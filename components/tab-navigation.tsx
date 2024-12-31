@@ -1,20 +1,31 @@
-export function TabNavigation() {
+'use client'
+import { useState } from 'react'
+
+interface TabNavigationProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
   return (
     <div className="flex justify-center mb-4 md:mb-8 lg:mb-16">
       <div className="inline-flex flex-wrap p-1 rounded-full bg-[#f5f5f5] max-w-full overflow-x-auto no-scrollbar">
         {[
           'Image',
-          'Video',
+          'Blog',
           'Audio',
           'Language Models',
           ['3D Objects', true]
         ].map((item, i) => (
           <button
             key={Array.isArray(item) ? item[0].toString() : item}
+            onClick={() => setActiveTab(Array.isArray(item) ? item[0].toString() : item)}
             className={`
               px-2 py-1 text-[11px] sm:text-[12px] md:px-4 md:py-2 md:text-[14px] font-medium rounded-full 
               flex items-center gap-1 sm:gap-1.5 transition-colors shrink-0
-              ${i === 0 ? 'bg-white shadow-sm' : 'text-[#666666] hover:text-black'}
+              ${(Array.isArray(item) ? item[0].toString() : item) === activeTab 
+                ? 'bg-white shadow-sm text-black' 
+                : 'text-[#666666] hover:text-black'}
               whitespace-nowrap
             `}
           >
