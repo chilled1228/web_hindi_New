@@ -1,5 +1,25 @@
 node_modules
-node_modules
+.next/
+.next/*
+build
+dist
+out
+.DS_Store
 
 # Environment variables
 .env*.local
+
+# IDE
+.vscode/
+.idea/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local

@@ -70,14 +70,14 @@ export function ImageUploadSection() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6 mb-16">
-      <div className="grid lg:grid-cols-[2fr,1fr] gap-8">
+    <div className="max-w-[1400px] mx-auto px-4 md:px-6 mb-8 md:mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-[2fr,1fr] gap-4 md:gap-8">
         {/* Upload Area */}
         <div
           {...getRootProps()}
           className={`
             relative flex flex-col items-center justify-center
-            min-h-[400px] p-8 rounded-3xl border-2 border-dashed
+            min-h-[300px] md:min-h-[400px] p-4 md:p-8 rounded-3xl border-2 border-dashed
             transition-colors cursor-pointer
             ${isDragActive 
               ? 'border-[#0066FF] bg-[#0066FF]/5' 

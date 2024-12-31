@@ -8,7 +8,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <NavigationMenu />
       
-      <main className="max-w-[1400px] mx-auto px-6 pt-24 pb-16">
+      <main className="max-w-[1400px] mx-auto px-6 pt-32 pb-16">
         {/* Hero Section */}
         <div className="text-center mb-20">
           <h1 className="text-[44px] leading-[1.15] font-semibold tracking-[-0.02em] mb-6">
