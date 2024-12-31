@@ -2,16 +2,21 @@
 
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, ImageIcon } from 'lucide-react'
+import { Upload, ImageIcon, Loader2 } from 'lucide-react'
 
 export function ImageUploadSection() {
   const [preview, setPreview] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
     if (file) {
       const objectUrl = URL.createObjectURL(file)
       setPreview(objectUrl)
+      setImageFile(file)
+      setGeneratedPrompt(null) // Reset prompt when new image is uploaded
     }
   }, [])
 
@@ -22,6 +27,47 @@ export function ImageUploadSection() {
     },
     multiple: false
   })
+
+  const generatePrompt = async () => {
+    if (!imageFile) return
+
+    setIsLoading(true)
+    try {
+      // Convert image to base64
+      const base64Image = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const base64String = reader.result as string
+          resolve(base64String.split(',')[1]) // Remove data URL prefix
+        }
+        reader.readAsDataURL(imageFile)
+      })
+
+      // Call Gemini API
+      const response = await fetch('/api/generate-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          mimeType: imageFile.type,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate prompt')
+      }
+
+      const data = await response.json()
+      setGeneratedPrompt(data.prompt)
+    } catch (error) {
+      console.error('Error generating prompt:', error)
+      // You might want to show an error message to the user
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="max-w-[1400px] mx-auto px-6 mb-16">
@@ -74,11 +120,24 @@ export function ImageUploadSection() {
           <p className="text-[#666666] mb-6">
             Upload an image and our AI will generate a detailed description that you can use as a prompt.
           </p>
+          {generatedPrompt && (
+            <div className="mb-6 p-4 bg-white rounded-lg border border-[#eaeaea]">
+              <p className="text-sm">{generatedPrompt}</p>
+            </div>
+          )}
           <button 
-            className="w-full px-4 py-3 text-[14px] font-medium text-white bg-black rounded-lg hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!preview}
+            className="w-full px-4 py-3 text-[14px] font-medium text-white bg-black rounded-lg hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={!preview || isLoading}
+            onClick={generatePrompt}
           >
-            Generate Prompt
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate Prompt'
+            )}
           </button>
         </div>
       </div>
