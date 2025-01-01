@@ -2,17 +2,28 @@ import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Initialize the Gemini API with your API key
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+let genAI: GoogleGenerativeAI;
+try {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not configured in environment variables');
+  }
+  if (!process.env.GEMINI_API_KEY.startsWith('AI')) {
+    throw new Error('Invalid API key format. Gemini API keys should start with "AI"');
+  }
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+} catch (error) {
+  console.error('Error initializing Gemini API:', error);
+}
 
 export async function POST(request: Request) {
   try {
-    // Validate API key
-    if (!process.env.GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY is not configured in environment variables')
+    // Validate API initialization
+    if (!genAI) {
       return NextResponse.json(
         { 
           error: 'API configuration error',
-          message: 'The Gemini API key is not configured. Please check your environment variables in Vercel.'
+          message: 'The Gemini API could not be initialized. Please check your API key format and configuration.',
+          help: 'Make sure to use an API key from Google AI Studio (https://makersuite.google.com/app/apikey)'
         },
         { status: 500 }
       )
