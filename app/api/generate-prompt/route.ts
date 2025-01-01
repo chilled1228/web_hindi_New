@@ -7,10 +7,20 @@ try {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not configured in environment variables');
   }
-  if (!process.env.GEMINI_API_KEY.startsWith('AI')) {
+  
+  // Enhance API key validation
+  const apiKey = process.env.GEMINI_API_KEY.trim();
+  if (!apiKey.startsWith('AI')) {
     throw new Error('Invalid API key format. Gemini API keys should start with "AI"');
   }
-  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  
+  // Test API key format with regex
+  const validKeyFormat = /^AI[A-Za-z0-9_-]{20,}$/;
+  if (!validKeyFormat.test(apiKey)) {
+    throw new Error('Invalid API key format. Please check your API key');
+  }
+  
+  genAI = new GoogleGenerativeAI(apiKey);
 } catch (error) {
   console.error('Error initializing Gemini API:', error);
 }
@@ -23,7 +33,11 @@ export async function POST(request: Request) {
         { 
           error: 'API configuration error',
           message: 'The Gemini API could not be initialized. Please check your API key format and configuration.',
-          help: 'Make sure to use an API key from Google AI Studio (https://makersuite.google.com/app/apikey)'
+          help: 'Make sure to use a valid API key from Google AI Studio (https://makersuite.google.com/app/apikey)',
+          env: {
+            hasApiKey: !!process.env.GEMINI_API_KEY,
+            keyFormat: process.env.GEMINI_API_KEY?.startsWith('AI')
+          }
         },
         { status: 500 }
       )
@@ -77,19 +91,24 @@ export async function POST(request: Request) {
     console.error('Error generating prompt:', {
       message: error.message,
       stack: error.stack,
-      details: error
+      details: error,
+      status: error.status,
+      errorDetails: error.errorDetails
     })
+    
+    // Enhanced error response
     return NextResponse.json(
       { 
-        error: 'Failed to generate prompt', 
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Failed to generate prompt',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        details: error.errorDetails || error.message,
         env: {
           hasApiKey: !!process.env.GEMINI_API_KEY,
           hasModel: !!process.env.GEMINI_MODEL,
           hasPrompt: !!process.env.GEMINI_PROMPT
         }
       },
-      { status: 500 }
+      { status: error.status || 500 }
     )
   }
 } 
