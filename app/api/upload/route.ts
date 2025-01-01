@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
 import { Storage } from '@google-cloud/storage'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../auth/auth.config'
 
 const storage = new Storage({
   projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
@@ -12,15 +10,6 @@ const bucket = storage.bucket(process.env.GOOGLE_CLOUD_BUCKET!)
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const { filename, contentType } = await request.json()
     
     if (!filename || !contentType) {
