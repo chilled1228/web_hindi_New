@@ -15,16 +15,12 @@ export default function Home() {
       
       <main className="max-w-[1400px] mx-auto px-6 pt-32 pb-16">
         {/* Hero Section */}
-        <div className="text-center mb-20">
-          <h1 className="text-[44px] leading-[1.15] font-semibold tracking-[-0.02em] mb-6">
-            Unlocking Human Potential
-            <br />
-            With Generative AI.
+        <div className="text-center mb-16 md:mb-20">
+          <h1 className="text-[36px] sm:text-[40px] leading-[1.2] font-semibold tracking-[-0.02em] mb-4 text-balance">
+            AI-Powered Prompts for Your Creativity
           </h1>
-          <p className="text-[18px] leading-[1.6] text-muted-foreground max-w-[600px] mx-auto">
-            Developing and providing open-source AI models
-            <br />
-            for creative problem-solving and industrial use.
+          <p className="text-responsive text-muted-foreground max-w-[500px] mx-auto">
+            Generate unique prompts for writing, design, and art. Upload an image or select a category.
           </p>
         </div>
 

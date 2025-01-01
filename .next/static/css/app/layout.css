@@ -630,6 +630,9 @@ video {
 .mb-8 {
   margin-bottom: 2rem;
 }
+.mb-16 {
+  margin-bottom: 4rem;
+}
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
@@ -723,6 +726,9 @@ video {
 .max-w-none {
   max-width: none;
 }
+.max-w-\[500px\] {
+  max-width: 500px;
+}
 .flex-1 {
   flex: 1 1 0%;
 }
@@ -814,6 +820,9 @@ video {
 }
 .whitespace-nowrap {
   white-space: nowrap;
+}
+.text-balance {
+  text-wrap: balance;
 }
 .rounded {
   border-radius: 0.25rem;
@@ -1050,11 +1059,20 @@ video {
   font-size: 0.75rem;
   line-height: 1rem;
 }
+.text-\[40px\] {
+  font-size: 40px;
+}
+.text-\[36px\] {
+  font-size: 36px;
+}
 .font-medium {
   font-weight: 500;
 }
 .font-semibold {
   font-weight: 600;
+}
+.font-bold {
+  font-weight: 700;
 }
 .italic {
   font-style: italic;
@@ -1064,6 +1082,9 @@ video {
 }
 .leading-\[1\.6\] {
   line-height: 1.6;
+}
+.leading-\[1\.2\] {
+  line-height: 1.2;
 }
 .tracking-\[-0\.02em\] {
   letter-spacing: -0.02em;
@@ -1182,6 +1203,27 @@ video {
 .ease-in-out {
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+.text-balance {
+    text-wrap: balance;
+  }
+.text-responsive {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+@media (min-width: 768px) {
+
+  .text-responsive {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+
+  .text-responsive {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -1287,6 +1329,14 @@ body {
   color: hsl(var(--primary));
 }
 
+.dark\:block:is(.dark *) {
+  display: block;
+}
+
+.dark\:hidden:is(.dark *) {
+  display: none;
+}
+
 .dark\:border-gray-800:is(.dark *) {
   --tw-border-opacity: 1;
   border-color: rgb(31 41 55 / var(--tw-border-opacity, 1));
@@ -1335,6 +1385,14 @@ body {
   .sm\:text-\[12px\] {
     font-size: 12px;
   }
+
+  .sm\:text-\[44px\] {
+    font-size: 44px;
+  }
+
+  .sm\:text-\[40px\] {
+    font-size: 40px;
+  }
 }
 
 @media (min-width: 768px) {
@@ -1345,6 +1403,10 @@ body {
 
   .md\:mb-8 {
     margin-bottom: 2rem;
+  }
+
+  .md\:mb-20 {
+    margin-bottom: 5rem;
   }
 
   .md\:aspect-\[4\/3\] {
