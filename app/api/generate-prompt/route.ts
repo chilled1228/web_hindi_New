@@ -8,9 +8,12 @@ export async function POST(request: Request) {
   try {
     // Validate API key
     if (!process.env.GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY is not configured')
+      console.error('GEMINI_API_KEY is not configured in environment variables')
       return NextResponse.json(
-        { error: 'API key not configured' },
+        { 
+          error: 'API configuration error',
+          message: 'The Gemini API key is not configured. Please check your environment variables in Vercel.'
+        },
         { status: 500 }
       )
     }
