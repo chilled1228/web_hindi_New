@@ -2,23 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Image from '@tiptap/extension-image'
-import Link from '@tiptap/extension-link'
+import { RichTextEditor } from '@/components/rich-text-editor'
 
-interface NewPost {
-  title: string
-  slug: string
-  excerpt: string
-  content: string
-  category: string
-  published: boolean
-}
-
-export default function NewPostPage() {
+export default function NewPost() {
   const router = useRouter()
-  const [post, setPost] = useState<NewPost>({
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
     title: '',
     slug: '',
     excerpt: '',
@@ -26,41 +15,40 @@ export default function NewPostPage() {
     category: '',
     published: false,
   })
-  const [saving, setSaving] = useState(false)
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Image,
-      Link.configure({
-        openOnClick: false,
-      }),
-    ],
-    content: '',
-    onUpdate: ({ editor }) => {
-      setPost(prev => ({ ...prev, content: editor.getHTML() }))
-    },
-  })
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
+    setLoading(true)
 
     try {
       const response = await fetch('/api/posts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(post),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       })
 
-      if (!response.ok) throw new Error('Failed to create post')
-      
+      if (!response.ok) {
+        throw new Error('Failed to create post')
+      }
+
       router.push('/admin/posts')
+      router.refresh()
     } catch (error) {
       console.error('Error creating post:', error)
+      alert('Failed to create post. Please try again.')
     } finally {
-      setSaving(false)
+      setLoading(false)
     }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    }))
   }
 
   const generateSlug = (title: string) => {
@@ -70,111 +58,118 @@ export default function NewPostPage() {
       .replace(/(^-|-$)/g, '')
   }
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const title = e.target.value
-    setPost({
-      ...post,
-      title,
-      slug: generateSlug(title),
-    })
-  }
-
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">New Post</h1>
-        <button
-          onClick={() => router.push('/admin/posts')}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          Cancel
-        </button>
-      </div>
-
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Create New Post</h1>
+      
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-medium">
-            Title
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={post.title}
-            onChange={handleTitleChange}
-            className="w-full p-2 border rounded-md bg-background"
-            required
-          />
-        </div>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium mb-1">
+              Title
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={(e) => {
+                handleChange(e)
+                setFormData(prev => ({
+                  ...prev,
+                  slug: generateSlug(e.target.value)
+                }))
+              }}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
 
-        <div className="space-y-2">
-          <label htmlFor="slug" className="text-sm font-medium">
-            Slug
-          </label>
-          <input
-            id="slug"
-            type="text"
-            value={post.slug}
-            onChange={(e) => setPost({ ...post, slug: e.target.value })}
-            className="w-full p-2 border rounded-md bg-background"
-            required
-          />
-        </div>
+          <div>
+            <label htmlFor="slug" className="block text-sm font-medium mb-1">
+              Slug
+            </label>
+            <input
+              type="text"
+              id="slug"
+              name="slug"
+              value={formData.slug}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
 
-        <div className="space-y-2">
-          <label htmlFor="excerpt" className="text-sm font-medium">
-            Excerpt
-          </label>
-          <textarea
-            id="excerpt"
-            value={post.excerpt}
-            onChange={(e) => setPost({ ...post, excerpt: e.target.value })}
-            className="w-full p-2 border rounded-md bg-background"
-            rows={3}
-            required
-          />
-        </div>
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium mb-1">
+              Category
+            </label>
+            <input
+              type="text"
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
 
-        <div className="space-y-2">
-          <label htmlFor="category" className="text-sm font-medium">
-            Category
-          </label>
-          <input
-            id="category"
-            type="text"
-            value={post.category}
-            onChange={(e) => setPost({ ...post, category: e.target.value })}
-            className="w-full p-2 border rounded-md bg-background"
-            required
-          />
-        </div>
+          <div>
+            <label htmlFor="excerpt" className="block text-sm font-medium mb-1">
+              Excerpt
+            </label>
+            <textarea
+              id="excerpt"
+              name="excerpt"
+              value={formData.excerpt}
+              onChange={handleChange}
+              rows={3}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Content
-          </label>
-          <div className="min-h-[400px] border rounded-md bg-background">
-            <EditorContent editor={editor} className="prose max-w-none p-4" />
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Content
+            </label>
+            <RichTextEditor
+              content={formData.content}
+              onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="published"
+              name="published"
+              checked={formData.published}
+              onChange={handleChange}
+              className="rounded border-gray-300"
+            />
+            <label htmlFor="published" className="text-sm font-medium">
+              Publish immediately
+            </label>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex gap-4">
           <button
             type="submit"
-            disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
+            disabled={loading}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
           >
-            {saving ? 'Creating...' : 'Create Post'}
+            {loading ? 'Creating...' : 'Create Post'}
           </button>
-
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={post.published}
-              onChange={(e) => setPost({ ...post, published: e.target.checked })}
-              className="rounded border-gray-300"
-            />
-            <span className="text-sm">Published</span>
-          </label>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
+          >
+            Cancel
+          </button>
         </div>
       </form>
     </div>
