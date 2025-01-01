@@ -80,9 +80,8 @@ export function ImageUploadSection() {
             min-h-[300px] md:min-h-[400px] p-4 md:p-8 rounded-3xl border-2 border-dashed
             transition-colors cursor-pointer
             ${isDragActive 
-              ? 'border-[#0066FF] bg-[#0066FF]/5' 
-              : 'border-[#eaeaea] hover:border-[#0066FF] hover:bg-[#fafafa]'
-            }
+              ? 'border-primary bg-primary/5' 
+              : 'border-border hover:border-primary hover:bg-accent'}
           `}
         >
           <input {...getInputProps()} />
@@ -95,16 +94,16 @@ export function ImageUploadSection() {
             />
           ) : (
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 mb-6 rounded-full bg-[#fafafa] flex items-center justify-center">
-                <Upload className="w-8 h-8 text-[#666666]" />
+              <div className="w-16 h-16 mb-6 rounded-full bg-accent flex items-center justify-center">
+                <Upload className="w-8 h-8 text-muted-foreground" />
               </div>
               <h3 className="text-xl font-semibold mb-2">
                 Drop your image here
               </h3>
-              <p className="text-[#666666] mb-6">
+              <p className="text-muted-foreground mb-6">
                 or click to browse from your computer
               </p>
-              <div className="flex items-center gap-2 text-[14px] text-[#666666]">
+              <div className="flex items-center gap-2 text-[14px] text-muted-foreground">
                 <ImageIcon className="w-4 h-4" />
                 Supports JPG, PNG and WEBP
               </div>
@@ -113,20 +112,20 @@ export function ImageUploadSection() {
         </div>
 
         {/* Generate Prompt Section */}
-        <div className="bg-[#fafafa] rounded-3xl p-8">
+        <div className="bg-accent rounded-3xl p-8">
           <h3 className="text-xl font-semibold mb-4">
             Generate Image Description
           </h3>
-          <p className="text-[#666666] mb-6">
+          <p className="text-muted-foreground mb-6">
             Upload an image and our AI will generate a detailed description that you can use as a prompt.
           </p>
           {generatedPrompt && (
-            <div className="mb-6 p-4 bg-white rounded-lg border border-[#eaeaea]">
+            <div className="mb-6 p-4 bg-background rounded-lg border border-border">
               <p className="text-sm">{generatedPrompt}</p>
             </div>
           )}
           <button 
-            className="w-full px-4 py-3 text-[14px] font-medium text-white bg-black rounded-lg hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 text-[14px] font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             disabled={!preview || isLoading}
             onClick={generatePrompt}
           >

@@ -1,5 +1,12 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js"
+  "/api/posts/route": "app/api/posts/route.js",
+  "/login/page": "app/login/page.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/generate-prompt/route": "app/api/generate-prompt/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/api/posts/[id]/route": "app/api/posts/[id]/route.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/posts/page": "app/admin/posts/page.js",
+  "/admin/posts/new/page": "app/admin/posts/new/page.js"
 }
