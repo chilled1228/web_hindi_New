@@ -7,8 +7,8 @@ import { Providers } from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'stability.ai - Unlocking Human Potential With Generative AI',
-  description: 'Developing and providing open-source AI models for creative problem-solving and industrial use.',
+  title: 'Freepromptbase - Unlocking Human Potential With Generative AI',
+  description: 'Discover and share the best prompts for AI models.',
 }
 
 export default function RootLayout({
