@@ -5,22 +5,27 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 let genAI: GoogleGenerativeAI;
 try {
   if (!process.env.GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY is not configured in environment variables');
     throw new Error('GEMINI_API_KEY is not configured in environment variables');
   }
   
   // Enhance API key validation
   const apiKey = process.env.GEMINI_API_KEY.trim();
+  console.log('API Key from env:', apiKey); // Log the API key
   if (!apiKey.startsWith('AI')) {
+    console.error('Invalid API key format. Gemini API keys should start with "AI"');
     throw new Error('Invalid API key format. Gemini API keys should start with "AI"');
   }
   
   // Test API key format with regex
   const validKeyFormat = /^AI[A-Za-z0-9_-]{20,}$/;
   if (!validKeyFormat.test(apiKey)) {
+    console.error('Invalid API key format. Please check your API key');
     throw new Error('Invalid API key format. Please check your API key');
   }
   
   genAI = new GoogleGenerativeAI(apiKey);
+  console.log('Gemini API initialized successfully'); // Log successful initialization
 } catch (error) {
   console.error('Error initializing Gemini API:', error);
 }
