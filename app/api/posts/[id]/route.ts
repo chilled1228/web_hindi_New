@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../../auth/auth.config'
 
-const prisma = new PrismaClient()
+// Dummy data for posts
+const posts = [
+  {
+    id: '1',
+    title: 'Welcome to Our Blog',
+    slug: 'welcome-to-our-blog',
+    excerpt: 'This is our first blog post. We\'re excited to share our journey with you.',
+    content: '<h2>Welcome to Our Blog!</h2><p>This is our first blog post. We\'re excited to share our journey with you.</p><p>Stay tuned for more content!</p>',
+    category: 'Announcements',
+    published: true,
+    createdAt: new Date().toISOString(),
+    author: {
+      name: 'Test User',
+      email: 'test@example.com'
+    }
+  }
+]
 
 // GET /api/posts/[id] - Get a single post
 export async function GET(
@@ -11,17 +24,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const post = await prisma.blogPost.findUnique({
-      where: { id: params.id },
-      include: {
-        author: {
-          select: {
-            name: true,
-            email: true
-          }
-        }
-      }
-    })
+    const post = posts.find(post => post.id === params.id)
 
     if (!post) {
       return NextResponse.json(
@@ -45,22 +48,17 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session || session.user.role !== 'ADMIN') {
+    const json = await request.json()
+    const postIndex = posts.findIndex(post => post.id === params.id)
+    if (postIndex === -1) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'Post not found' },
+        { status: 404 }
       )
     }
+    posts[postIndex] = { ...posts[postIndex], ...json }
 
-    const json = await request.json()
-    const post = await prisma.blogPost.update({
-      where: { id: params.id },
-      data: json
-    })
-
-    return NextResponse.json(post)
+    return NextResponse.json(posts[postIndex])
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to update post' },
@@ -75,18 +73,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session || session.user.role !== 'ADMIN') {
+    const postIndex = posts.findIndex(post => post.id === params.id)
+    if (postIndex === -1) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'Post not found' },
+        { status: 404 }
       )
     }
-
-    await prisma.blogPost.delete({
-      where: { id: params.id }
-    })
+    posts.splice(postIndex, 1)
 
     return new NextResponse(null, { status: 204 })
   } catch (error) {

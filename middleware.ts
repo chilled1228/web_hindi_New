@@ -3,13 +3,13 @@ import { NextResponse } from "next/server"
 
 export default withAuth(
   function middleware(req) {
-    const token = req.nextauth.token
-    const isAdmin = token?.role === "ADMIN"
-    const isAdminRoute = req.nextUrl.pathname.startsWith("/admin")
+    // const token = req.nextauth.token
+    // const isAdmin = token?.role === "ADMIN"
+    // const isAdminRoute = req.nextUrl.pathname.startsWith("/admin")
 
-    if (isAdminRoute && !isAdmin) {
-      return NextResponse.redirect(new URL("/login", req.url))
-    }
+    // if (isAdminRoute && !isAdmin) {
+    //   return NextResponse.redirect(new URL("/login", req.url))
+    // }
   },
   {
     callbacks: {
@@ -20,7 +20,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/admin/:path*",
+    // "/admin/:path*",
     "/api/posts/:path*"
   ]
 } 
