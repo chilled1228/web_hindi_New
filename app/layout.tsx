@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/lib/theme-provider'
 import { Providers } from './providers'
-import { Brain } from 'lucide-react'
+import { NavBar } from '@/components/nav-bar'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -13,7 +13,6 @@ const generateFavicon = () => {
   const base64String = btoa(svgString);
   return `data:image/svg+xml;base64,${base64String}`;
 };
-
 
 export const metadata: Metadata = {
   title: 'Freepromptbase - Unlocking Human Potential With Generative AI',
@@ -32,7 +31,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
         <Providers>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <NavBar />
+            <main className="pt-16">
+              {children}
+            </main>
+          </ThemeProvider>
         </Providers>
       </body>
     </html>
