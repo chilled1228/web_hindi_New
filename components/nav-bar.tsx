@@ -34,9 +34,6 @@ export function NavBar() {
                 >
                   Sign Out
                 </button>
-                <span className="text-sm text-muted-foreground">
-                  {user.email}
-                </span>
               </>
             ) : (
               <Link 

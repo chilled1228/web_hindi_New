@@ -3,7 +3,6 @@ import { NavigationMenu } from "../components/navigation-menu"
 import { TabNavigation } from "../components/tab-navigation"
 import { ContentSection } from "../components/content-section"
 import { ImageUploadSection } from "../components/image-upload-section"
-import { BlogSection } from "../components/blog-section"
 import { useState } from "react"
 
 export default function Home() {
@@ -27,8 +26,7 @@ export default function Home() {
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
         
         {activeTab === 'Image' && <ImageUploadSection />}
-        {activeTab === 'Blog' && <BlogSection />}
-        {activeTab !== 'Image' && activeTab !== 'Blog' && (
+        {activeTab !== 'Image' && (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold mb-4">Coming Soon</h2>
             <p className="text-muted-foreground">This feature is currently under development.</p>

@@ -7,7 +7,12 @@ export async function POST(request: Request) {
     if (!filename || !contentType) {
       return NextResponse.json(
         { error: 'Missing required fields' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       )
     }
 
@@ -18,12 +23,21 @@ export async function POST(request: Request) {
     return NextResponse.json({
       uploadUrl: mockUrl,
       fileUrl: mockUrl,
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     })
   } catch (error) {
     console.error('Error handling upload:', error)
     return NextResponse.json(
       { error: 'Failed to handle upload' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
     )
   }
 } 

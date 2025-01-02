@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { ThemeProvider } from '@/lib/theme-provider'
 import { Providers } from './providers'
 import { NavBar } from '@/components/nav-bar'
+import { Toaster } from '@/components/ui/toaster'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -38,6 +39,7 @@ export default function RootLayout({
             </main>
           </ThemeProvider>
         </Providers>
+        <Toaster />
       </body>
     </html>
   )

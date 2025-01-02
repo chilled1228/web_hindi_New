@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { parseAndCleanJsonOutput } from '@/lib/utils'
 
 // Initialize the Gemini API with your API key
 let genAI: GoogleGenerativeAI;
@@ -82,6 +83,18 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate GEMINI_PROMPT
+    if (!process.env.GEMINI_PROMPT) {
+      console.error('GEMINI_PROMPT is not configured');
+      return NextResponse.json(
+        { 
+          error: 'Configuration error',
+          message: 'GEMINI_PROMPT is not configured in environment variables'
+        },
+        { status: 500 }
+      )
+    }
+
     const { image, mimeType } = await request.json()
 
     // Validate request data
@@ -96,6 +109,12 @@ export async function POST(request: Request) {
     // Initialize the model
     const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp" })
 
+    const json_format = `{
+      "output": "string" // Act as a stable diffusion photography prompt generator that accepts a visual description and outputs a detailed paragraph of 100 words that I can copy into my diffusion model. Include a variety of photography-related terminology including the description of the lens you use and most importantly a description of the lighting.
+    }`
+
+    const systemPrompt = `Analyze this image and provide Reply with only the JSON object and do not mention names of real people, locations, or copyrighted terms, and do not capitlalize every word. ${json_format}`
+
     // Prepare the image data
     const imageData = {
       inlineData: {
@@ -106,27 +125,47 @@ export async function POST(request: Request) {
 
     console.log('Sending request to Gemini API...', {
       model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp",
-      prompt: process.env.GEMINI_PROMPT,
+      prompt: systemPrompt,
       mimeType
     })
 
     // Generate content
     const result = await model.generateContent([
-      process.env.GEMINI_PROMPT || "Generate a detailed 100-word photography description including lens choice and lighting setup for this image:",
+      systemPrompt,
       imageData
     ])
 
     const response = await result.response
-    const prompt = response.text()
+    const rawText = response.text()
+    
+    try {
+      // Parse and clean the response
+      const cleanOutput = parseAndCleanJsonOutput(rawText);
 
-    console.log('Generated prompt:', prompt)
+      if (!cleanOutput) {
+        throw new Error('No output generated');
+      }
 
-    if (!prompt) {
-      console.error('No prompt was generated');
-      throw new Error('No prompt generated')
+      // Only return the cleaned output
+      return NextResponse.json({ 
+        output: cleanOutput
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('Error processing response:', error);
+      return NextResponse.json({
+        error: 'Failed to process response',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }, {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
-
-    return NextResponse.json({ prompt })
   } catch (error: any) {
     console.error('Error generating prompt:', {
       message: error.message,
@@ -141,19 +180,20 @@ export async function POST(request: Request) {
       }
     })
     
-    // Enhanced error response
-    return NextResponse.json(
-      { 
-        error: 'Failed to generate prompt',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        details: error.errorDetails || error.message,
-        env: {
-          hasApiKey: !!process.env.GEMINI_API_KEY,
-          hasModel: !!process.env.GEMINI_MODEL,
-          hasPrompt: !!process.env.GEMINI_PROMPT
-        }
-      },
-      { status: error.status || 500 }
-    )
+    return NextResponse.json({
+      error: 'Failed to generate prompt',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      details: error.errorDetails || error.message,
+      env: {
+        hasApiKey: !!process.env.GEMINI_API_KEY,
+        hasModel: !!process.env.GEMINI_MODEL,
+        hasPrompt: !!process.env.GEMINI_PROMPT
+      }
+    }, {
+      status: error.status || 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
   }
 } 

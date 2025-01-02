@@ -16,8 +16,12 @@ export function SignInForm() {
     try {
       await signIn(email, password)
       // Success! The auth context will be updated
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid email or password')
+    } catch (err: any) {
+      if (err?.message?.toLowerCase().includes('rate limit')) {
+        setError('Too many login attempts. Please wait a minute before trying again.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Invalid email or password')
+      }
     } finally {
       setLoading(false)
     }
