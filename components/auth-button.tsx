@@ -34,7 +34,7 @@ export function AuthButton() {
     return (
       <div className="flex items-center gap-4">
         <div className="text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{promptsRemaining}</span> prompts remaining
+          <span className="font-medium text-foreground">{promptsRemaining}</span> credit
         </div>
         <Button
           variant="ghost"

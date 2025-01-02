@@ -3,12 +3,15 @@
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, ImageIcon, Loader2 } from 'lucide-react'
+import { useAuth } from '@/lib/hooks/use-auth'
 
 export function ImageUploadSection() {
   const [preview, setPreview] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const { promptsRemaining, fetchUserData, user } = useAuth()
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -17,6 +20,7 @@ export function ImageUploadSection() {
       setPreview(objectUrl)
       setImageFile(file)
       setGeneratedPrompt(null) // Reset prompt when new image is uploaded
+      setError(null) // Reset error when new image is uploaded
     }
   }, [])
 
@@ -29,9 +33,14 @@ export function ImageUploadSection() {
   })
 
   const generatePrompt = async () => {
-    if (!imageFile) return
+    if (!imageFile || !user) return
+    if (promptsRemaining !== null && promptsRemaining <= 0) {
+      setError('You have reached your monthly prompt generation limit')
+      return
+    }
 
     setIsLoading(true)
+    setError(null)
     try {
       // Convert image to base64
       const base64Image = await new Promise<string>((resolve) => {
@@ -55,15 +64,18 @@ export function ImageUploadSection() {
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to generate prompt')
+        throw new Error(data.message || 'Failed to generate prompt')
       }
 
-      const data = await response.json()
       setGeneratedPrompt(data.prompt)
+      // Refresh user data to update prompt count
+      await fetchUserData(user.id)
     } catch (error) {
       console.error('Error generating prompt:', error)
-      // You might want to show an error message to the user
+      setError(error instanceof Error ? error.message : 'Failed to generate prompt')
     } finally {
       setIsLoading(false)
     }
@@ -124,9 +136,14 @@ export function ImageUploadSection() {
               <p className="text-sm">{generatedPrompt}</p>
             </div>
           )}
+          {error && (
+            <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
           <button 
             className="w-full px-4 py-3 text-[14px] font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            disabled={!preview || isLoading}
+            disabled={!preview || isLoading || (promptsRemaining !== null && promptsRemaining <= 0)}
             onClick={generatePrompt}
           >
             {isLoading ? (

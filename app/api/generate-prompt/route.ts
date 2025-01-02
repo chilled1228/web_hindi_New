@@ -37,44 +37,28 @@ export async function POST(request: Request) {
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
 
-    // Get user's limit
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('monthly_prompt_limit')
-      .eq('id', session.user.id)
-      .single()
+    // Use a transaction to check and update prompt usage atomically
+    const { data: usageResult, error: transactionError } = await supabase.rpc('check_and_track_prompt_usage', {
+      user_id_param: session.user.id,
+      start_date_param: startOfMonth.toISOString(),
+      prompt_type_param: 'image'
+    })
 
-    if (userError || !userData) {
-      console.error('User data error:', userError);
+    if (transactionError) {
+      console.error('Transaction error:', transactionError)
       return NextResponse.json(
-        { error: 'User data not found', details: userError?.message },
-        { status: 404 }
-      )
-    }
-
-    // Get current usage
-    const { count: usedPrompts, error: usageError } = await supabase
-      .from('prompt_usage')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', session.user.id)
-      .gte('used_at', startOfMonth.toISOString())
-
-    if (usageError) {
-      console.error('Usage check error:', usageError);
-      return NextResponse.json(
-        { error: 'Failed to check usage limits', details: usageError.message },
+        { error: 'Failed to process prompt usage', details: transactionError.message },
         { status: 500 }
       )
     }
 
-    if ((usedPrompts || 0) >= userData.monthly_prompt_limit) {
-      console.warn('Rate limit exceeded for user:', session.user.id);
+    if (!usageResult.success) {
       return NextResponse.json(
         { 
           error: 'Rate limit exceeded',
           message: 'You have reached your monthly prompt generation limit',
-          used: usedPrompts,
-          limit: userData.monthly_prompt_limit
+          used: usageResult.used_prompts,
+          limit: usageResult.prompt_limit
         },
         { status: 429 }
       )
@@ -140,20 +124,6 @@ export async function POST(request: Request) {
     if (!prompt) {
       console.error('No prompt was generated');
       throw new Error('No prompt generated')
-    }
-
-    // Track prompt usage
-    const { error: trackingError } = await supabase
-      .from('prompt_usage')
-      .insert([
-        {
-          user_id: session.user.id,
-          prompt_type: 'image'
-        }
-      ])
-
-    if (trackingError) {
-      console.error('Failed to track prompt usage:', trackingError)
     }
 
     return NextResponse.json({ prompt })

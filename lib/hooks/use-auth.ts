@@ -5,7 +5,7 @@ import { User } from '@supabase/supabase-js'
 interface UserData {
   id: string
   email: string
-  monthly_prompt_limit: number
+  daily_prompt_limit: number
 }
 
 interface AuthState {
@@ -58,20 +58,19 @@ export function useAuth() {
 
       if (userError) throw userError
 
-      // Fetch prompt usage for current month
-      const startOfMonth = new Date()
-      startOfMonth.setDate(1)
-      startOfMonth.setHours(0, 0, 0, 0)
+      // Get start of today for daily usage
+      const startOfDay = new Date()
+      startOfDay.setHours(0, 0, 0, 0)
 
       const { count: usedPrompts, error: usageError } = await supabase
         .from('prompt_usage')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('used_at', startOfMonth.toISOString())
+        .gte('used_at', startOfDay.toISOString())
 
       if (usageError) throw usageError
 
-      const promptsRemaining = userData.monthly_prompt_limit - (usedPrompts || 0)
+      const promptsRemaining = userData.daily_prompt_limit - (usedPrompts || 0)
 
       setState(s => ({
         ...s,
@@ -129,7 +128,7 @@ export function useAuth() {
   const trackPromptUsage = async (promptType: string) => {
     if (!state.user) throw new Error('User not authenticated')
     if (state.promptsRemaining !== null && state.promptsRemaining <= 0) {
-      throw new Error('Monthly prompt limit reached')
+      throw new Error('Daily prompt limit reached')
     }
 
     try {
@@ -166,6 +165,7 @@ export function useAuth() {
     signUp,
     signIn,
     signOut,
-    trackPromptUsage
+    trackPromptUsage,
+    fetchUserData
   }
 } 

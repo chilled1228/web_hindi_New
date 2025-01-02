@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   email TEXT UNIQUE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  monthly_prompt_limit INTEGER DEFAULT 50 NOT NULL
+  monthly_prompt_limit INTEGER DEFAULT 5 NOT NULL
 );
 
 -- Create prompt_usage table

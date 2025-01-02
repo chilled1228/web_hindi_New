@@ -32,6 +32,14 @@ body {
     opacity: 0;
     animation: fade-in 0.2s ease-out forwards;
   }
+
+  .nav-link {
+    @apply text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors;
+  }
+  
+  .dropdown-animation {
+    @apply transition-all duration-200 ease-in-out transform;
+  }
 }
 
 @layer base {
