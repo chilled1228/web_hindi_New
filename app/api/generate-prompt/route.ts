@@ -95,13 +95,13 @@ export async function POST(request: Request) {
       )
     }
 
-    const { image, mimeType } = await request.json()
+    const { image, mimeType, promptType = 'photography' } = await request.json()
 
     // Validate request data
-    if (!image || !mimeType) {
-      console.error('Missing required fields:', { image: !!image, mimeType: !!mimeType });
+    if (!image || !mimeType || !promptType) {
+      console.error('Missing required fields:', { image: !!image, mimeType: !!mimeType, promptType: !!promptType });
       return NextResponse.json(
-        { error: 'Missing required fields', details: { hasImage: !!image, hasMimeType: !!mimeType } },
+        { error: 'Missing required fields', details: { hasImage: !!image, hasMimeType: !!mimeType, hasPromptType: !!promptType } },
         { status: 400 }
       )
     }
@@ -109,11 +109,30 @@ export async function POST(request: Request) {
     // Initialize the model
     const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp" })
 
-    const json_format = `{
-      "output": "string" // Act as a stable diffusion photography prompt generator that accepts a visual description and outputs a detailed paragraph of 100 words that I can copy into my diffusion model. Include a variety of photography-related terminology including the description of the lens you use and most importantly a description of the lighting.
-    }`
+    // Define prompt templates for different types
+    const promptTemplates = {
+      photography: {
+        format: `{
+          "output": "string" // Act as a stable diffusion photography prompt generator that accepts a visual description and outputs a detailed paragraph of 100 words that I can copy into my diffusion model. Include a variety of photography-related terminology including the description of the lens you use and most importantly a description of the lighting.
+        }`,
+        instruction: "Analyze this image and provide a detailed photography-focused description"
+      },
+      painting: {
+        format: `{
+          "output": "string" // Act as an art prompt generator that describes the image in terms of artistic style, composition, color palette, brushwork, and medium. Provide a detailed 100-word description suitable for an art generation model.
+        }`,
+        instruction: "Analyze this image and provide a detailed artistic interpretation"
+      },
+      character: {
+        format: `{
+          "output": "string" // Act as a character design prompt generator that describes the subject's appearance, pose, expression, clothing, and notable features in detail. Provide a 100-word description suitable for character generation.
+        }`,
+        instruction: "Analyze this image and provide a detailed character description"
+      }
+    }
 
-    const systemPrompt = `Analyze this image and provide Reply with only the JSON object and do not mention names of real people, locations, or copyrighted terms, and do not capitlalize every word. ${json_format}`
+    const selectedTemplate = promptTemplates[promptType as keyof typeof promptTemplates] || promptTemplates.photography
+    const systemPrompt = `${selectedTemplate.instruction}. Reply with only the JSON object and do not mention names of real people, locations, or copyrighted terms, and do not capitalize every word. ${selectedTemplate.format}`
 
     // Prepare the image data
     const imageData = {

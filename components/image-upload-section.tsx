@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, ImageIcon, Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/use-auth'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function ImageUploadSection() {
   const [preview, setPreview] = useState<string | null>(null)
@@ -11,6 +12,7 @@ export function ImageUploadSection() {
   const [isLoading, setIsLoading] = useState(false)
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [promptType, setPromptType] = useState<string>('photography')
   const { promptsRemaining, fetchUserData, user } = useAuth()
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -61,6 +63,7 @@ export function ImageUploadSection() {
         body: JSON.stringify({
           image: base64Image,
           mimeType: imageFile.type,
+          promptType: promptType,
         }),
       })
 
@@ -135,6 +138,24 @@ export function ImageUploadSection() {
           <p className="text-muted-foreground mb-6">
             Upload an image and our AI will generate a detailed description that you can use as a prompt.
           </p>
+          
+          {/* Prompt Type Selector */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Prompt Type
+            </label>
+            <Select value={promptType} onValueChange={setPromptType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="photography">Photography</SelectItem>
+                <SelectItem value="painting">Painting</SelectItem>
+                <SelectItem value="character">Character</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {generatedPrompt && (
             <div className="mb-6">
               <div className="p-4 bg-background rounded-lg border border-border">
