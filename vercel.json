@@ -9,7 +9,6 @@
     "NEXT_PUBLIC_SUPABASE_URL": "env",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "env",
     "GEMINI_API_KEY": "env",
-    "GEMINI_MODEL": "env",
-    "GEMINI_PROMPT": "env"
+    "GEMINI_MODEL": "env"
   }
 } 

@@ -76,20 +76,7 @@ export async function POST(request: Request) {
           env: {
             hasApiKey: !!process.env.GEMINI_API_KEY,
             hasModel: !!process.env.GEMINI_MODEL,
-            hasPrompt: !!process.env.GEMINI_PROMPT
           }
-        },
-        { status: 500 }
-      )
-    }
-
-    // Validate GEMINI_PROMPT
-    if (!process.env.GEMINI_PROMPT) {
-      console.error('GEMINI_PROMPT is not configured');
-      return NextResponse.json(
-        { 
-          error: 'Configuration error',
-          message: 'GEMINI_PROMPT is not configured in environment variables'
         },
         { status: 500 }
       )
@@ -165,6 +152,20 @@ export async function POST(request: Request) {
         throw new Error('No output generated');
       }
 
+      // Store the prompt history
+      const { error: historyError } = await supabase
+        .from('prompt_history')
+        .insert({
+          user_id: session.user.id,
+          prompt_type: promptType,
+          input_image: image,
+          output_text: cleanOutput
+        });
+
+      if (historyError) {
+        console.error('Error storing prompt history:', historyError);
+      }
+
       // Only return the cleaned output
       return NextResponse.json({ 
         output: cleanOutput
@@ -195,7 +196,6 @@ export async function POST(request: Request) {
       env: {
         hasApiKey: !!process.env.GEMINI_API_KEY,
         hasModel: !!process.env.GEMINI_MODEL,
-        hasPrompt: !!process.env.GEMINI_PROMPT
       }
     })
     
@@ -206,7 +206,6 @@ export async function POST(request: Request) {
       env: {
         hasApiKey: !!process.env.GEMINI_API_KEY,
         hasModel: !!process.env.GEMINI_MODEL,
-        hasPrompt: !!process.env.GEMINI_PROMPT
       }
     }, {
       status: error.status || 500,

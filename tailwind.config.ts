@@ -9,9 +9,18 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['Inter', 'sans-serif'],
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
+  			finpay: {
+  				primary: '#3AA39F',
+  				dark: '#0A2533',
+  				gray: '#6B7280',
+  				'gray-light': '#F5F7FA',
+  			},
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'

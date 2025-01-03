@@ -6,7 +6,7 @@ import { ImageUploadSection } from "../components/image-upload-section"
 import { useState } from "react"
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('Image')
+  const [activeTab, setActiveTab] = useState('Image to Prompt')
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -25,8 +25,8 @@ export default function Home() {
 
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
         
-        {activeTab === 'Image' && <ImageUploadSection />}
-        {activeTab !== 'Image' && (
+        {activeTab === 'Image to Prompt' && <ImageUploadSection />}
+        {activeTab !== 'Image to Prompt' && (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold mb-4">Coming Soon</h2>
             <p className="text-muted-foreground">This feature is currently under development.</p>

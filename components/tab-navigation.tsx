@@ -13,8 +13,8 @@ type TabItem = [string | [string, boolean], LucideIcon];
 export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
   const tabs = [
     {
-      value: 'Image',
-      label: 'Image',
+      value: 'Image to Prompt',
+      label: 'Image to Prompt',
       icon: Image
     },
     {
