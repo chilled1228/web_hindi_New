@@ -1,19 +1,7 @@
 import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { auth } from '@clerk/nextjs/server'
 import { parseAndCleanJsonOutput } from '@/lib/utils'
-import { createClient } from '@supabase/supabase-js'
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      persistSession: false
-    }
-  }
-)
+import { getServerSession } from 'next-auth'
 
 // Initialize the Gemini API with your API key
 let genAI: GoogleGenerativeAI;
@@ -29,66 +17,51 @@ try {
   console.error('Error initializing Gemini API:', error);
 }
 
+// Add this helper function before the POST handler
+async function retryWithBackoff(fn: () => Promise<any>, maxRetries = 3, initialDelay = 1000) {
+  let retries = 0;
+  while (retries < maxRetries) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      if (error?.status === 503 && retries < maxRetries - 1) {
+        retries++;
+        const delay = initialDelay * Math.pow(2, retries - 1); // Exponential backoff
+        console.log(`Retrying after ${delay}ms (attempt ${retries}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
 export async function POST(request: Request) {
   try {
-    // Check authentication using Clerk
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Please sign in to use this feature' },
-        { status: 401 }
-      )
-    }
+    const { image, mimeType, promptType } = await request.json()
 
-    // Validate API initialization
-    if (!genAI) {
-      console.error('Gemini API not initialized');
-      return NextResponse.json(
-        { 
-          error: 'API configuration error',
-          message: 'The Gemini API could not be initialized. Please check your API key format and configuration.',
-          help: 'Make sure to use a valid API key from Google AI Studio (https://makersuite.google.com/app/apikey)',
-          env: {
-            hasApiKey: !!process.env.GEMINI_API_KEY,
-            hasModel: !!process.env.GEMINI_MODEL,
-          }
-        },
-        { status: 500 }
-      )
-    }
-
-    const { image, mimeType, promptType = 'photography' } = await request.json()
-
-    // Validate request data
     if (!image || !mimeType || !promptType) {
-      console.error('Missing required fields:', { image: !!image, mimeType: !!mimeType, promptType: !!promptType });
       return NextResponse.json(
-        { error: 'Missing required fields', details: { hasImage: !!image, hasMimeType: !!mimeType, hasPromptType: !!promptType } },
+        { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
-    // Initialize the model
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp" })
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp"
+    })
 
-    // Define prompt templates for different types
     const promptTemplates = {
       photography: {
-        format: `{
-          "output": "string" // Act as a stable diffusion photography prompt generator that accepts a visual description and outputs a detailed paragraph of 100 words that I can copy into my diffusion model. Include a variety of photography-related terminology including the description of the lens you use and most importantly a description of the lighting.
-        }`,
+        format: `{"output": "string"}`,
         instruction: "Analyze this image and provide a detailed photography-focused description"
       },
       painting: {
-        format: `{
-          "output": "string" // Act as an art prompt generator that describes the image in terms of artistic style, composition, color palette, brushwork, and medium. Provide a detailed 100-word description suitable for an art generation model.
-        }`,
+        format: `{"output": "string"}`,
         instruction: "Analyze this image and provide a detailed artistic interpretation"
       },
       character: {
-        format: `{
-          "output": "string" // Act as a character design prompt generator that describes the subject's appearance, pose, expression, clothing, and notable features in detail. Provide a 100-word description suitable for character generation.
-        }`,
+        format: `{"output": "string"}`,
         instruction: "Analyze this image and provide a detailed character description"
       }
     }
@@ -110,11 +83,13 @@ export async function POST(request: Request) {
       mimeType
     })
 
-    // Generate content
-    const result = await model.generateContent([
-      systemPrompt,
-      imageData
-    ])
+    // Generate content with retry logic
+    const result = await retryWithBackoff(async () => {
+      return await model.generateContent([
+        systemPrompt,
+        imageData
+      ]);
+    });
 
     const response = await result.response
     const rawText = response.text()
@@ -125,20 +100,6 @@ export async function POST(request: Request) {
 
       if (!cleanOutput) {
         throw new Error('No output generated');
-      }
-
-      // Save to prompt history
-      const { error: saveError } = await supabase
-        .from('prompt_history')
-        .insert({
-          user_id: session.userId,
-          prompt_type: promptType,
-          input_image: image,
-          output_text: cleanOutput
-        })
-
-      if (saveError) {
-        console.error('Error saving prompt history:', saveError)
       }
 
       // Only return the cleaned output
@@ -161,32 +122,11 @@ export async function POST(request: Request) {
         }
       });
     }
-  } catch (error: any) {
-    console.error('Error generating prompt:', {
-      message: error.message,
-      stack: error.stack,
-      details: error,
-      status: error.status,
-      errorDetails: error.errorDetails,
-      env: {
-        hasApiKey: !!process.env.GEMINI_API_KEY,
-        hasModel: !!process.env.GEMINI_MODEL,
-      }
-    })
-    
-    return NextResponse.json({
-      error: 'Failed to generate prompt',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      details: error.errorDetails || error.message,
-      env: {
-        hasApiKey: !!process.env.GEMINI_API_KEY,
-        hasModel: !!process.env.GEMINI_MODEL,
-      }
-    }, {
-      status: error.status || 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
+  } catch (error) {
+    console.error('Error in generate prompt API:', error);
+    return NextResponse.json(
+      { error: 'Server error', message: 'An unexpected error occurred' },
+      { status: 500 }
+    );
   }
 } 

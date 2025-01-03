@@ -1,71 +1,92 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { createClient } from '@supabase/supabase-js'
+import { getAuth } from 'firebase-admin/auth'
+import { initializeApp, getApps, cert } from 'firebase-admin/app'
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      persistSession: false
-    }
-  }
-)
+// Initialize Firebase Admin if it hasn't been initialized
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    })
+  })
+}
 
 export async function GET(request: Request) {
   try {
-    // Check authentication using Clerk
-    const session = await auth()
-    if (!session.userId) {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'Please sign in to view your history' },
+        { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    // Parse pagination parameters from URL
-    const url = new URL(request.url)
-    const page = parseInt(url.searchParams.get('page') || '1')
-    const limit = parseInt(url.searchParams.get('limit') || '10')
-    const offset = (page - 1) * limit
+    // Verify the token
+    const token = authHeader.split('Bearer ')[1]
+    const decodedToken = await getAuth().verifyIdToken(token)
+    const userId = decodedToken.uid
 
-    // Fetch prompt history from Supabase with pagination
-    const { data: history, error, count } = await supabase
-      .from('prompt_history')
-      .select('id, created_at, prompt_type, output_text, input_image', { count: 'exact' })
-      .eq('user_id', session.userId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    // Get pagination parameters
+    const { searchParams } = new URL(request.url)
+    const pageSize = parseInt(searchParams.get('pageSize') || '10')
+    const lastDocId = searchParams.get('lastDocId') || undefined
 
-    if (error) {
-      console.error('Error fetching prompt history:', error)
+    // Get the history from Firebase
+    const { getPromptHistory } = await import('@/lib/firebase-db')
+    const history = await getPromptHistory(userId, pageSize, lastDocId)
+
+    return NextResponse.json(history)
+  } catch (error) {
+    console.error('Error in prompt history API:', error)
+    return NextResponse.json(
+      { 
+        error: 'Server error',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred'
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Database error', message: 'Failed to fetch prompt history' },
-        { status: 500 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       )
     }
 
-    // Process the history to limit image size
-    const processedHistory = history?.map(item => ({
-      ...item,
-      // Only return a thumbnail version of the image or null
-      input_image: item.input_image ? item.input_image.slice(0, 200000) : null // Limit to ~200KB
-    }))
+    // Verify the token
+    const token = authHeader.split('Bearer ')[1]
+    const decodedToken = await getAuth().verifyIdToken(token)
+    const userId = decodedToken.uid
 
-    return NextResponse.json({ 
-      history: processedHistory,
-      pagination: {
-        total: count,
-        page,
-        limit,
-        totalPages: Math.ceil((count || 0) / limit)
-      }
+    // Get the request body
+    const body = await request.json()
+    
+    // Save the prompt to history
+    const { savePromptToHistory } = await import('@/lib/firebase-db')
+    const savedPrompt = await savePromptToHistory({
+      userId,
+      promptType: body.promptType,
+      inputImage: body.inputImage,
+      outputText: body.outputText,
     })
-  } catch (error: any) {
-    console.error('Error in prompt history endpoint:', error)
+
+    return NextResponse.json(savedPrompt)
+  } catch (error) {
+    console.error('Error in prompt history API:', error)
     return NextResponse.json(
-      { error: 'Server error', message: error.message || 'Failed to fetch prompt history' },
+      { 
+        error: 'Server error',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred'
+      },
       { status: 500 }
     )
   }

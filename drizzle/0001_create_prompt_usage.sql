@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS prompt_usage (
+CREATE TABLE IF NOT EXISTS public.prompt_usage (
   id SERIAL PRIMARY KEY,
   user_id VARCHAR(256) NOT NULL,
   count INTEGER NOT NULL DEFAULT 0,

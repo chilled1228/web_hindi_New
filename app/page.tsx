@@ -1,5 +1,4 @@
 'use client'
-import { NavigationMenu } from "../components/navigation-menu"
 import { TabNavigation } from "../components/tab-navigation"
 import { ContentSection } from "../components/content-section"
 import dynamic from 'next/dynamic'
@@ -24,8 +23,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <NavigationMenu />
-      
       <main className="max-w-[1400px] mx-auto px-6 pt-24 pb-12">
         {/* Hero Section */}
         <div className="text-center mb-10 md:mb-12">

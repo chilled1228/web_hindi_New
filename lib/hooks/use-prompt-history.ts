@@ -1,154 +1,199 @@
-import { useState, useEffect, useCallback } from 'react'
-import { UserResource } from '@clerk/types'
+import { useState, useCallback, useEffect } from 'react'
+import { auth, db } from '@/lib/firebase'
+import { collection, query, where, orderBy, limit, getDocs, startAfter, addDoc, Timestamp } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
 
-interface PromptHistory {
-  id: string
-  created_at: string
-  prompt_type: string
-  input_image: string
-  output_text: string
+export interface PromptHistoryItem {
+  id?: string
+  userId: string
+  promptType: string
+  inputImage?: string
+  outputText: string
+  createdAt: Date
 }
 
-interface Pagination {
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+const LOCAL_STORAGE_KEY = 'promptHistory';
 
-interface PromptHistoryState {
-  history: PromptHistory[]
-  loading: boolean
-  error: string | null
-  pagination: Pagination | null
-}
+export function usePromptHistory() {
+  const [history, setHistory] = useState<PromptHistoryItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [lastDoc, setLastDoc] = useState<any>(null)
 
-interface PromptHistoryResponse {
-  history: PromptHistory[]
-  pagination: Pagination
-}
-
-export function usePromptHistory(user: UserResource | null | undefined) {
-  const [state, setState] = useState<PromptHistoryState>({
-    history: [],
-    loading: true,
-    error: null,
-    pagination: null
-  })
-
-  // Improved cache with TTL
-  const [pageCache, setPageCache] = useState<Record<number, { data: PromptHistory[], timestamp: number }>>({})
-  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-  const isPageCacheValid = useCallback((page: number) => {
-    const cached = pageCache[page];
-    if (!cached) return false;
-    return Date.now() - cached.timestamp < CACHE_TTL;
-  }, [pageCache]);
-
-  const fetchPage = useCallback(async (page: number, isPrefetch = false) => {
-    if (!user) return;
-    
-    // Check cache first
-    if (!isPrefetch && isPageCacheValid(page)) {
-      setState(s => ({
-        ...s,
-        history: pageCache[page].data,
-        loading: false,
-        error: null
-      }));
-      return;
-    }
-
+  // Load history from local storage on initial load
+  useEffect(() => {
     try {
-      if (!isPrefetch) {
-        setState(s => ({ ...s, loading: true, error: null }));
+      const storedHistory = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory));
       }
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    } catch (e) {
+      console.error('Error loading history from local storage', e);
+    }
+  }, []);
 
-      const response = await fetch(`/api/prompt-history?page=${page}&limit=10`, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      const data: PromptHistoryResponse = await response.json();
+  // Save history to local storage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(history));
+    } catch (e) {
+      console.error('Error saving history to local storage', e);
+    }
+  }, [history]);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch prompt history');
+  const fetchHistory = useCallback(async (lastDocument?: any) => {
+    try {
+      const user = auth.currentUser
+      if (!user) {
+        console.log('No user logged in')
+        throw new Error('Please sign in to view your prompt history')
       }
 
-      // Update cache with timestamp
-      setPageCache(cache => ({
-        ...cache,
-        [page]: {
-          data: data.history,
-          timestamp: Date.now()
-        }
-      }));
+      console.log('Fetching history for user:', user.uid)
+      
+      let q = query(
+        collection(db, 'prompt_history'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      )
 
-      if (!isPrefetch) {
-        setState(s => ({
-          ...s,
-          history: data.history,
-          pagination: data.pagination,
-          loading: false,
-          error: null
-        }));
+      if (lastDocument) {
+        q = query(q, startAfter(lastDocument))
+      }
+
+      const querySnapshot = await getDocs(q)
+      console.log('Fetched documents:', querySnapshot.size)
+
+      const items = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt.toDate()
+      })) as PromptHistoryItem[]
+
+      return {
+        items,
+        lastDoc: querySnapshot.docs[querySnapshot.docs.length - 1],
+        hasMore: querySnapshot.docs.length === 10
       }
     } catch (error) {
-      if (!isPrefetch) {
-        setState(s => ({
-          ...s,
-          loading: false,
-          error: error instanceof Error ? error.message : 'Failed to fetch prompt history'
-        }));
-      }
+      console.error('Error fetching history:', error)
+      throw error
     }
-  }, [user, isPageCacheValid]);
+  }, [])
 
-  // Prefetch next and previous pages
-  useEffect(() => {
-    if (!state.pagination) return;
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loading) return
 
-    const prefetchTimer = setTimeout(() => {
-      const pagination = state.pagination;
-      if (!pagination) return;
+    try {
+      setLoading(true)
+      setError(null)
 
-      // Prefetch next page if available
-      if (pagination.page < pagination.totalPages && !isPageCacheValid(pagination.page + 1)) {
-        fetchPage(pagination.page + 1, true);
-      }
+      const data = await fetchHistory(lastDoc)
       
-      // Prefetch previous page if available
-      if (pagination.page > 1 && !isPageCacheValid(pagination.page - 1)) {
-        fetchPage(pagination.page - 1, true);
-      }
-    }, 1000);
+      setHistory(prev => [...prev, ...data.items])
+      setLastDoc(data.lastDoc)
+      setHasMore(data.hasMore)
+    } catch (error) {
+      console.error('Error loading more:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load more history')
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchHistory, hasMore, lastDoc, loading])
 
-    return () => clearTimeout(prefetchTimer);
-  }, [state.pagination, fetchPage, isPageCacheValid]);
+  const savePrompt = useCallback(async (data: {
+    promptType: string
+    inputImage?: string
+    outputText: string
+  }) => {
+    try {
+      const user = auth.currentUser
+      if (!user) {
+        throw new Error('Please sign in to save prompts')
+      }
+
+      console.log('Saving prompt for user:', user.uid)
+
+      const docRef = await addDoc(collection(db, 'prompt_history'), {
+        ...data,
+        userId: user.uid,
+        createdAt: Timestamp.now()
+      })
+
+      const newPrompt = {
+        id: docRef.id,
+        ...data,
+        userId: user.uid,
+        createdAt: new Date()
+      }
+
+      setHistory(prev => [newPrompt, ...prev])
+      console.log('Prompt saved successfully')
+      
+      return newPrompt
+    } catch (error) {
+      console.error('Error saving prompt:', error)
+      throw error
+    }
+  }, [])
 
   useEffect(() => {
-    if (user) {
-      fetchPage(1);
-    } else {
-      setState(s => ({ 
-        ...s, 
-        history: [], 
-        loading: false,
-        pagination: null 
-      }));
+    const initialFetch = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await fetchHistory()
+        setHistory(data.items)
+        setLastDoc(data.lastDoc)
+        setHasMore(data.hasMore)
+      } catch (error) {
+        console.error('Error in initial fetch:', error)
+        setError(error instanceof Error ? error.message : 'Failed to load history')
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [user, fetchPage]);
+
+    initialFetch()
+  }, [fetchHistory])
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          setLoading(true)
+          setError(null)
+          console.log('Loading initial history for user:', user.uid)
+          
+          const data = await fetchHistory()
+          
+          setHistory(data.items)
+          setLastDoc(data.lastDoc)
+          setHasMore(data.hasMore)
+        } catch (error) {
+          console.error('Error loading initial history:', error)
+          setError(error instanceof Error ? error.message : 'Failed to load prompt history')
+        } finally {
+          setLoading(false)
+        }
+      } else {
+        // Clear local storage on logout
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        setHistory([]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [fetchHistory]);
 
   return {
-    history: state.history,
-    loading: state.loading,
-    error: state.error,
-    pagination: state.pagination,
-    fetchPage
-  };
+    history,
+    loading,
+    error,
+    hasMore,
+    loadMore,
+    savePrompt,
+  }
 } 

@@ -1,21 +1,23 @@
-import {
-  ClerkProvider,
-  SignedIn,
-  SignedOut,
-  UserButton
-} from '@clerk/nextjs'
+import type { Metadata } from 'next'
+import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
-import { Inter } from 'next/font/google'
-import { ThemeProvider } from '@/lib/theme-provider'
 import { Providers } from './providers'
-import { NavigationMenu } from '@/components/navigation-menu'
-import { Toaster } from '@/components/ui/toaster'
+import { Navbar } from '@/components/navbar'
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
-  display: 'swap',
-  preload: true 
+  variable: '--font-inter',
 })
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+})
+
+export const metadata: Metadata = {
+  title: 'PromptBase',
+  description: 'Your AI Prompt Management Tool',
+}
 
 export default function RootLayout({
   children,
@@ -23,24 +25,18 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        </head>
-        <body className={`${inter.className} antialiased min-h-screen`}>
-          <Providers>
-            <ThemeProvider>
-              <NavigationMenu />
-              <main className="pt-16 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                {children}
-              </main>
-            </ThemeProvider>
-          </Providers>
-          <Toaster />
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
+        <Providers>
+          <div className="relative min-h-screen flex flex-col">
+            <Navbar />
+            <main className="flex-1 container mx-auto px-4 py-4 md:px-6 md:py-8">
+              {children}
+            </main>
+          </div>
+        </Providers>
+      </body>
+    </html>
   )
 }
 

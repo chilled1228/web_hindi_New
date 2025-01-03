@@ -1,104 +1,55 @@
 'use client'
 
-import { useCallback, useState, useEffect, useMemo } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, ImageIcon, Loader2, Link as LinkIcon, X, ClipboardCopy, Settings } from 'lucide-react'
-import { useAuth } from '@/lib/hooks/use-auth'
+import { ArrowUpFromLine, RotateCcw, ImageIcon, History, Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { cn } from '@/lib/utils'
 import { HistoryDialog } from './history-dialog'
-import { useAuthNotification } from '@/lib/hooks/use-auth-notification'
+import { usePromptHistory } from '@/lib/hooks/use-prompt-history'
+import { auth } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 
 export function ImageUploadSection() {
-  // State for managing image data
+  const [imageUrl, setImageUrl] = useState<string>('')
+  const [promptStyle, setPromptStyle] = useState('Photography')
+  const [isSignedIn, setIsSignedIn] = useState(false)
+  const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imageUrl, setImageUrl] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
-  const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [promptType, setPromptType] = useState<string>('photography')
-  const { user, isLoaded } = useAuth()
-  useAuthNotification()
+  const { savePrompt } = usePromptHistory()
 
-  // Handle image file upload through drag & drop or file selection
-  const compressImage = async (file: File): Promise<File> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1024;
-          const MAX_HEIGHT = 1024;
-          let width = img.width;
-          let height = img.height;
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsSignedIn(!!user)
+      console.log('Auth state changed:', user ? 'Signed in' : 'Signed out')
+    })
 
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-              }
-            },
-            'image/jpeg',
-            0.8
-          );
-        };
-      };
-    });
-  };
-
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      setIsLoading(true);
-      try {
-        const compressedFile = await compressImage(file);
-        const objectUrl = URL.createObjectURL(compressedFile);
-        setPreview(objectUrl);
-        setImageFile(compressedFile);
-        setImageUrl('');
-        setGeneratedPrompt(null);
-        setError(null);
-      } catch (error) {
-        console.error('Error processing image:', error);
-        setError('Failed to process image');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  // Handle URL input change
-  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setImageUrl(e.target.value)
+    return () => unsubscribe()
   }, [])
 
-  // Clear URL input
-  const clearUrl = useCallback(() => {
+  const handleImageFile = (file: File) => {
+    const objectUrl = URL.createObjectURL(file)
+    setPreview(objectUrl)
+    setImageFile(file)
     setImageUrl('')
+    setGeneratedPrompt(null)
+    setError(null)
+  }
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0]
+    if (file) {
+      handleImageFile(file)
+    }
   }, [])
 
-  // Handle image paste functionality
+  // Handle image paste
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
       const items = e.clipboardData?.items
@@ -108,12 +59,7 @@ export function ImageUploadSection() {
         if (item.type.startsWith('image/')) {
           const file = item.getAsFile()
           if (file) {
-            const objectUrl = URL.createObjectURL(file)
-            setPreview(objectUrl)
-            setImageFile(file)
-            setImageUrl('') // Reset URL input when image is pasted
-            setGeneratedPrompt(null)
-            setError(null)
+            handleImageFile(file)
             break
           }
         }
@@ -124,31 +70,108 @@ export function ImageUploadSection() {
     return () => window.removeEventListener('paste', handlePaste)
   }, [])
 
-  // Handle image URL input
-  const handleUrlSubmit = useCallback(async () => {
+  const handleLoadUrl = async () => {
     if (!imageUrl) return
+    setIsLoading(true)
+    setError(null)
     
     try {
-      setIsLoading(true)
-      setError(null)
-      
       const response = await fetch(imageUrl)
       if (!response.ok) throw new Error('Failed to fetch image')
       
       const blob = await response.blob()
       const file = new File([blob], 'image.jpg', { type: blob.type })
-      
-      const objectUrl = URL.createObjectURL(file)
-      setPreview(objectUrl)
-      setImageFile(file)
-      setGeneratedPrompt(null)
+      handleImageFile(file)
     } catch (error) {
       setError('Invalid image URL or unable to load image')
       console.error('Error loading image URL:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [imageUrl])
+  }
+
+  const generatePrompt = async () => {
+    if (!imageFile && !imageUrl) return
+    if (!isSignedIn) {
+      setError('Please sign in to generate prompts')
+      return
+    }
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      let base64Data, mimeType;
+
+      if (imageFile) {
+        // Convert file to base64
+        const base64Image = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(imageFile)
+        })
+
+        // Extract base64 data and mime type
+        const matches = (base64Image as string).match(/^data:([^;]+);base64,(.+)$/)
+        if (!matches) throw new Error('Invalid image format')
+        ;[, mimeType, base64Data] = matches
+      } else if (imageUrl) {
+        // Fetch image from URL and convert to base64
+        const response = await fetch(imageUrl)
+        const blob = await response.blob()
+        const base64Image = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+
+        // Extract base64 data and mime type
+        const matches = (base64Image as string).match(/^data:([^;]+);base64,(.+)$/)
+        if (!matches) throw new Error('Invalid image format')
+        ;[, mimeType, base64Data] = matches
+      }
+
+      const response = await fetch('/api/generate-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Data,
+          mimeType: mimeType,
+          promptType: promptStyle.toLowerCase()
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to generate prompt')
+      }
+
+      setGeneratedPrompt(data.output)
+      setIsLoading(false) // Reset loading state after successful generation
+
+      // Save to prompt history
+      try {
+        await savePrompt({
+          promptType: promptStyle,
+          inputImage: `data:${mimeType};base64,${base64Data}`,
+          outputText: data.output
+        })
+        console.log('Prompt saved to history successfully')
+      } catch (error) {
+        console.error('Error saving to history:', error)
+        // Don't throw here to avoid interrupting the main flow
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to generate prompt')
+      console.error('Error generating prompt:', error)
+      setIsLoading(false) // Reset loading state on error
+    }
+  }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -158,239 +181,175 @@ export function ImageUploadSection() {
     multiple: false
   })
 
-  // Handle prompt generation
-  const generatePrompt = useCallback(async () => {
-    if (!imageFile || !user) return;
-
-    setIsLoading(true);
-    setError(null);
-    
-    const reader = new FileReader();
-    const base64Promise = new Promise<string>((resolve, reject) => {
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        resolve(base64String.split(',')[1]);
-      };
-      reader.onerror = reject;
-    });
-
-    try {
-      reader.readAsDataURL(imageFile);
-      const base64Image = await base64Promise;
-
-      const response = await fetch('/api/generate-prompt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: base64Image,
-          mimeType: imageFile.type,
-          promptType: promptType,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || 'Failed to generate prompt');
-      }
-
-      if (!data.output) {
-        throw new Error('No output received from the server');
-      }
-
-      setGeneratedPrompt(data.output);
-    } catch (error) {
-      console.error('Error generating prompt:', error);
-      setError(error instanceof Error ? error.message : 'Failed to generate prompt');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [imageFile, user, promptType]);
-
-  // Only render content if auth is loaded
-  if (!isLoaded) {
-    return <div className="flex items-center justify-center min-h-[240px]">
-      <Loader2 className="w-6 h-6 animate-spin" />
-    </div>
+  const resetAll = () => {
+    setPreview(null)
+    setImageFile(null)
+    setImageUrl('')
+    setGeneratedPrompt(null)
+    setError(null)
   }
 
   return (
-    <div className="relative space-y-6">
-      {/* Add History Dialog */}
-      <div className="absolute top-4 right-4 z-10">
-        <HistoryDialog />
-      </div>
-
-      {/* Prompt Type Selector */}
-      <div className="flex items-center gap-4 p-4 rounded-xl bg-accent/50 backdrop-blur-[8px]">
+    <div className="w-full">
+      {/* Prompt Style Selector */}
+      <div className="flex items-center gap-2 mb-4">
         <div className="flex items-center gap-2">
-          <Settings className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-medium">Prompt Style:</span>
+          <Select value={promptStyle} onValueChange={setPromptStyle}>
+            <SelectTrigger className="w-[140px] bg-background">
+              <SelectValue placeholder="Select style" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Photography">Photography</SelectItem>
+              <SelectItem value="Illustration">Illustration</SelectItem>
+              <SelectItem value="Painting">Painting</SelectItem>
+              <SelectItem value="3D">3D Render</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={promptType} onValueChange={setPromptType}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select style" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="photography">Photography</SelectItem>
-            <SelectItem value="illustration">Illustration</SelectItem>
-            <SelectItem value="painting">Painting</SelectItem>
-            <SelectItem value="3d">3D Render</SelectItem>
-            <SelectItem value="graphic">Graphic Design</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="ml-auto flex items-center gap-2">
+          <HistoryDialog />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full h-8 w-8 hover:bg-gray-100"
+            onClick={resetAll}
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
-        {/* Left Column - Image Upload */}
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-[1.5fr,1fr] gap-6">
+        {/* Left Section - Image Upload */}
         <div className="space-y-4">
-          {/* Drag & Drop Area */}
+          {/* Dropzone Area */}
           <div
             {...getRootProps()}
-            className={`
-              relative flex flex-col items-center justify-center
-              min-h-[240px] md:min-h-[320px] p-4 md:p-8 rounded-2xl border-2 border-dashed
-              transition-all duration-300 cursor-pointer bg-background/50
-              backdrop-blur-[8px] shadow-sm will-change-transform transform translate-z-0
-              group
-              ${isDragActive 
-                ? 'border-primary bg-primary/5 scale-[0.99] shadow-primary/5 ring-2 ring-primary/20' 
-                : 'border-border hover:border-primary/50 hover:bg-accent/50 hover:ring-2 hover:ring-primary/10'}
-            `}
+            className={cn(
+              'relative rounded-lg border-2 border-dashed border-gray-300 transition-colors',
+              'bg-white p-12 text-center cursor-pointer min-h-[300px] flex items-center justify-center',
+              isDragActive && 'border-primary bg-primary/5'
+            )}
           >
             <input {...getInputProps()} />
-            
             {preview ? (
-              <div className="relative w-full h-full flex items-center justify-center">
+              <div className="relative w-full h-full">
                 <img 
                   src={preview} 
                   alt="Preview" 
-                  className="max-h-[280px] rounded-xl object-contain transition-transform duration-300 group-hover:scale-[0.98] shadow-md will-change-transform"
-                  loading="lazy"
+                  className="max-h-full max-w-full object-contain mx-auto"
                 />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl flex items-center justify-center backdrop-blur-[8px]">
-                  <p className="text-white font-medium tracking-tight">Click or drag to replace</p>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 rounded-full h-8 w-8 bg-white/80 hover:bg-white"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setPreview(null)
+                    setImageFile(null)
+                  }}
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                  </svg>
+                </Button>
               </div>
             ) : (
-              <div className="flex flex-col items-center text-center">
-                <div className="w-14 h-14 mb-5 rounded-full bg-accent/80 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm will-change-transform">
-                  <Upload className="w-7 h-7 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-4">
+                <ArrowUpFromLine className="h-10 w-10 text-gray-400" />
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Drop your image here</h3>
+                  <p className="text-sm text-gray-500">or click to browse from your computer</p>
+                  <p className="text-sm text-gray-500">You can also paste an image directly (Ctrl/Cmd + V)</p>
                 </div>
-                <h3 className="text-lg font-semibold mb-2 tracking-tight">
-                  Drop your image here
-                </h3>
-                <p className="text-sm text-muted-foreground/90 mb-1.5">
-                  or click to browse from your computer
-                </p>
-                <p className="text-sm text-muted-foreground/90 mb-5">
-                  You can also paste an image directly (Ctrl/Cmd + V)
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground/80 bg-muted/50 px-3 py-1.5 rounded-full">
-                  <ImageIcon className="w-3.5 h-3.5" />
+                <div className="text-xs text-gray-400">
                   Supports JPG, PNG and WEBP
                 </div>
               </div>
             )}
           </div>
 
-          {/* Image URL Input */}
-          <div className="flex flex-col items-center text-center p-4 rounded-xl bg-accent/50 backdrop-blur-[8px] shadow-sm will-change-transform transform translate-z-0">
-            <p className="text-xs font-medium text-muted-foreground/90 mb-3">
-              Or add image from URL
-            </p>
-            <div className="flex gap-2.5 w-full max-w-2xl">
-              <div className="relative flex-1">
-                <Input
-                  type="url"
-                  placeholder="Paste image URL here"
-                  value={imageUrl}
-                  onChange={handleUrlChange}
-                  className="pr-8 text-sm shadow-sm"
-                />
-                {imageUrl && (
-                  <button
-                    onClick={clearUrl}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors duration-150"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={handleUrlSubmit}
+          {/* URL Input Section */}
+          <div className="space-y-2">
+            <p className="text-center text-sm text-gray-500">Or add image from URL</p>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Paste image URL here"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button 
+                variant="secondary"
+                onClick={handleLoadUrl}
                 disabled={!imageUrl || isLoading}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-[100px] justify-center text-sm font-medium shadow-sm will-change-transform"
               >
                 {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Loading...
-                  </>
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    <LinkIcon className="w-4 h-4" />
-                    Load URL
-                  </>
+                  'Load URL'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Right Column - Generated Prompt */}
+        {/* Right Section - Generate */}
         <div className="space-y-4">
-          <button
+          <Button 
+            className="w-full bg-gray-500 hover:bg-gray-600 text-white flex items-center gap-2" 
+            size="lg"
+            disabled={(!imageFile && !imageUrl) || isLoading || !isSignedIn}
             onClick={generatePrompt}
-            disabled={!imageFile || isLoading || !user}
-            className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center text-sm font-medium shadow-sm will-change-transform relative overflow-hidden"
           >
             {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Generating Prompt...
-              </>
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <>
-                <ImageIcon className="w-5 h-5" />
-                Generate Prompt
-              </>
+              <ImageIcon className="h-4 w-4" />
             )}
-          </button>
-
-          {error && (
-            <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-              {error}
-            </div>
-          )}
-
-          {generatedPrompt && (
-            <div className="p-4 rounded-xl bg-accent/50 backdrop-blur-[8px] space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">Generated Prompt</h3>
-                <button
-                  onClick={() => {
-                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                      navigator.clipboard.writeText(generatedPrompt)
-                    }
-                  }}
-                  className="p-2 hover:bg-accent rounded-lg transition-colors duration-200"
-                >
-                  <ClipboardCopy className="w-4 h-4" />
-                </button>
+            {isLoading ? 'Generating...' : 'Generate Prompt'}
+          </Button>
+          
+          <div className="rounded-lg bg-gray-50 p-4 min-h-[200px]">
+            {error ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center text-red-500">
+                  <p className="text-sm">{error}</p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {generatedPrompt}
-              </p>
-            </div>
-          )}
+            ) : generatedPrompt ? (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium">Generated Prompt</h3>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={() => navigator.clipboard.writeText(generatedPrompt)}
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600">{generatedPrompt}</p>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center text-gray-500">
+                  <p className="text-sm">Generated Prompt</p>
+                </div>
+              </div>
+            )}
+          </div>
 
-          {!user && (
-            <div className="p-4 rounded-xl bg-accent text-sm text-center">
+          {!isSignedIn && (
+            <p className="text-center text-sm text-gray-500">
               Please sign in to generate prompts
-            </div>
+            </p>
           )}
         </div>
       </div>
