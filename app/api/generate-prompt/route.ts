@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { auth } from '@clerk/nextjs/server'
 import { parseAndCleanJsonOutput } from '@/lib/utils'
 
 // Initialize the Gemini API with your API key
@@ -20,48 +19,12 @@ try {
 
 export async function POST(request: Request) {
   try {
-    // Initialize Supabase client
-    const supabase = createRouteHandlerClient({ cookies })
-
-    // Check authentication
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
-    if (authError || !session) {
-      console.error('Authentication error:', authError);
+    // Check authentication using Clerk
+    const session = await auth();
+    if (!session.userId) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Please sign in to use this feature' },
         { status: 401 }
-      )
-    }
-
-    // Check rate limits
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
-
-    // Use a transaction to check and update prompt usage atomically
-    const { data: usageResult, error: transactionError } = await supabase.rpc('check_and_track_prompt_usage', {
-      user_id_param: session.user.id,
-      start_date_param: startOfMonth.toISOString(),
-      prompt_type_param: 'image'
-    })
-
-    if (transactionError) {
-      console.error('Transaction error:', transactionError)
-      return NextResponse.json(
-        { error: 'Failed to process prompt usage', details: transactionError.message },
-        { status: 500 }
-      )
-    }
-
-    if (!usageResult.success) {
-      return NextResponse.json(
-        { 
-          error: 'Rate limit exceeded',
-          message: 'You have reached your monthly prompt generation limit',
-          used: usageResult.used_prompts,
-          limit: usageResult.prompt_limit
-        },
-        { status: 429 }
       )
     }
 
@@ -150,20 +113,6 @@ export async function POST(request: Request) {
 
       if (!cleanOutput) {
         throw new Error('No output generated');
-      }
-
-      // Store the prompt history
-      const { error: historyError } = await supabase
-        .from('prompt_history')
-        .insert({
-          user_id: session.user.id,
-          prompt_type: promptType,
-          input_image: image,
-          output_text: cleanOutput
-        });
-
-      if (historyError) {
-        console.error('Error storing prompt history:', historyError);
       }
 
       // Only return the cleaned output

@@ -1,11 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useAuth } from '@/lib/auth-context'
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 
 export function NavBar() {
-  const { user, signOut } = useAuth()
-
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,29 +18,22 @@ export function NavBar() {
           </div>
 
           <div className="flex items-center space-x-4">
-            {user ? (
-              <>
-                <Link 
-                  href="/create" 
-                  className="text-sm font-medium hover:text-primary"
-                >
-                  Create Post
-                </Link>
-                <button
-                  onClick={() => signOut()}
-                  className="text-sm font-medium text-destructive hover:text-destructive/80"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
+            <SignedIn>
               <Link 
-                href="/auth" 
+                href="/create" 
                 className="text-sm font-medium hover:text-primary"
               >
-                Sign In
+                Create Post
               </Link>
-            )}
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton>
+                <button className="text-sm font-medium hover:text-primary">
+                  Sign In
+                </button>
+              </SignInButton>
+            </SignedOut>
           </div>
         </div>
       </div>

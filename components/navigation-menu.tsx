@@ -4,8 +4,8 @@ import Link from "next/link"
 import { Search, Menu, X, Sun, Moon, ChevronDown } from 'lucide-react'
 import { useState, useMemo, useCallback } from "react"
 import { useTheme } from "@/lib/theme-provider"
-import { AuthButton } from './auth-button'
 import { usePathname } from 'next/navigation'
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 
 export function NavigationMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -113,7 +113,18 @@ export function NavigationMenu() {
               <Moon className="w-[18px] h-[18px] text-gray-600" />
             )}
           </button>
-          <AuthButton />
+          <div className="flex items-center gap-4">
+            <SignedOut>
+              <SignInButton>
+                <button className="text-sm font-medium hover:text-primary">
+                  Sign In
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+          </div>
         </div>
 
         {/* Mobile Menu Button */}
@@ -170,7 +181,16 @@ export function NavigationMenu() {
               </div>
             ))}
             <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-800">
-              <AuthButton />
+              <SignedOut>
+                <SignInButton>
+                  <button className="text-sm font-medium hover:text-primary">
+                    Sign In
+                  </button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
             </div>
           </div>
         </div>

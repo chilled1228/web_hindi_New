@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../supabase'
-import { User } from '@supabase/supabase-js'
+import { UserResource } from '@clerk/types'
 
 interface PromptHistory {
   id: string
@@ -16,7 +15,7 @@ interface PromptHistoryState {
   error: string | null
 }
 
-export function usePromptHistory(user: User | null) {
+export function usePromptHistory(user: UserResource | null | undefined) {
   const [state, setState] = useState<PromptHistoryState>({
     history: [],
     loading: true,
@@ -34,17 +33,10 @@ export function usePromptHistory(user: User | null) {
   const fetchHistory = async () => {
     try {
       setState(s => ({ ...s, loading: true, error: null }))
-      
-      const { data, error } = await supabase
-        .from('prompt_history')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-
+      // Mock implementation - replace with actual API call
       setState(s => ({
         ...s,
-        history: data,
+        history: [],
         loading: false,
         error: null
       }))

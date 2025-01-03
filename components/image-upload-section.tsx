@@ -17,7 +17,7 @@ export function ImageUploadSection() {
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [promptType, setPromptType] = useState<string>('photography')
-  const { promptsRemaining, fetchUserData, user } = useAuth()
+  const { user, isLoaded } = useAuth()
 
   // Handle image file upload through drag & drop or file selection
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -105,10 +105,6 @@ export function ImageUploadSection() {
   // Handle prompt generation
   const generatePrompt = useCallback(async () => {
     if (!imageFile || !user) return
-    if (promptsRemaining !== null && promptsRemaining <= 0) {
-      setError('You have reached your monthly prompt generation limit')
-      return
-    }
 
     setIsLoading(true)
     setError(null)
@@ -146,14 +142,20 @@ export function ImageUploadSection() {
       }
 
       setGeneratedPrompt(data.output)
-      await fetchUserData(user.id)
     } catch (error) {
       console.error('Error generating prompt:', error)
       setError(error instanceof Error ? error.message : 'Failed to generate prompt')
     } finally {
       setIsLoading(false)
     }
-  }, [imageFile, user, promptType, promptsRemaining, fetchUserData])
+  }, [imageFile, user, promptType])
+
+  // Only render content if auth is loaded
+  if (!isLoaded) {
+    return <div className="flex items-center justify-center min-h-[240px]">
+      <Loader2 className="w-6 h-6 animate-spin" />
+    </div>
+  }
 
   return (
     <div className="max-w-[1400px] mx-auto px-2 md:px-6 mb-4 md:mb-8">
@@ -254,148 +256,68 @@ export function ImageUploadSection() {
           </div>
         </div>
 
-        {/* Generate Prompt Section */}
-        <div className="bg-accent/50 backdrop-blur-[2px] rounded-2xl p-4 md:p-6 sticky top-20 h-fit max-h-[calc(100vh-100px)] overflow-y-auto shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold tracking-tight">
-              Generate Description
-            </h3>
-            <HistoryDialog />
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            Upload an image and our AI will generate a detailed description that you can use as a prompt.
-          </p>
-          
-          {/* Prompt Type Selector */}
-          <div className="mb-4">
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+        {/* Right Column - Prompt Generation */}
+        <div className="flex flex-col gap-4">
+          {/* Prompt Type Selection */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-muted-foreground">
               Prompt Type
             </label>
             <Select value={promptType} onValueChange={setPromptType}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="photography">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <ImageIcon className="w-3 h-3 text-blue-500" />
-                    </div>
-                    Photography
-                  </div>
-                </SelectItem>
-                <SelectItem value="painting">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center">
-                      <ImageIcon className="w-3 h-3 text-purple-500" />
-                    </div>
-                    Painting
-                  </div>
-                </SelectItem>
-                <SelectItem value="character">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <ImageIcon className="w-3 h-3 text-green-500" />
-                    </div>
-                    Character
-                  </div>
-                </SelectItem>
+                <SelectItem value="photography">Photography</SelectItem>
+                <SelectItem value="illustration">Illustration</SelectItem>
+                <SelectItem value="3d">3D Render</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {generatedPrompt && (
-            <div className="mb-4 animate-in fade-in slide-in-from-bottom-4">
-              <div className="p-3 bg-background rounded-lg border border-border">
-                <p className="text-xs whitespace-pre-wrap break-words leading-relaxed text-foreground">
-                  {generatedPrompt}
-                </p>
-              </div>
-              <div className="mt-1.5 flex justify-end">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedPrompt);
-                  }}
-                  className="text-[11px] text-primary hover:text-primary/80 transition-colors flex items-center gap-1 py-1 px-2 rounded-md hover:bg-primary/10"
-                >
-                  <ClipboardCopy className="w-3 h-3" />
-                  Copy to clipboard
-                </button>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 animate-in fade-in slide-in-from-bottom-4">
-              <p className="text-xs">{error}</p>
-            </div>
-          )}
-
-          <button 
-            className="w-full px-4 py-2.5 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-all hover:scale-[0.98] disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-            disabled={!preview || isLoading || (promptsRemaining !== null && promptsRemaining <= 0)}
+          {/* Generate Button */}
+          <button
             onClick={generatePrompt}
+            disabled={!imageFile || isLoading || !user}
+            className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center text-sm font-medium shadow-sm will-change-transform"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Generating...
               </>
             ) : (
-              'Generate Prompt'
+              <>
+                <Settings className="w-4 h-4" />
+                Generate Prompt
+              </>
             )}
           </button>
 
-          {promptsRemaining !== null && (
-            <p className="text-[11px] text-muted-foreground text-center mt-3">
-              {promptsRemaining} prompts remaining
-            </p>
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
+              {error}
+            </div>
           )}
-        </div>
-      </div>
 
-      {/* How to Use Guide Section */}
-      <div className="mt-8 p-6 bg-gradient-to-br from-accent/50 via-accent/30 to-background rounded-2xl border border-accent">
-        <h2 className="text-2xl font-bold mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-          How to Use
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex flex-col items-center text-center p-4 bg-background/80 rounded-xl backdrop-blur-sm border border-accent hover:scale-[1.02] transition-transform">
-            <div className="w-12 h-12 mb-3 rounded-full bg-primary/10 flex items-center justify-center">
-              <Upload className="w-6 h-6 text-primary" />
+          {/* Generated Prompt */}
+          {generatedPrompt && (
+            <div className="p-4 rounded-lg bg-accent/50 backdrop-blur-[8px] shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium">Generated Prompt</h3>
+                <button
+                  onClick={() => navigator.clipboard.writeText(generatedPrompt)}
+                  className="p-1.5 hover:bg-accent rounded-md transition-colors duration-200"
+                >
+                  <ClipboardCopy className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {generatedPrompt}
+              </p>
             </div>
-            <h3 className="font-semibold mb-2">1. Drop It Like It's Hot</h3>
-            <p className="text-sm text-muted-foreground">
-              Drag, drop, paste, or URL it here. We're not picky, we just love your pixels! 📸
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center text-center p-4 bg-background/80 rounded-xl backdrop-blur-sm border border-accent hover:scale-[1.02] transition-transform">
-            <div className="w-12 h-12 mb-3 rounded-full bg-primary/10 flex items-center justify-center">
-              <Settings className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="font-semibold mb-2">2. Pick Your Flavor</h3>
-            <p className="text-sm text-muted-foreground">
-              Photography, painting, or character? Choose your style and let the magic begin! ✨
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center text-center p-4 bg-background/80 rounded-xl backdrop-blur-sm border border-accent hover:scale-[1.02] transition-transform">
-            <div className="w-12 h-12 mb-3 rounded-full bg-primary/10 flex items-center justify-center">
-              <ClipboardCopy className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="font-semibold mb-2">3. Prompt-ly Yours</h3>
-            <p className="text-sm text-muted-foreground">
-              Our AI will whip up a prompt faster than you can say "masterpiece"! 🎨
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/10">
-          <p className="text-sm text-center text-muted-foreground">
-            <span className="font-medium text-primary">Pro Tip:</span> Clear, well-lit images work best! And yes, you can Ctrl+V – we're living in the future! 🚀
-          </p>
+          )}
         </div>
       </div>
     </div>
