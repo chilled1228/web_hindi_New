@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { auth } from '@clerk/nextjs/server'
 import { parseAndCleanJsonOutput } from '@/lib/utils'
+import { createClient } from '@supabase/supabase-js'
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      persistSession: false
+    }
+  }
+)
 
 // Initialize the Gemini API with your API key
 let genAI: GoogleGenerativeAI;
@@ -113,6 +125,20 @@ export async function POST(request: Request) {
 
       if (!cleanOutput) {
         throw new Error('No output generated');
+      }
+
+      // Save to prompt history
+      const { error: saveError } = await supabase
+        .from('prompt_history')
+        .insert({
+          user_id: session.userId,
+          prompt_type: promptType,
+          input_image: image,
+          output_text: cleanOutput
+        })
+
+      if (saveError) {
+        console.error('Error saving prompt history:', saveError)
       }
 
       // Only return the cleaned output

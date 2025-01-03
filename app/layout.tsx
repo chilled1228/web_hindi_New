@@ -12,7 +12,11 @@ import { Providers } from './providers'
 import { NavigationMenu } from '@/components/navigation-menu'
 import { Toaster } from '@/components/ui/toaster'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true 
+})
 
 export default function RootLayout({
   children,
@@ -22,19 +26,22 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.className} antialiased`}>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        </head>
+        <body className={`${inter.className} antialiased min-h-screen`}>
           <Providers>
             <ThemeProvider>
               <NavigationMenu />
-              <div className="flex justify-end items-center p-4">
+              <div className="flex justify-end items-center p-4 fixed top-0 right-0 z-50">
                 <SignedOut>
                   <SignInButton />
                 </SignedOut>
                 <SignedIn>
-                  <UserButton afterSignOutUrl="/"/>
+                  <UserButton afterSignOutUrl="/" />
                 </SignedIn>
               </div>
-              <main className="pt-16">
+              <main className="pt-16 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {children}
               </main>
             </ThemeProvider>

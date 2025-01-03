@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { UserResource } from '@clerk/types'
 
 interface PromptHistory {
@@ -9,10 +9,23 @@ interface PromptHistory {
   output_text: string
 }
 
+interface Pagination {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 interface PromptHistoryState {
   history: PromptHistory[]
   loading: boolean
   error: string | null
+  pagination: Pagination | null
+}
+
+interface PromptHistoryResponse {
+  history: PromptHistory[]
+  pagination: Pagination
 }
 
 export function usePromptHistory(user: UserResource | null | undefined) {
@@ -20,39 +33,82 @@ export function usePromptHistory(user: UserResource | null | undefined) {
     history: [],
     loading: true,
     error: null,
+    pagination: null
   })
 
-  useEffect(() => {
-    if (user) {
-      fetchHistory()
-    } else {
-      setState(s => ({ ...s, history: [], loading: false }))
-    }
-  }, [user])
+  // Cache for prefetched pages
+  const [pageCache, setPageCache] = useState<Record<number, PromptHistory[]>>({})
 
-  const fetchHistory = async () => {
-    try {
-      setState(s => ({ ...s, loading: true, error: null }))
-      // Mock implementation - replace with actual API call
+  const fetchPage = useCallback(async (page: number, isPrefetch = false) => {
+    if (!user) return
+    
+    // If the page is in cache and it's not a prefetch, use it
+    if (pageCache[page] && !isPrefetch) {
       setState(s => ({
         ...s,
-        history: [],
+        history: pageCache[page],
         loading: false,
         error: null
       }))
+      return
+    }
+
+    try {
+      if (!isPrefetch) {
+        setState(s => ({ ...s, loading: true, error: null }))
+      }
+      
+      const response = await fetch(`/api/prompt-history?page=${page}&limit=10`)
+      const data: PromptHistoryResponse = await response.json()
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch prompt history')
+      }
+
+      // Update cache
+      setPageCache(cache => ({
+        ...cache,
+        [page]: data.history
+      }))
+
+      if (!isPrefetch) {
+        setState(s => ({
+          ...s,
+          history: data.history,
+          pagination: data.pagination,
+          loading: false,
+          error: null
+        }))
+      }
     } catch (error) {
-      setState(s => ({
-        ...s,
+      if (!isPrefetch) {
+        setState(s => ({
+          ...s,
+          loading: false,
+          error: error instanceof Error ? error.message : 'Failed to fetch prompt history'
+        }))
+      }
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (user) {
+      fetchPage(1)
+    } else {
+      setState(s => ({ 
+        ...s, 
+        history: [], 
         loading: false,
-        error: 'Failed to fetch prompt history'
+        pagination: null 
       }))
     }
-  }
+  }, [user, fetchPage])
 
   return {
     history: state.history,
     loading: state.loading,
     error: state.error,
-    refetch: fetchHistory
+    pagination: state.pagination,
+    fetchPage
   }
 } 

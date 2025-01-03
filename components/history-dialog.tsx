@@ -17,11 +17,13 @@ export function HistoryDialog() {
           <History className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="w-[90vw] max-w-3xl max-h-[80vh] overflow-hidden p-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Prompt History</DialogTitle>
         </DialogHeader>
-        <PromptHistory />
+        <div className="overflow-y-auto px-6 py-4 scrollbar-stable">
+          <PromptHistory />
+        </div>
       </DialogContent>
     </Dialog>
   )

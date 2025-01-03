@@ -158,10 +158,35 @@ export function ImageUploadSection() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-2 md:px-6 mb-4 md:mb-8">
-      <div className="grid grid-cols-1 md:grid-cols-[1.5fr,1fr] gap-4 md:gap-6">
-        {/* Upload Area */}
-        <div className="flex flex-col gap-4">
+    <div className="relative space-y-6">
+      {/* Add History Dialog */}
+      <div className="absolute top-4 right-4 z-10">
+        <HistoryDialog />
+      </div>
+
+      {/* Prompt Type Selector */}
+      <div className="flex items-center gap-4 p-4 rounded-xl bg-accent/50 backdrop-blur-[8px]">
+        <div className="flex items-center gap-2">
+          <Settings className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Prompt Style:</span>
+        </div>
+        <Select value={promptType} onValueChange={setPromptType}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select style" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="photography">Photography</SelectItem>
+            <SelectItem value="illustration">Illustration</SelectItem>
+            <SelectItem value="painting">Painting</SelectItem>
+            <SelectItem value="3d">3D Render</SelectItem>
+            <SelectItem value="graphic">Graphic Design</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
+        {/* Left Column - Image Upload */}
+        <div className="space-y-4">
           {/* Drag & Drop Area */}
           <div
             {...getRootProps()}
@@ -172,8 +197,8 @@ export function ImageUploadSection() {
               backdrop-blur-[8px] shadow-sm will-change-transform transform translate-z-0
               group
               ${isDragActive 
-                ? 'border-primary bg-primary/5 scale-[0.99] shadow-primary/5' 
-                : 'border-border hover:border-primary/50 hover:bg-accent/50'}
+                ? 'border-primary bg-primary/5 scale-[0.99] shadow-primary/5 ring-2 ring-primary/20' 
+                : 'border-border hover:border-primary/50 hover:bg-accent/50 hover:ring-2 hover:ring-primary/10'}
             `}
           >
             <input {...getInputProps()} />
@@ -256,59 +281,41 @@ export function ImageUploadSection() {
           </div>
         </div>
 
-        {/* Right Column - Prompt Generation */}
-        <div className="flex flex-col gap-4">
-          {/* Prompt Type Selection */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Prompt Type
-            </label>
-            <Select value={promptType} onValueChange={setPromptType}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="photography">Photography</SelectItem>
-                <SelectItem value="illustration">Illustration</SelectItem>
-                <SelectItem value="3d">3D Render</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Generate Button */}
+        {/* Right Column - Generated Prompt */}
+        <div className="space-y-4">
           <button
             onClick={generatePrompt}
             disabled={!imageFile || isLoading || !user}
-            className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center text-sm font-medium shadow-sm will-change-transform"
+            className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center text-sm font-medium shadow-sm will-change-transform relative overflow-hidden"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating...
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Generating Prompt...
               </>
             ) : (
               <>
-                <Settings className="w-4 h-4" />
+                <ImageIcon className="w-5 h-5" />
                 Generate Prompt
               </>
             )}
           </button>
 
-          {/* Error Message */}
           {error && (
-            <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
+            <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               {error}
             </div>
           )}
 
-          {/* Generated Prompt */}
           {generatedPrompt && (
-            <div className="p-4 rounded-lg bg-accent/50 backdrop-blur-[8px] shadow-sm">
-              <div className="flex items-center justify-between mb-2">
+            <div className="p-4 rounded-xl bg-accent/50 backdrop-blur-[8px] space-y-3">
+              <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium">Generated Prompt</h3>
                 <button
-                  onClick={() => navigator.clipboard.writeText(generatedPrompt)}
-                  className="p-1.5 hover:bg-accent rounded-md transition-colors duration-200"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedPrompt)
+                  }}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors duration-200"
                 >
                   <ClipboardCopy className="w-4 h-4" />
                 </button>
@@ -316,6 +323,12 @@ export function ImageUploadSection() {
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {generatedPrompt}
               </p>
+            </div>
+          )}
+
+          {!user && (
+            <div className="p-4 rounded-xl bg-accent text-sm text-center">
+              Please sign in to generate prompts
             </div>
           )}
         </div>

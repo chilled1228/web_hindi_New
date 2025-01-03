@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { Search, Menu, X, Sun, Moon, ChevronDown } from 'lucide-react'
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useTheme } from "@/lib/theme-provider"
 import { usePathname } from 'next/navigation'
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 
 export function NavigationMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const pathname = usePathname()
 
@@ -40,14 +41,39 @@ export function NavigationMenu() {
     setIsMenuOpen(prev => !prev)
   }, [])
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Close menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false)
+  }, [pathname])
+
   return (
-    <nav className="fixed top-0 left-0 w-full h-16 border-b border-[#eaeaea] dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-[8px] z-50 shadow-sm will-change-transform">
+    <nav 
+      className={`fixed top-0 left-0 w-full h-16 border-b border-[#eaeaea] dark:border-gray-800 
+        ${isScrolled 
+          ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-[8px] shadow-sm' 
+          : 'bg-white dark:bg-gray-900'} 
+        transition-all duration-200 z-50 will-change-transform`}
+    >
       <div className="max-w-7xl h-full mx-auto px-4 sm:px-6 flex items-center justify-between transform translate-z-0">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 font-medium text-primary will-change-transform">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2.5 font-medium text-primary will-change-transform"
+          prefetch
+        >
           <svg
             viewBox="0 0 24 24"
             className="w-8 h-8 text-sky-400"
+            aria-hidden="true"
             fill="currentColor"
           >
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
