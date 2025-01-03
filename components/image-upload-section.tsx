@@ -372,7 +372,9 @@ export function ImageUploadSection() {
                 <h3 className="text-sm font-medium">Generated Prompt</h3>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(generatedPrompt)
+                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                      navigator.clipboard.writeText(generatedPrompt)
+                    }
                   }}
                   className="p-2 hover:bg-accent rounded-lg transition-colors duration-200"
                 >

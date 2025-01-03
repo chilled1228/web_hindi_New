@@ -1,14 +1,7 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "env",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "env",
-    "GEMINI_API_KEY": "env",
-    "GEMINI_MODEL": "env"
-  }
+  "outputDirectory": ".next"
 } 
