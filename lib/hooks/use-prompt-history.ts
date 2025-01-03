@@ -36,40 +36,58 @@ export function usePromptHistory(user: UserResource | null | undefined) {
     pagination: null
   })
 
-  // Cache for prefetched pages
-  const [pageCache, setPageCache] = useState<Record<number, PromptHistory[]>>({})
+  // Improved cache with TTL
+  const [pageCache, setPageCache] = useState<Record<number, { data: PromptHistory[], timestamp: number }>>({})
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  const isPageCacheValid = useCallback((page: number) => {
+    const cached = pageCache[page];
+    if (!cached) return false;
+    return Date.now() - cached.timestamp < CACHE_TTL;
+  }, [pageCache]);
 
   const fetchPage = useCallback(async (page: number, isPrefetch = false) => {
-    if (!user) return
+    if (!user) return;
     
-    // If the page is in cache and it's not a prefetch, use it
-    if (pageCache[page] && !isPrefetch) {
+    // Check cache first
+    if (!isPrefetch && isPageCacheValid(page)) {
       setState(s => ({
         ...s,
-        history: pageCache[page],
+        history: pageCache[page].data,
         loading: false,
         error: null
-      }))
-      return
+      }));
+      return;
     }
 
     try {
       if (!isPrefetch) {
-        setState(s => ({ ...s, loading: true, error: null }))
+        setState(s => ({ ...s, loading: true, error: null }));
       }
       
-      const response = await fetch(`/api/prompt-history?page=${page}&limit=10`)
-      const data: PromptHistoryResponse = await response.json()
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const response = await fetch(`/api/prompt-history?page=${page}&limit=10`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      const data: PromptHistoryResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error('Failed to fetch prompt history')
+        throw new Error('Failed to fetch prompt history');
       }
 
-      // Update cache
+      // Update cache with timestamp
       setPageCache(cache => ({
         ...cache,
-        [page]: data.history
-      }))
+        [page]: {
+          data: data.history,
+          timestamp: Date.now()
+        }
+      }));
 
       if (!isPrefetch) {
         setState(s => ({
@@ -78,7 +96,7 @@ export function usePromptHistory(user: UserResource | null | undefined) {
           pagination: data.pagination,
           loading: false,
           error: null
-        }))
+        }));
       }
     } catch (error) {
       if (!isPrefetch) {
@@ -86,23 +104,45 @@ export function usePromptHistory(user: UserResource | null | undefined) {
           ...s,
           loading: false,
           error: error instanceof Error ? error.message : 'Failed to fetch prompt history'
-        }))
+        }));
       }
     }
-  }, [user])
+  }, [user, isPageCacheValid]);
+
+  // Prefetch next and previous pages
+  useEffect(() => {
+    if (!state.pagination) return;
+
+    const prefetchTimer = setTimeout(() => {
+      const pagination = state.pagination;
+      if (!pagination) return;
+
+      // Prefetch next page if available
+      if (pagination.page < pagination.totalPages && !isPageCacheValid(pagination.page + 1)) {
+        fetchPage(pagination.page + 1, true);
+      }
+      
+      // Prefetch previous page if available
+      if (pagination.page > 1 && !isPageCacheValid(pagination.page - 1)) {
+        fetchPage(pagination.page - 1, true);
+      }
+    }, 1000);
+
+    return () => clearTimeout(prefetchTimer);
+  }, [state.pagination, fetchPage, isPageCacheValid]);
 
   useEffect(() => {
     if (user) {
-      fetchPage(1)
+      fetchPage(1);
     } else {
       setState(s => ({ 
         ...s, 
         history: [], 
         loading: false,
         pagination: null 
-      }))
+      }));
     }
-  }, [user, fetchPage])
+  }, [user, fetchPage]);
 
   return {
     history: state.history,
@@ -110,5 +150,5 @@ export function usePromptHistory(user: UserResource | null | undefined) {
     error: state.error,
     pagination: state.pagination,
     fetchPage
-  }
+  };
 } 

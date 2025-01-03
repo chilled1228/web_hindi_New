@@ -1,6 +1,5 @@
 import {
   ClerkProvider,
-  SignInButton,
   SignedIn,
   SignedOut,
   UserButton
@@ -33,14 +32,6 @@ export default function RootLayout({
           <Providers>
             <ThemeProvider>
               <NavigationMenu />
-              <div className="flex justify-end items-center p-4 fixed top-0 right-0 z-50">
-                <SignedOut>
-                  <SignInButton />
-                </SignedOut>
-                <SignedIn>
-                  <UserButton afterSignOutUrl="/" />
-                </SignedIn>
-              </div>
               <main className="pt-16 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {children}
               </main>

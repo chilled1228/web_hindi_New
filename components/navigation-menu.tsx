@@ -5,13 +5,15 @@ import { Search, Menu, X, Sun, Moon, ChevronDown } from 'lucide-react'
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useTheme } from "@/lib/theme-provider"
 import { usePathname } from 'next/navigation'
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
+import { LoginDialog } from "./login-dialog"
 
 export function NavigationMenu() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const pathname = usePathname()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
 
   const navItems = useMemo(() => [
     { label: 'Home', href: '/' },
@@ -141,11 +143,12 @@ export function NavigationMenu() {
           </button>
           <div className="flex items-center gap-4">
             <SignedOut>
-              <SignInButton>
-                <button className="text-sm font-medium hover:text-primary">
-                  Sign In
-                </button>
-              </SignInButton>
+              <button 
+                onClick={() => setIsLoginOpen(true)}
+                className="text-sm font-medium hover:text-primary"
+              >
+                Sign In
+              </button>
             </SignedOut>
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
@@ -164,63 +167,67 @@ export function NavigationMenu() {
             <Menu className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           )}
         </button>
-      </div>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="lg:hidden fixed inset-0 top-16 bg-white dark:bg-gray-900 z-40">
-          <div className="p-4 space-y-3">
-            {navItems.map((item) => (
-              <div key={item.label}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center justify-between py-2 text-[15px] transition-colors
-                    ${isActive(item.href)
-                      ? 'text-primary font-medium'
-                      : 'text-gray-600 dark:text-gray-300'
-                    }
-                  `}
-                  onClick={handleMenuToggle}
-                >
-                  {item.label}
-                  {item.hasDropdown && <ChevronDown className="w-4 h-4" />}
-                </Link>
-                {item.hasDropdown && (
-                  <div className="pl-4 mt-1 space-y-1">
-                    {item.dropdownItems?.map((dropdownItem) => (
-                      <Link
-                        key={dropdownItem.label}
-                        href={dropdownItem.href}
-                        className={`block py-2 text-[14px] transition-colors
-                          ${pathname === dropdownItem.href
-                            ? 'text-primary'
-                            : 'text-gray-500 dark:text-gray-400'
-                          }
-                        `}
-                        onClick={handleMenuToggle}
-                      >
-                        {dropdownItem.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-800">
-              <SignedOut>
-                <SignInButton>
-                  <button className="text-sm font-medium hover:text-primary">
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="lg:hidden fixed inset-0 top-16 z-50 bg-white dark:bg-gray-900">
+            <div className="p-4">
+              {navItems.map((item) => (
+                <div key={item.label}>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center justify-between py-2 text-[15px] transition-colors
+                      ${isActive(item.href)
+                        ? 'text-primary font-medium'
+                        : 'text-gray-600 dark:text-gray-300'
+                      }
+                    `}
+                    onClick={handleMenuToggle}
+                  >
+                    {item.label}
+                    {item.hasDropdown && <ChevronDown className="w-4 h-4" />}
+                  </Link>
+                  {item.hasDropdown && (
+                    <div className="pl-4 mt-1 space-y-1">
+                      {item.dropdownItems?.map((dropdownItem) => (
+                        <Link
+                          key={dropdownItem.label}
+                          href={dropdownItem.href}
+                          className={`block py-2 text-[14px] transition-colors
+                            ${pathname === dropdownItem.href
+                              ? 'text-primary'
+                              : 'text-gray-500 dark:text-gray-400'
+                            }
+                          `}
+                          onClick={handleMenuToggle}
+                        >
+                          {dropdownItem.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-800">
+                <SignedOut>
+                  <button 
+                    onClick={() => setIsLoginOpen(true)}
+                    className="text-sm font-medium hover:text-primary"
+                  >
                     Sign In
                   </button>
-                </SignInButton>
-              </SignedOut>
-              <SignedIn>
-                <UserButton afterSignOutUrl="/" />
-              </SignedIn>
+                </SignedOut>
+                <SignedIn>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* Login Dialog */}
+      <LoginDialog open={isLoginOpen} onOpenChange={setIsLoginOpen} />
     </nav>
   )
 }

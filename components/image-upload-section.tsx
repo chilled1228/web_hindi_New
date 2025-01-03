@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/hooks/use-auth'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { HistoryDialog } from './history-dialog'
+import { useAuthNotification } from '@/lib/hooks/use-auth-notification'
 
 export function ImageUploadSection() {
   // State for managing image data
@@ -18,19 +19,74 @@ export function ImageUploadSection() {
   const [error, setError] = useState<string | null>(null)
   const [promptType, setPromptType] = useState<string>('photography')
   const { user, isLoaded } = useAuth()
+  useAuthNotification()
 
   // Handle image file upload through drag & drop or file selection
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1024;
+          const MAX_HEIGHT = 1024;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+              }
+            },
+            'image/jpeg',
+            0.8
+          );
+        };
+      };
+    });
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
     if (file) {
-      const objectUrl = URL.createObjectURL(file)
-      setPreview(objectUrl)
-      setImageFile(file)
-      setImageUrl('') // Reset URL input when file is uploaded
-      setGeneratedPrompt(null)
-      setError(null)
+      setIsLoading(true);
+      try {
+        const compressedFile = await compressImage(file);
+        const objectUrl = URL.createObjectURL(compressedFile);
+        setPreview(objectUrl);
+        setImageFile(compressedFile);
+        setImageUrl('');
+        setGeneratedPrompt(null);
+        setError(null);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        setError('Failed to process image');
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [])
+  }, []);
 
   // Handle URL input change
   const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,20 +160,23 @@ export function ImageUploadSection() {
 
   // Handle prompt generation
   const generatePrompt = useCallback(async () => {
-    if (!imageFile || !user) return
+    if (!imageFile || !user) return;
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
+    
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        resolve(base64String.split(',')[1]);
+      };
+      reader.onerror = reject;
+    });
+
     try {
-      // Convert image to base64
-      const base64Image = await new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          const base64String = reader.result as string
-          resolve(base64String.split(',')[1])
-        }
-        reader.readAsDataURL(imageFile)
-      })
+      reader.readAsDataURL(imageFile);
+      const base64Image = await base64Promise;
 
       const response = await fetch('/api/generate-prompt', {
         method: 'POST',
@@ -129,26 +188,26 @@ export function ImageUploadSection() {
           mimeType: imageFile.type,
           promptType: promptType,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || 'Failed to generate prompt')
+        throw new Error(data.message || data.error || 'Failed to generate prompt');
       }
 
       if (!data.output) {
-        throw new Error('No output received from the server')
+        throw new Error('No output received from the server');
       }
 
-      setGeneratedPrompt(data.output)
+      setGeneratedPrompt(data.output);
     } catch (error) {
-      console.error('Error generating prompt:', error)
-      setError(error instanceof Error ? error.message : 'Failed to generate prompt')
+      console.error('Error generating prompt:', error);
+      setError(error instanceof Error ? error.message : 'Failed to generate prompt');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [imageFile, user, promptType])
+  }, [imageFile, user, promptType]);
 
   // Only render content if auth is loaded
   if (!isLoaded) {

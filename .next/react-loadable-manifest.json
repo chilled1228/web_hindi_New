@@ -1,4 +1,10 @@
 {
+  "app/page.tsx -> ../components/image-upload-section": {
+    "id": "app/page.tsx -> ../components/image-upload-section",
+    "files": [
+      "static/chunks/_app-pages-browser_components_image-upload-section_tsx.js"
+    ]
+  },
   "node_modules/@clerk/nextjs/dist/esm/app-router/client/ClerkProvider.js -> ./keyless-creator-reader.js": {
     "id": "node_modules/@clerk/nextjs/dist/esm/app-router/client/ClerkProvider.js -> ./keyless-creator-reader.js",
     "files": [
