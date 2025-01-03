@@ -13,6 +13,9 @@ import {
 import { ModeToggle } from './mode-toggle';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { CreditsDisplay } from './credits-display';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/lib/firebase';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -85,7 +88,8 @@ export function Navbar() {
           {/* Right Side */}
           <div className="flex items-center gap-2">
             <ModeToggle />
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-2">
+              <CreditsDisplay />
               <LoginButton />
             </div>
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -132,7 +136,8 @@ export function Navbar() {
                   >
                     Pricing
                   </Link>
-                  <div className="pt-4">
+                  <div className="pt-4 flex flex-col gap-2">
+                    <CreditsDisplay />
                     <LoginButton />
                   </div>
                 </div>

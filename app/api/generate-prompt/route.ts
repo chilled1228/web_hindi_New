@@ -1,7 +1,69 @@
 import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { parseAndCleanJsonOutput } from '@/lib/utils'
-import { getServerSession } from 'next-auth'
+import { getAuth } from 'firebase-admin/auth'
+import { initializeApp, cert, getApps } from 'firebase-admin/app'
+import { getFirestore } from 'firebase-admin/firestore'
+
+// Initialize Firebase Admin
+if (!process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PROJECT_ID) {
+  throw new Error('Firebase Admin environment variables are missing');
+}
+
+const firebaseAdminConfig = {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+};
+
+// Initialize Firebase Admin app if not already initialized
+const firebaseAdmin = 
+  getApps().length === 0 
+    ? initializeApp({
+        credential: cert(firebaseAdminConfig),
+      })
+    : getApps()[0];
+
+const auth = getAuth(firebaseAdmin);
+const db = getFirestore(firebaseAdmin);
+
+// Credit management functions
+async function getUserCredits(userId: string): Promise<number> {
+  try {
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+    
+    if (!userDoc.exists) {
+      console.warn('User document not found:', userId);
+      return 0;
+    }
+    
+    const userData = userDoc.data();
+    return userData?.credits || 0;
+  } catch (error) {
+    console.error('Error getting user credits:', error);
+    throw error;
+  }
+}
+
+async function updateUserCredits(userId: string, newCredits: number) {
+  try {
+    if (newCredits < 0) {
+      throw new Error('Credits cannot be negative');
+    }
+    
+    const userRef = db.collection('users').doc(userId);
+    await userRef.update({
+      credits: newCredits,
+      lastUpdated: new Date().toISOString(),
+    });
+    
+    console.log('Updated credits for user:', userId, 'New credits:', newCredits);
+  } catch (error) {
+    console.error('Error updating user credits:', error);
+    throw error;
+  }
+}
 
 // Initialize the Gemini API with your API key
 let genAI: GoogleGenerativeAI;
@@ -38,11 +100,87 @@ async function retryWithBackoff(fn: () => Promise<any>, maxRetries = 3, initialD
 
 export async function POST(request: Request) {
   try {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Missing or invalid authorization header' },
+        { status: 401 }
+      )
+    }
+
+    // Verify the token
+    let userId: string;
+    try {
+      const token = authHeader.split('Bearer ')[1]
+      const decodedToken = await auth.verifyIdToken(token)
+      userId = decodedToken.uid
+    } catch (error) {
+      console.error('Error verifying auth token:', error)
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Invalid authentication token' },
+        { status: 401 }
+      )
+    }
+
+    // Check user's credits
+    let credits: number;
+    try {
+      credits = await getUserCredits(userId)
+      console.log('Retrieved credits for user:', userId, 'Credits:', credits);
+      
+      if (credits === 0) {
+        return NextResponse.json(
+          { error: 'Insufficient Credits', message: 'No credits remaining. Please purchase more credits.' },
+          { status: 403 }
+        )
+      }
+    } catch (error) {
+      console.error('Error checking user credits:', error);
+      
+      // Check if it's a Firestore error
+      if (error instanceof Error) {
+        if (error.message.includes('permission-denied')) {
+          return NextResponse.json(
+            { error: 'Access Denied', message: 'You do not have permission to access credits' },
+            { status: 403 }
+          )
+        } else if (error.message.includes('not-found')) {
+          // Initialize credits for new user
+          try {
+            await db.collection('users').doc(userId).set({
+              credits: 10, // Default credits for new user
+              createdAt: new Date().toISOString(),
+              lastUpdated: new Date().toISOString(),
+            });
+            credits = 10;
+            console.log('Initialized credits for new user:', userId);
+          } catch (initError) {
+            console.error('Error initializing user credits:', initError);
+            return NextResponse.json(
+              { error: 'Initialization Failed', message: 'Unable to initialize user credits' },
+              { status: 500 }
+            )
+          }
+        } else {
+          return NextResponse.json(
+            { error: 'Credit Check Failed', message: 'Unable to verify user credits: ' + error.message },
+            { status: 500 }
+          )
+        }
+      } else {
+        return NextResponse.json(
+          { error: 'Credit Check Failed', message: 'Unable to verify user credits' },
+          { status: 500 }
+        )
+      }
+    }
+
     const { image, mimeType, promptType } = await request.json()
 
     if (!image || !mimeType || !promptType) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Bad Request', message: 'Missing required fields' },
         { status: 400 }
       )
     }
@@ -102,9 +240,19 @@ export async function POST(request: Request) {
         throw new Error('No output generated');
       }
 
-      // Only return the cleaned output
+      // Update user's credits
+      try {
+        await updateUserCredits(userId, credits - 1)
+      } catch (error) {
+        console.error('Error updating credits:', error)
+        // Still return the output but log the error
+        console.warn('Generated output delivered but failed to update credits')
+      }
+
+      // Return the cleaned output
       return NextResponse.json({ 
-        output: cleanOutput
+        output: cleanOutput,
+        creditsRemaining: credits - 1
       }, {
         headers: {
           'Content-Type': 'application/json'
@@ -113,8 +261,8 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error('Error processing response:', error);
       return NextResponse.json({
-        error: 'Failed to process response',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Processing Failed',
+        message: error instanceof Error ? error.message : 'Failed to process response'
       }, {
         status: 500,
         headers: {
@@ -125,7 +273,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error in generate prompt API:', error);
     return NextResponse.json(
-      { error: 'Server error', message: 'An unexpected error occurred' },
+      { 
+        error: 'Server Error', 
+        message: error instanceof Error ? error.message : 'An unexpected error occurred'
+      },
       { status: 500 }
     );
   }

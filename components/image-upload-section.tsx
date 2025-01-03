@@ -101,6 +101,12 @@ export function ImageUploadSection() {
     setError(null)
     
     try {
+      // Get the current user's token
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) {
+        throw new Error('Authentication token not available')
+      }
+
       let base64Data, mimeType;
 
       if (imageFile) {
@@ -137,6 +143,7 @@ export function ImageUploadSection() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           image: base64Data,
@@ -148,11 +155,15 @@ export function ImageUploadSection() {
       const data = await response.json()
 
       if (!response.ok) {
+        if (response.status === 403) {
+          setError('No credits remaining. Please purchase more credits to continue.')
+          return
+        }
         throw new Error(data.message || data.error || 'Failed to generate prompt')
       }
 
       setGeneratedPrompt(data.output)
-      setIsLoading(false) // Reset loading state after successful generation
+      setIsLoading(false)
 
       // Save to prompt history
       try {
@@ -169,7 +180,7 @@ export function ImageUploadSection() {
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to generate prompt')
       console.error('Error generating prompt:', error)
-      setIsLoading(false) // Reset loading state on error
+      setIsLoading(false)
     }
   }
 
