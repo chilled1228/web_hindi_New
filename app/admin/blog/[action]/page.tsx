@@ -1,20 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-type Props = {
-  params: {
-    action: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
+interface PageParams {
+  action: string;
 }
 
-export default function BlogActionHandler({ params, searchParams }: Props) {
+export default function BlogActionHandler({ params }: { params: Promise<PageParams> }) {
+  const resolvedParams = use(params) as PageParams;
   const router = useRouter();
-  const { action } = params;
+  const { action } = resolvedParams;
 
   useEffect(() => {
     if (action === 'new') {
