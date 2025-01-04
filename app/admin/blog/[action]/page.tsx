@@ -1,25 +1,27 @@
 'use client';
 
-import { useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-interface PageParams {
-  action: string;
-}
-
-export default function BlogActionHandler({ params }: { params: Promise<PageParams> }) {
-  const resolvedParams = use(params) as PageParams;
+export default function BlogActionHandler() {
   const router = useRouter();
-  const { action } = resolvedParams;
-
+  const pathname = usePathname();
+  
   useEffect(() => {
+    // Extract action from pathname
+    const action = pathname?.split('/').pop();
+    
     if (action === 'new') {
       const newDocRef = doc(collection(db, 'blog_posts'));
       router.push(`/admin/blog/edit/${newDocRef.id}`);
+    } else {
+      // Redirect to admin dashboard if not a valid action
+      router.push('/admin');
     }
-  }, [action, router]);
+  }, [pathname, router]);
 
+  // Show loading or nothing while redirecting
   return null;
 } 
