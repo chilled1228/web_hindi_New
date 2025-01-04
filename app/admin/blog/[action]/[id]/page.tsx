@@ -44,6 +44,13 @@ interface PageParams {
   id: string;
 }
 
+type Props = {
+  params: {
+    action: string;
+  };
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
 export default function BlogPostEditor({ params }: { params: Promise<PageParams> }) {
   const resolvedParams = use(params) as PageParams;
   const router = useRouter();
