@@ -5,15 +5,17 @@ import { useRouter } from 'next/navigation';
 import { collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-type PageProps = {
+interface BlogActionPageProps {
   params: {
     action: string;
   };
-};
+  searchParams: { [key: string]: string | string[] | undefined };
+}
 
 export default function BlogActionHandler({
   params,
-}: PageProps) {
+  searchParams,
+}: BlogActionPageProps) {
   const router = useRouter();
   const { action } = params;
 
