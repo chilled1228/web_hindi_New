@@ -195,15 +195,21 @@ export async function POST(request: Request) {
 
     const promptTemplates = {
       photography: {
-        format: `{"output": "string"}`,
+        format: `{
+          "output": "string" // Act as a stable diffusion photography prompt generator that accepts a visual description and outputs a detailed paragraph of 100 words that I can copy into my diffusion model. Include a variety of photography-related terminology including the description of the lens you use and most importantly a description of the lighting.
+        }`,
         instruction: "Analyze this image and provide a detailed photography-focused description"
       },
       painting: {
-        format: `{"output": "string"}`,
+        format: `{
+          "output": "string" // Act as an art prompt generator that describes the image in terms of artistic style, composition, color palette, brushwork, and medium. Provide a detailed 100-word description suitable for an art generation model.
+        }`,
         instruction: "Analyze this image and provide a detailed artistic interpretation"
       },
       character: {
-        format: `{"output": "string"}`,
+        format: `{
+          "output": "string" // Act as a character design prompt generator that describes the subject's appearance, pose, expression, clothing, and notable features in detail. Provide a 100-word description suitable for character generation.
+        }`,
         instruction: "Analyze this image and provide a detailed character description"
       }
     }
