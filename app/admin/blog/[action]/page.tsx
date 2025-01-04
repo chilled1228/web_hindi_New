@@ -5,15 +5,24 @@ import { useRouter } from 'next/navigation';
 import { collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-export default function BlogActionHandler({ params }: { params: { action: string } }) {
+type PageProps = {
+  params: {
+    action: string;
+  };
+};
+
+export default function BlogActionHandler({
+  params,
+}: PageProps) {
   const router = useRouter();
+  const { action } = params;
 
   useEffect(() => {
-    if (params.action === 'new') {
+    if (action === 'new') {
       const newDocRef = doc(collection(db, 'blog_posts'));
       router.push(`/admin/blog/edit/${newDocRef.id}`);
     }
-  }, [params.action, router]);
+  }, [action, router]);
 
   return null;
 } 
