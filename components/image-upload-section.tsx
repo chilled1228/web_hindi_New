@@ -162,6 +162,9 @@ export function ImageUploadSection() {
       setGeneratedPrompt(data.output)
       setIsLoading(false)
 
+      // Dispatch credit update event
+      window.dispatchEvent(new Event('creditUpdate'));
+
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to generate prompt')
       console.error('Error generating prompt:', error)

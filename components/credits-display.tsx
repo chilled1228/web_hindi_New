@@ -60,9 +60,17 @@ export function CreditsDisplay() {
       }
     };
 
+    // Add custom event listener for credit updates
+    const handleCreditUpdate = () => {
+      fetchCredits();
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('creditUpdate', handleCreditUpdate);
+    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('creditUpdate', handleCreditUpdate);
     };
   }, [user]);
 

@@ -135,8 +135,12 @@ export async function POST(request: Request) {
           { status: 403 }
         )
       }
+
+      // Update credits BEFORE generating content to prevent usage without credits
+      await updateUserCredits(userId, credits - 1)
+      console.log('Successfully updated credits for user:', userId, 'New credits:', credits - 1);
     } catch (error) {
-      console.error('Error checking user credits:', error);
+      console.error('Error checking/updating user credits:', error);
       
       // Check if it's a Firestore error
       if (error instanceof Error) {
@@ -238,15 +242,6 @@ export async function POST(request: Request) {
 
       if (!cleanOutput) {
         throw new Error('No output generated');
-      }
-
-      // Update user's credits
-      try {
-        await updateUserCredits(userId, credits - 1)
-      } catch (error) {
-        console.error('Error updating credits:', error)
-        // Still return the output but log the error
-        console.warn('Generated output delivered but failed to update credits')
       }
 
       // Return the cleaned output
