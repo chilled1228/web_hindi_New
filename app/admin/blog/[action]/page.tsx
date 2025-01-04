@@ -4,16 +4,15 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Metadata } from 'next';
 
-type Props = {
+interface PageProps {
   params: {
     action: string;
   };
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Record<string, string | string[] | undefined>;
 }
 
-export default function BlogActionHandler({ params, searchParams }: Props) {
+export default function BlogActionHandler({ params, searchParams }: PageProps) {
   const router = useRouter();
   const { action } = params;
 
