@@ -30,7 +30,7 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
   ]
 
   return (
-    <div className="flex justify-center mb-4 md:mb-8 lg:mb-16">
+    <div className="flex justify-center mb-4 md:mb-6">
       <div className="inline-flex flex-wrap p-1 rounded-full bg-[#f5f5f5] dark:bg-gray-800 max-w-full overflow-x-auto no-scrollbar">
         {tabs.map(({ value, label, icon: Icon }) => (
           <button

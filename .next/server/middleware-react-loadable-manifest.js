@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"app/page.tsx -> ../components/image-upload-section\":{\"id\":\"app/page.tsx -> ../components/image-upload-section\",\"files\":[\"static/chunks/_app-pages-browser_components_image-upload-section_tsx.js\"]}}"

@@ -22,15 +22,15 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b glass-effect">
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="flex h-16 items-center justify-between">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6">
+        <div className="flex h-14 sm:h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-90">
-              <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="currentColor">
+            <Link href="/" className="flex items-center gap-1.5 sm:gap-2 transition-opacity hover:opacity-90">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-6 sm:w-6 text-primary" fill="currentColor">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-              <span className="font-heading text-xl font-bold">FreePromptBase</span>
+              <span className="font-heading text-lg sm:text-xl font-bold">FreePromptBase</span>
             </Link>
           </div>
 
@@ -86,7 +86,7 @@ export function Navbar() {
           </div>
 
           {/* Right Side */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <ModeToggle />
             <div className="hidden md:flex items-center gap-2">
               <CreditsDisplay />
@@ -94,44 +94,44 @@ export function Navbar() {
             </div>
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Menu className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                  <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[80vw] sm:w-[350px]">
-                <div className="flex flex-col gap-4">
+              <SheetContent side="right" className="w-[280px] sm:w-[350px] p-4 sm:p-6">
+                <div className="flex flex-col gap-3 sm:gap-4 mt-4">
                   <Link 
                     href="/"
-                    className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+                    className="text-base font-medium text-foreground/80 hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Home
                   </Link>
                   <Link 
                     href="/inspiration"
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Inspiration
                   </Link>
                   <Link 
                     href="/tutorials"
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Tutorials
                   </Link>
                   <Link 
                     href="/tools"
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Tools
                   </Link>
                   <Link 
                     href="/pricing"
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Pricing

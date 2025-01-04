@@ -23,10 +23,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-[1400px] mx-auto px-6 pt-24 pb-12">
+      <main className="max-w-[1400px] mx-auto px-4 pt-16 pb-8">
         {/* Hero Section */}
-        <div className="text-center mb-10 md:mb-12">
-          <h1 className="text-[36px] sm:text-[40px] leading-[1.15] font-semibold tracking-[-0.02em] mb-3 text-balance">
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-[36px] sm:text-[40px] leading-[1.15] font-semibold tracking-[-0.02em] mb-2 text-balance">
             AI-Powered Prompts for Your Creativity
           </h1>
           <p className="text-responsive text-muted-foreground max-w-[500px] mx-auto">

@@ -28,27 +28,27 @@ export function LoginDialog() {
         <Button 
           variant="ghost" 
           size="sm"
-          className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 hover:bg-primary hover:text-primary-foreground transition-colors"
         >
-          <LogIn className="w-4 h-4" />
-          Login
+          <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="text-sm sm:text-base">Login</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden bg-gradient-to-br from-background to-muted">
+      <DialogContent className="w-[90vw] max-w-[360px] sm:max-w-[400px] p-0 overflow-hidden bg-gradient-to-br from-background to-muted">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <DialogHeader className="p-6 pb-2">
-            <DialogTitle className="text-2xl font-bold text-center">
+          <DialogHeader className="p-4 sm:p-6 pb-2">
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-center">
               Welcome Back
             </DialogTitle>
-            <p className="text-center text-muted-foreground text-sm mt-2">
+            <p className="text-center text-muted-foreground text-xs sm:text-sm mt-1.5 sm:mt-2">
               Sign in to your account to continue
             </p>
           </DialogHeader>
-          <div className="p-6 pt-2">
+          <div className="p-4 sm:p-6 pt-2">
             <AuthButtons />
           </div>
         </motion.div>
