@@ -103,35 +103,35 @@ export function Navbar() {
                 <div className="flex flex-col gap-3 sm:gap-4 mt-4">
                   <Link 
                     href="/"
-                    className="text-base font-medium text-foreground/80 hover:text-foreground transition-colors"
+                    className="text-base sm:text-lg font-medium text-foreground/80 hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Home
                   </Link>
                   <Link 
                     href="/inspiration"
-                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Inspiration
                   </Link>
                   <Link 
                     href="/tutorials"
-                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Tutorials
                   </Link>
                   <Link 
                     href="/tools"
-                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Tools
                   </Link>
                   <Link 
                     href="/pricing"
-                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Pricing

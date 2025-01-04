@@ -22,9 +22,19 @@ export function AuthButtons() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSuccess = () => {
+  const handleSuccess = async (user: any) => {
     setIsLoading(false);
     setError('');
+    
+    // Get the token and set it in a cookie
+    const token = await user.getIdToken();
+    document.cookie = `firebaseToken=${token}; path=/`;
+    
+    // Get the redirect URL from query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectUrl = urlParams.get('redirect') || '/dashboard';
+    
+    router.push(redirectUrl);
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -33,12 +43,13 @@ export function AuthButtons() {
     setError('');
     
     try {
+      let userCredential;
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
       }
-      handleSuccess();
+      await handleSuccess(userCredential.user);
     } catch (error: any) {
       const errorMessage = error.code === 'auth/invalid-credential' 
         ? 'Invalid email or password'
@@ -57,11 +68,10 @@ export function AuthButtons() {
       provider.addScope('https://www.googleapis.com/auth/userinfo.email');
       provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
       provider.setCustomParameters({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
         prompt: 'select_account'
       });
-      await signInWithPopup(auth, provider);
-      handleSuccess();
+      const result = await signInWithPopup(auth, provider);
+      await handleSuccess(result.user);
     } catch (error: any) {
       const errorMessage = error.code === 'auth/popup-closed-by-user'
         ? 'Sign in was cancelled'
@@ -153,14 +163,16 @@ export function AuthButtons() {
             )}
           </Button>
 
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="w-full text-sm font-normal hover:bg-transparent hover:underline"
-          >
-            {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
-          </Button>
+          <p className="text-center text-sm">
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-primary hover:underline"
+            >
+              {isSignUp ? 'Sign In' : 'Sign Up'}
+            </button>
+          </p>
         </motion.form>
       </AnimatePresence>
     </div>

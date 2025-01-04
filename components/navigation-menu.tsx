@@ -3,9 +3,30 @@
 import Link from "next/link"
 import { LoginButton } from './auth/login-button'
 import { useAuth } from '@/app/providers'
+import { useEffect, useState } from 'react'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 export function NavigationMenu() {
   const { user } = useAuth()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) return;
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data()?.isAdmin) {
+          setIsAdmin(true);
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user]);
 
   return (
     <nav className="fixed top-0 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -23,6 +44,14 @@ export function NavigationMenu() {
             >
               Dashboard
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                Admin
+              </Link>
+            )}
             <Link
               href="/docs"
               className="transition-colors hover:text-foreground/80 text-foreground/60"

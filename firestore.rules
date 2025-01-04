@@ -2,26 +2,43 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Function to check if user is admin
+    function isAdmin() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && userDoc.data.isAdmin == true;
+    }
+
     match /users/{userId} {
       // Allow users to read their own data
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      
       // Allow creation of new user documents
       allow create: if request.auth != null && request.auth.uid == userId;
+      
       // Allow updates to own document except admin status
       allow update: if request.auth != null && 
         request.auth.uid == userId &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin']);
       
-      // Function to check if user is admin
-      function isAdmin() {
-        let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        return userDoc != null && userDoc.data.isAdmin == true;
-      }
+      // Allow admins to read all users
+      allow list: if request.auth != null && isAdmin();
       
-      // Allow admins to update any user's credits
-      allow update: if request.auth != null && 
-        isAdmin() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['credits']);
+      // Allow admins to update any user document
+      allow update: if request.auth != null && isAdmin();
+    }
+
+    match /metadata/{document=**} {
+      // Allow public read access to metadata
+      allow read: if true;
+      
+      // Allow admin users to create metadata documents
+      allow create: if request.auth != null && isAdmin();
+      
+      // Allow admin users to update metadata documents
+      allow update: if request.auth != null && isAdmin();
+      
+      // Allow admin users to delete metadata documents
+      allow delete: if request.auth != null && isAdmin();
     }
   }
 }

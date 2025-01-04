@@ -393,7 +393,7 @@ export function ImageUploadSection() {
                             group-hover:scale-110 transition-transform duration-300">
                 <ArrowUpFromLine className="h-5 w-5 text-gray-700" />
               </div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Add Your Image</h3>
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Add Your Image</h3>
               <p className="text-xs text-muted-foreground/80 leading-relaxed">
                 Drop, paste, or import your image – we make it easy
               </p>
@@ -437,8 +437,8 @@ export function ImageUploadSection() {
                   <path d="M10 12h4" />
                 </svg>
               </div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Pick Your Style</h3>
-              <p className="text-xs text-muted-foreground/80 leading-relaxed">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Pick Your Style</h3>
+              <p className="text-mobile-friendly text-muted-foreground/80">
                 Choose from our curated collection of artistic styles
               </p>
             </div>
@@ -480,8 +480,8 @@ export function ImageUploadSection() {
                   <path d="M12 2v20M2 12h20" />
                 </svg>
               </div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Transform</h3>
-              <p className="text-xs text-muted-foreground/80 leading-relaxed">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Transform</h3>
+              <p className="text-mobile-friendly text-muted-foreground/80">
                 Watch as your image inspires the perfect prompt
               </p>
             </div>
@@ -511,7 +511,7 @@ export function ImageUploadSection() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-0.5">Quick Tip</p>
-                <p className="text-xs text-muted-foreground/80">
+                <p className="text-mobile-friendly text-muted-foreground/80">
                   Speed up your workflow by using Ctrl/Cmd + V to paste images directly from your clipboard
                 </p>
               </div>

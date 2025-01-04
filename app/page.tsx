@@ -27,10 +27,10 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center mb-6 md:mb-8">
           <h1 className="text-[36px] sm:text-[40px] leading-[1.15] font-semibold tracking-[-0.02em] mb-2 text-balance">
-            AI-Powered Prompts for Your Creativity
+            AI Prompt Generator
           </h1>
           <p className="text-responsive text-muted-foreground max-w-[500px] mx-auto">
-            Generate unique prompts for writing, design, and art. Upload an image or select a category.
+            Generate creative prompts. Upload an image or select a category.
           </p>
         </div>
 

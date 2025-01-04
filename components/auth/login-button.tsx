@@ -13,10 +13,38 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User2, LogOut } from 'lucide-react';
 import { LoginDialog } from './login-dialog';
+import { useEffect } from 'react';
 
 export function LoginButton() {
   const { user, loading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    // Set session cookie when user logs in
+    const setSessionCookie = async () => {
+      if (user) {
+        const token = await user.getIdToken();
+        // Store the token in a cookie that will be sent with requests
+        document.cookie = `firebaseToken=${token}; path=/`;
+      } else {
+        // Clear the cookie when user logs out
+        document.cookie = 'firebaseToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      }
+    };
+
+    setSessionCookie();
+  }, [user]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      // Clear the cookie
+      document.cookie = 'firebaseToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      router.push('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -61,7 +89,7 @@ export function LoginButton() {
         </DropdownMenuItem>
         <DropdownMenuItem
           className="text-red-600 cursor-pointer"
-          onClick={() => signOut(auth)}
+          onClick={handleSignOut}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Sign out

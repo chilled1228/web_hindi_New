@@ -60,6 +60,10 @@
   .content-grid {
     @apply grid gap-4 md:gap-6 lg:gap-8;
   }
+
+  .text-mobile-friendly {
+    @apply text-sm sm:text-base leading-relaxed tracking-tight break-words;
+  }
 }
 
 @layer base {
@@ -120,19 +124,19 @@
     @apply font-heading tracking-tight;
   }
   h1 {
-    @apply text-4xl font-bold md:text-5xl lg:text-6xl;
+    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl;
   }
   h2 {
-    @apply text-3xl font-bold md:text-4xl lg:text-5xl;
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
   }
   h3 {
-    @apply text-2xl font-bold md:text-3xl lg:text-4xl;
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
   }
   h4 {
-    @apply text-xl font-bold md:text-2xl lg:text-3xl;
+    @apply text-lg sm:text-xl md:text-2xl lg:text-3xl;
   }
   p {
-    @apply leading-relaxed text-muted-foreground;
+    @apply leading-relaxed text-muted-foreground text-sm sm:text-base;
   }
 }
 

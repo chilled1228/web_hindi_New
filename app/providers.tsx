@@ -2,7 +2,7 @@
 
 import { ThemeProvider as NextThemeProvider } from 'next-themes'
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { User, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 interface AuthContextType {
@@ -22,8 +22,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // Set persistence to LOCAL
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => {
+        console.log('Auth persistence set to LOCAL');
+      })
+      .catch((error) => {
+        console.error('Error setting auth persistence:', error);
+      });
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user ? `User logged in: ${user.email}` : 'User logged out');
       if (user) {
+        // Force token refresh
+        const token = await user.getIdToken(true);
         setUser(user);
       } else {
         setUser(null);
