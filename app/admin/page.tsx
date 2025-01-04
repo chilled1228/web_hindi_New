@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/providers';
 import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, setDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface User {
   id: string;
@@ -29,6 +31,16 @@ interface WebsiteMetadata {
   title: string;
   description: string;
   keywords: string;
+}
+
+interface BlogPost {
+  id: string;
+  title: string;
+  status: string;
+  author: {
+    name: string;
+  };
+  publishedAt: Timestamp;
 }
 
 export default function AdminPage() {
@@ -45,6 +57,7 @@ export default function AdminPage() {
     keywords: ''
   });
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -94,6 +107,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin) {
       fetchMetadata();
+      fetchBlogPosts();
     }
   }, [isAdmin]);
 
@@ -219,10 +233,73 @@ export default function AdminPage() {
     updateUserCredits(userId, newCredits);
   };
 
-  if (loading) {
+  const fetchBlogPosts = async () => {
+    try {
+      const blogPostsRef = collection(db, 'blog_posts');
+      const blogPostsSnapshot = await getDocs(blogPostsRef);
+      const blogPostsData = blogPostsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          status: data.status,
+          author: {
+            name: data.author?.name || ''
+          },
+          publishedAt: data.publishedAt
+        } as BlogPost;
+      });
+      setBlogPosts(blogPostsData);
+    } catch (error) {
+      console.error('Error fetching blog posts:', error);
+      setError('Failed to fetch blog posts');
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (window.confirm('Are you sure you want to delete this post?')) {
+      try {
+        await deleteDoc(doc(db, 'blog_posts', postId));
+        fetchBlogPosts();
+      } catch (error) {
+        console.error('Error deleting post:', error);
+      }
+    }
+  };
+
+  const handleDuplicatePost = async (postId: string) => {
+    try {
+      // Get the original post
+      const postDoc = await getDoc(doc(db, 'blog_posts', postId));
+      if (!postDoc.exists()) return;
+
+      const originalPost = postDoc.data();
+      
+      // Create new post data maintaining original status and publishedAt if published
+      const newPostData = {
+        ...originalPost,
+        title: `${originalPost.title} (Copy)`,
+        updatedAt: Timestamp.now(),
+        // Maintain original status and publishedAt
+        status: originalPost.status,
+        publishedAt: originalPost.status === 'published' ? Timestamp.now() : null
+      };
+
+      // Create a new document
+      const newDocRef = doc(collection(db, 'blog_posts'));
+      await setDoc(newDocRef, newPostData);
+      
+      // Refresh the posts list
+      fetchBlogPosts();
+    } catch (error) {
+      console.error('Error duplicating post:', error);
+    }
+  };
+
+  if (loading || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-6 h-6 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
       </div>
     );
   }
@@ -238,7 +315,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         <Button 
@@ -384,6 +461,88 @@ export default function AdminPage() {
             </Table>
           </div>
         )}
+
+        {/* Blog Posts Management Section */}
+        <div className="rounded-md border p-6 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Blog Posts</h2>
+            <Button
+              onClick={() => router.push('/admin/blog/new')}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Create New Post
+            </Button>
+          </div>
+
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs uppercase bg-muted">
+                <tr>
+                  <th scope="col" className="px-6 py-3">Title</th>
+                  <th scope="col" className="px-6 py-3">Status</th>
+                  <th scope="col" className="px-6 py-3">Author</th>
+                  <th scope="col" className="px-6 py-3">Published</th>
+                  <th scope="col" className="px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {blogPosts.map((post) => (
+                  <tr key={post.id} className="bg-background border-b">
+                    <td className="px-6 py-4 font-medium">
+                      {post.title}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={cn(
+                        "px-2 py-1 rounded-full text-xs font-medium",
+                        post.status === 'published' ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                      )}>
+                        {post.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {post.author.name}
+                    </td>
+                    <td className="px-6 py-4">
+                      {post.publishedAt ? formatDistanceToNow(post.publishedAt.toDate(), { addSuffix: true }) : 'Draft'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/admin/blog/edit/${post.id}`)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => handleDeletePost(post.id)}
+                        >
+                          Delete
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDuplicatePost(post.id)}
+                        >
+                          Duplicate
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {blogPosts.length === 0 && (
+              <div className="text-center py-4 text-muted-foreground">
+                No blog posts yet
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

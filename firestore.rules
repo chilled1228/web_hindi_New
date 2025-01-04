@@ -2,43 +2,32 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Function to check if user is admin
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
     function isAdmin() {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc != null && userDoc.data.isAdmin == true;
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // User profiles
     match /users/{userId} {
-      // Allow users to read their own data
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      
-      // Allow creation of new user documents
-      allow create: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow updates to own document except admin status
-      allow update: if request.auth != null && 
-        request.auth.uid == userId &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin']);
-      
-      // Allow admins to read all users
-      allow list: if request.auth != null && isAdmin();
-      
-      // Allow admins to update any user document
-      allow update: if request.auth != null && isAdmin();
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    match /metadata/{document=**} {
-      // Allow public read access to metadata
+    // Blog posts
+    match /blog_posts/{postId} {
+      allow read: if true; // Public read access
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Website metadata
+    match /metadata/{docId} {
       allow read: if true;
-      
-      // Allow admin users to create metadata documents
-      allow create: if request.auth != null && isAdmin();
-      
-      // Allow admin users to update metadata documents
-      allow update: if request.auth != null && isAdmin();
-      
-      // Allow admin users to delete metadata documents
-      allow delete: if request.auth != null && isAdmin();
+      allow write: if isAdmin();
     }
   }
 }

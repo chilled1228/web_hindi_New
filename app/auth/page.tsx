@@ -11,7 +11,9 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (user && !loading) {
-      router.push('/dashboard');
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectUrl = urlParams.get('redirect') || '/';
+      router.push(redirectUrl);
     }
   }, [user, loading, router]);
 

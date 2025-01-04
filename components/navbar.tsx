@@ -49,10 +49,10 @@ export function Navbar() {
               Inspiration
             </Link>
             <Link 
-              href="/tutorials"
+              href="/blog"
               className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              Tutorials
+              Blog
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -116,11 +116,11 @@ export function Navbar() {
                     Inspiration
                   </Link>
                   <Link 
-                    href="/tutorials"
+                    href="/blog"
                     className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
-                    Tutorials
+                    Blog
                   </Link>
                   <Link 
                     href="/tools"

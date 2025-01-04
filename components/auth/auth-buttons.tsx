@@ -32,7 +32,7 @@ export function AuthButtons() {
     
     // Get the redirect URL from query parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const redirectUrl = urlParams.get('redirect') || '/dashboard';
+    const redirectUrl = urlParams.get('redirect') || '/';
     
     router.push(redirectUrl);
   };

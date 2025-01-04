@@ -2,6 +2,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, onAuthStateChanged, User } from 'firebase/auth';
 import { Analytics, getAnalytics } from 'firebase/analytics';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBzz4VJ_jUKGKuEVIcg06hCdwAMQ3wpx0c",
@@ -42,6 +43,9 @@ if (typeof window !== 'undefined') {
     console.error('Error initializing Analytics:', error);
   }
 }
+
+// Initialize Storage
+const storage = getStorage(app);
 
 // Remove emulator connections for now
 // if (process.env.NODE_ENV === 'development') {
@@ -125,4 +129,4 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-export { app, auth, db, analytics }; 
+export { app, auth, db, analytics, storage }; 

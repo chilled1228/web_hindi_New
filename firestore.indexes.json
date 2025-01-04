@@ -1,15 +1,15 @@
 {
   "indexes": [
     {
-      "collectionGroup": "prompt_history",
+      "collectionGroup": "blog_posts",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "userId",
+          "fieldPath": "status",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "created_at",
+          "fieldPath": "publishedAt",
           "order": "DESCENDING"
         }
       ]

@@ -11,5 +11,3 @@ Disallow: /static/
 # Sitemap location
 Sitemap: https://your-domain.com/sitemap.xml
 
-# Crawl-delay for all bots
-Crawl-delay: 1 
