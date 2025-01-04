@@ -5,23 +5,16 @@ import { useRouter } from 'next/navigation';
 import { collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-type BlogActionParams = {
-  action: string;
-};
+interface PageProps {
+  params: {
+    action: string;
+  };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
 
-type BlogActionSearchParams = {
-  [key: string]: string | string[] | undefined;
-};
-
-export default function BlogActionHandler({
-  params,
-  searchParams,
-}: {
-  params: BlogActionParams;
-  searchParams: BlogActionSearchParams;
-}) {
+export default function BlogActionHandler(props: PageProps) {
   const router = useRouter();
-  const { action } = params;
+  const { action } = props.params;
 
   useEffect(() => {
     if (action === 'new') {
