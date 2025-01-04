@@ -75,7 +75,7 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
     async function checkAdminAndFetchPost() {
       setLoading(true);
       try {
-        const userDocRef = doc(db, 'users', user.uid);
+        const userDocRef = doc(db, 'users', user!.uid);
         const userDocSnap = await getDoc(userDocRef);
         
         if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
