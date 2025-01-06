@@ -5,6 +5,7 @@ import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { Navbar } from '@/components/navbar'
+import { Footer } from '@/components/footer'
 import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
@@ -68,6 +69,7 @@ export default function RootLayout({
             <main className="flex-1 container mx-auto px-4 py-2 md:px-6 md:py-4">
               {children}
             </main>
+            <Footer />
           </div>
         </Providers>
       </body>

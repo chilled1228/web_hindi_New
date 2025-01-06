@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/app/providers';
 import { slugify } from '@/lib/utils';
 import { ImageUpload } from '@/components/blog/image-upload';
+import { Preview } from '@/components/blog/preview';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -307,21 +308,8 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="relative">
-            <div className="prose prose-lg max-w-4xl mx-auto">
-              <h1>{post.title}</h1>
-              {post.coverImage && (
-                <div className="relative aspect-[2/1] rounded-lg overflow-hidden my-8">
-                  <Image
-                    src={post.coverImage}
-                    alt={post.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )}
-              <div dangerouslySetInnerHTML={{ __html: post.content }} />
-            </div>
+          <TabsContent value="preview">
+            <Preview content={post.content} />
           </TabsContent>
         </Tabs>
       </div>

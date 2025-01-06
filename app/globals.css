@@ -185,3 +185,134 @@
     opacity: 1;
   }
 }
+
+/* Table of Contents Styles */
+#toc-toggle {
+    background-color: transparent;
+    border: none;
+    color: #666;
+    padding: 4px;
+    transition: color 0.3s;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+}
+
+#toc-toggle:hover {
+    color: #000;
+}
+
+#geekdroid-toc-container {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    width: 100%;
+}
+
+#geekdroid-toc-container .geekdroid-toc-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 1rem;
+    padding-right: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#geekdroid-toc-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#geekdroid-toc-container ul ul {
+    margin-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+#geekdroid-toc-container ul li {
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+    position: relative;
+    display: flex;
+}
+
+.geekdroid-toc-entry {
+    display: flex !important;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.geekdroid-toc-entry::before {
+    content: attr(data-index);
+    color: #dc2626;
+    font-weight: 500;
+    font-size: 0.9rem;
+    min-width: 1.5rem;
+    text-align: right;
+}
+
+#toc-list {
+    display: block;
+    columns: 2;
+    column-gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    #toc-list {
+        columns: 1;
+    }
+}
+
+.geekdroid-toc-entry a {
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 400;
+    transition: color 0.2s;
+    display: block;
+    flex: 1;
+}
+
+.geekdroid-toc-entry a:hover {
+    color: #dc2626;
+}
+
+/* Dark mode styles */
+.dark #geekdroid-toc-container {
+    background: hsl(var(--background));
+    border-color: hsl(var(--border));
+}
+
+.dark #geekdroid-toc-container .geekdroid-toc-title {
+    color: hsl(var(--foreground));
+}
+
+.dark .geekdroid-toc-entry a {
+    color: hsl(var(--muted-foreground));
+}
+
+.dark .geekdroid-toc-entry a:hover {
+    color: #ef4444;
+}
+
+.dark #toc-toggle {
+    color: hsl(var(--muted-foreground));
+}
+
+.dark #toc-toggle:hover {
+    color: hsl(var(--foreground));
+}
+
+.dark .geekdroid-toc-entry::before {
+    color: #ef4444;
+}

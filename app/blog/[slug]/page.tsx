@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatDistanceToNow } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { notFound, usePathname } from 'next/navigation';
+import { TableOfContents } from '@/components/ui/table-of-contents';
 
 interface BlogPost {
   id: string;
@@ -25,6 +26,7 @@ export default function BlogPostPage() {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const slug = pathname?.split('/').pop() || '';
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchPost() {
@@ -107,8 +109,11 @@ export default function BlogPostPage() {
           </div>
         )}
 
+        <TableOfContents contentRef={contentRef} defaultOpen={true} />
+        
         <div 
-          className="prose prose-lg max-w-none"
+          ref={contentRef}
+          className="prose prose-lg max-w-none mt-8"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
       </article>
