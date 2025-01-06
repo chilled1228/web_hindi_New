@@ -6,6 +6,7 @@ import './globals.css'
 import { Providers } from './providers'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
+import { PrivacyConsent } from '@/components/privacy-consent'
 import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
@@ -70,6 +71,7 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
+            <PrivacyConsent />
           </div>
         </Providers>
       </body>

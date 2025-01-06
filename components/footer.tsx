@@ -155,7 +155,7 @@ export function Footer() {
                   href="/terms" 
                   className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
-                  Terms & comdistion
+                  Terms & Conditions
                   <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                 </Link>
               </li>
@@ -205,12 +205,6 @@ export function Footer() {
                 className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               >
                 Disclaimer
-              </Link>
-              <Link 
-                href="/cookies" 
-                className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              >
-                Cookies Policy
               </Link>
             </div>
           </div>
