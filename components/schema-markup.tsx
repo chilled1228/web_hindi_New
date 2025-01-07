@@ -71,6 +71,7 @@ export function generateOrganizationSchema(org: {
   name: string;
   url: string;
   logo?: string;
+  description?: string;
   sameAs?: string[];
 }) {
   return {
@@ -78,6 +79,7 @@ export function generateOrganizationSchema(org: {
     name: org.name,
     url: org.url,
     logo: org.logo,
+    description: org.description,
     sameAs: org.sameAs,
   };
 }
@@ -87,11 +89,20 @@ export function generateWebsiteSchema(site: {
   name: string;
   url: string;
   description: string;
+  potentialAction?: Array<{
+    '@type': string;
+    target: {
+      '@type': string;
+      urlTemplate: string;
+    };
+    'query-input': string;
+  }>;
 }) {
   return {
     '@type': 'WebSite',
     name: site.name,
     url: site.url,
     description: site.description,
+    potentialAction: site.potentialAction,
   };
 } 

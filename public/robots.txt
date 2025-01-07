@@ -9,5 +9,8 @@ Disallow: /_next/
 Disallow: /static/
 
 # Sitemap location
-Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://freepromptbase.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10
 

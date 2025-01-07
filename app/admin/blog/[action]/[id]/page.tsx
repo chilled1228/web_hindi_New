@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ReadingTime } from '@/components/blog/reading-time';
 
 // Dynamically import the editor to avoid SSR issues
 const Editor = dynamic(() => import('@/components/editor'), {
@@ -29,6 +30,8 @@ const Editor = dynamic(() => import('@/components/editor'), {
 interface BlogPost {
   title: string;
   slug: string;
+  permalink: string;
+  isCustomPermalink?: boolean;
   excerpt: string;
   content: string;
   coverImage: string;
@@ -38,6 +41,17 @@ interface BlogPost {
     name: string;
     avatar: string;
   };
+  seo: {
+    metaTitle: string;
+    metaDescription: string;
+    metaKeywords: string;
+    canonicalUrl?: string;
+    ogImage?: string;
+    noIndex: boolean;
+  };
+  readingTime?: string;
+  categories: string[];
+  tags: string[];
 }
 
 interface PageParams {
@@ -52,6 +66,8 @@ type Props = {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
+const BASE_URL = 'https://freepromptbase.com/blog/';
+
 export default function BlogPostEditor({ params }: { params: Promise<PageParams> }) {
   const resolvedParams = use(params) as PageParams;
   const router = useRouter();
@@ -63,6 +79,8 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
   const [post, setPost] = useState<BlogPost>({
     title: '',
     slug: '',
+    permalink: '',
+    isCustomPermalink: false,
     excerpt: '',
     content: '',
     coverImage: '',
@@ -71,7 +89,16 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
     author: {
       name: '',
       avatar: ''
-    }
+    },
+    seo: {
+      metaTitle: '',
+      metaDescription: '',
+      metaKeywords: '',
+      noIndex: false
+    },
+    categories: [],
+    tags: [],
+    readingTime: ''
   });
 
   useEffect(() => {
@@ -115,6 +142,48 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
     checkAdminAndFetchPost();
   }, [user, resolvedParams.action, resolvedParams.id, router]);
 
+  useEffect(() => {
+    if (post.title && !post.permalink) {
+      const newSlug = slugify(post.title);
+      const newPermalink = `${BASE_URL}${newSlug}`;
+      setPost(prev => ({
+        ...prev,
+        slug: newSlug,
+        permalink: newPermalink
+      }));
+    }
+  }, [post.title]);
+
+  const handleTitleChange = (newTitle: string) => {
+    const newSlug = slugify(newTitle);
+    setPost(prev => ({ 
+      ...prev, 
+      title: newTitle,
+      slug: newSlug,
+      ...((!prev.isCustomPermalink) && {
+        permalink: `${BASE_URL}${newSlug}`
+      })
+    }));
+  };
+
+  const handleSlugChange = (newSlug: string) => {
+    const slugified = slugify(newSlug);
+    setPost(prev => ({ 
+      ...prev, 
+      slug: slugified,
+      permalink: `${BASE_URL}${slugified}`,
+      isCustomPermalink: true
+    }));
+  };
+
+  const handlePermalinkChange = (newPermalink: string) => {
+    setPost(prev => ({
+      ...prev,
+      permalink: newPermalink,
+      isCustomPermalink: true
+    }));
+  };
+
   const handleSave = async (status: 'draft' | 'published' = 'draft') => {
     if (!user || !isAdmin) return;
 
@@ -124,7 +193,13 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
       const postData = {
         ...post,
         status,
-        slug: slugify(post.title),
+        ...((!post.isCustomPermalink) ? {
+          slug: slugify(post.title),
+          permalink: `${BASE_URL}${slugify(post.title)}`
+        } : {
+          slug: post.slug,
+          permalink: post.permalink
+        }),
         updatedAt: Timestamp.now(),
         author: {
           name: user.displayName || 'Anonymous',
@@ -149,6 +224,11 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
         const newDocRef = doc(collection(db, 'blog_posts'));
         await setDoc(newDocRef, postData);
       }
+      
+      setPost(prev => ({
+        ...prev,
+        ...postData
+      }));
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -244,10 +324,63 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
                     <Input
                       id="title"
                       value={post.title}
-                      onChange={(e) => setPost(prev => ({ ...prev, title: e.target.value }))}
+                      onChange={(e) => handleTitleChange(e.target.value)}
                       placeholder="Enter post title"
                       className="text-lg"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="slug">
+                      URL Slug
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (automatically generated from title)
+                      </span>
+                    </Label>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-muted-foreground whitespace-nowrap">{BASE_URL}</span>
+                      <Input
+                        id="slug"
+                        value={post.slug}
+                        onChange={(e) => handleSlugChange(e.target.value)}
+                        placeholder="custom-url-slug"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <Label htmlFor="permalink" className="mt-4">
+                      Custom Permalink
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (full URL, leave empty to use default)
+                      </span>
+                    </Label>
+                    <Input
+                      id="permalink"
+                      value={post.permalink}
+                      onChange={(e) => handlePermalinkChange(e.target.value)}
+                      placeholder="https://..."
+                      className="font-mono text-sm"
+                    />
+                    
+                    {post.isCustomPermalink && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newSlug = slugify(post.title);
+                            setPost(prev => ({
+                              ...prev,
+                              slug: newSlug,
+                              permalink: `${BASE_URL}${newSlug}`,
+                              isCustomPermalink: false
+                            }));
+                          }}
+                        >
+                          Reset to Default URL
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -256,15 +389,23 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
                       id="excerpt"
                       value={post.excerpt}
                       onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
-                      placeholder="Enter a brief excerpt of your post"
-                      className="h-24 resize-none"
+                      placeholder="Enter post excerpt"
+                      rows={3}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label>Content</Label>
-                  <div className="min-h-[500px] bg-background rounded-lg overflow-hidden">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Content</Label>
+                      <ReadingTime 
+                        content={post.content} 
+                        onTimeCalculated={(time) => {
+                          if (time !== post.readingTime) {
+                            setPost(prev => ({ ...prev, readingTime: time }));
+                          }
+                        }}
+                      />
+                    </div>
                     <Editor
                       value={post.content}
                       onChange={(content: string) => setPost(prev => ({ ...prev, content }))}
@@ -273,42 +414,128 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
                 </div>
               </div>
 
-              <div className="space-y-8">
-                <div className="space-y-4 rounded-lg border bg-card p-4">
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select
-                      value={post.status}
-                      onValueChange={(value: 'draft' | 'published') => 
-                        setPost(prev => ({ ...prev, status: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="published">Published</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="lg:col-span-1 space-y-8">
+                <div className="space-y-4">
+                  <div className="bg-card rounded-lg border p-4">
+                    <h3 className="text-lg font-semibold mb-4">SEO Settings</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="metaTitle">Meta Title</Label>
+                        <Input
+                          id="metaTitle"
+                          value={post.seo.metaTitle}
+                          onChange={(e) => setPost(prev => ({
+                            ...prev,
+                            seo: { ...prev.seo, metaTitle: e.target.value }
+                          }))}
+                          placeholder="Enter meta title"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {post.seo.metaTitle.length}/60 characters
+                        </p>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label>Cover Image</Label>
-                    <ImageUpload
-                      onImageUploaded={(url) => setPost(prev => ({ ...prev, coverImage: url }))}
-                      className="mb-2"
-                    />
-                    {post.coverImage && (
-                      <div className="relative aspect-video rounded-lg overflow-hidden">
-                        <Image
-                          src={post.coverImage}
-                          alt="Cover image preview"
-                          fill
-                          className="object-cover"
+                      <div className="space-y-2">
+                        <Label htmlFor="metaDescription">Meta Description</Label>
+                        <Textarea
+                          id="metaDescription"
+                          value={post.seo.metaDescription}
+                          onChange={(e) => setPost(prev => ({
+                            ...prev,
+                            seo: { ...prev.seo, metaDescription: e.target.value }
+                          }))}
+                          placeholder="Enter meta description"
+                          rows={3}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {post.seo.metaDescription.length}/160 characters
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="metaKeywords">Meta Keywords</Label>
+                        <Input
+                          id="metaKeywords"
+                          value={post.seo.metaKeywords}
+                          onChange={(e) => setPost(prev => ({
+                            ...prev,
+                            seo: { ...prev.seo, metaKeywords: e.target.value }
+                          }))}
+                          placeholder="keyword1, keyword2, keyword3"
                         />
                       </div>
-                    )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="canonicalUrl">Canonical URL (optional)</Label>
+                        <Input
+                          id="canonicalUrl"
+                          value={post.seo.canonicalUrl || ''}
+                          onChange={(e) => setPost(prev => ({
+                            ...prev,
+                            seo: { ...prev.seo, canonicalUrl: e.target.value }
+                          }))}
+                          placeholder="https://..."
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="ogImage">Social Image URL (optional)</Label>
+                        <Input
+                          id="ogImage"
+                          value={post.seo.ogImage || ''}
+                          onChange={(e) => setPost(prev => ({
+                            ...prev,
+                            seo: { ...prev.seo, ogImage: e.target.value }
+                          }))}
+                          placeholder="https://..."
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="noIndex"
+                          checked={post.seo.noIndex}
+                          onChange={(e) => setPost(prev => ({
+                            ...prev,
+                            seo: { ...prev.seo, noIndex: e.target.checked }
+                          }))}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor="noIndex">No Index (hide from search engines)</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-card rounded-lg border p-4">
+                    <h3 className="text-lg font-semibold mb-4">Categories & Tags</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="categories">Categories</Label>
+                        <Input
+                          id="categories"
+                          value={post.categories?.join(', ') || ''}
+                          onChange={(e) => setPost(prev => ({
+                            ...prev,
+                            categories: e.target.value ? e.target.value.split(',').map(cat => cat.trim()) : []
+                          }))}
+                          placeholder="Category1, Category2"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="tags">Tags</Label>
+                        <Input
+                          id="tags"
+                          value={post.tags?.join(', ') || ''}
+                          onChange={(e) => setPost(prev => ({
+                            ...prev,
+                            tags: e.target.value ? e.target.value.split(',').map(tag => tag.trim()) : []
+                          }))}
+                          placeholder="tag1, tag2, tag3"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

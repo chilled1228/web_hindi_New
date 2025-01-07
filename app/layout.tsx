@@ -35,9 +35,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const [metadata, setMetadata] = useState<WebsiteMetadata>({
-    title: 'PromptBase',
-    description: 'Your AI Prompt Management Tool',
-    keywords: ''
+    title: 'FreePromptBase',
+    description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
+    keywords: 'AI prompts, prompt generator, image to prompt, text to prompt, free AI tools'
   });
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function RootLayout({
     fetchMetadata();
   }, []);
 
-  const websiteUrl = 'https://promptbase.com';
+  const websiteUrl = 'https://freepromptbase.com';
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -65,29 +65,52 @@ export default function RootLayout({
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />
         <meta name="keywords" content={metadata.keywords} />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="robots" content="index, follow" />
+        <meta property="og:title" content={metadata.title} />
+        <meta property="og:description" content={metadata.description} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={websiteUrl} />
+        <meta property="og:image" content={`${websiteUrl}/og-image.jpg`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={metadata.title} />
+        <meta name="twitter:description" content={metadata.description} />
+        <meta name="twitter:image" content={`${websiteUrl}/og-image.jpg`} />
         <link rel="canonical" href={websiteUrl} />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`${inter.variable} ${outfit.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
         <Providers>
           <SchemaMarkup
             type="Organization"
             data={generateOrganizationSchema({
-              name: metadata.title,
+              name: 'FreePromptBase',
               url: websiteUrl,
+              logo: `${websiteUrl}/logo.png`,
+              description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
               sameAs: [
-                'https://twitter.com/promptbase',
-                'https://github.com/promptbase',
-                'https://instagram.com/promptbase',
-                'https://linkedin.com/company/promptbase'
+                'https://twitter.com/freepromptbase',
+                'https://github.com/freepromptbase',
+                'https://instagram.com/freepromptbase',
+                'https://linkedin.com/company/freepromptbase'
               ]
             })}
           />
           <SchemaMarkup
             type="WebSite"
             data={generateWebsiteSchema({
-              name: metadata.title,
+              name: 'FreePromptBase',
               url: websiteUrl,
-              description: metadata.description
+              description: metadata.description,
+              potentialAction: [{
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: `${websiteUrl}/search?q={search_term_string}`
+                },
+                'query-input': 'required name=search_term_string'
+              }]
             })}
           />
           <div className="relative min-h-screen flex flex-col">
