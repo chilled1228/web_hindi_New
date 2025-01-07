@@ -137,7 +137,14 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
       }
 
       if (resolvedParams.action === 'edit' && resolvedParams.id) {
-        await updateDoc(doc(db, 'blog_posts', resolvedParams.id), postData);
+        const docRef = doc(db, 'blog_posts', resolvedParams.id);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          await updateDoc(docRef, postData);
+        } else {
+          await setDoc(docRef, postData);
+        }
       } else {
         const newDocRef = doc(collection(db, 'blog_posts'));
         await setDoc(newDocRef, postData);

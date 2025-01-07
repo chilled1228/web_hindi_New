@@ -140,6 +140,128 @@ export default function Editor({ value, onChange }: EditorProps) {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg mx-auto focus:outline-none',
       },
+      handlePaste: (view, event, slice) => {
+        // Handle image paste
+        const items = event.clipboardData?.items;
+        if (items) {
+          const imageItem = Array.from(items).find(item => item.type.startsWith('image'));
+          if (imageItem) {
+            handlePaste(event);
+            return true;
+          }
+        }
+
+        // Handle HTML paste
+        const html = event.clipboardData?.getData('text/html');
+        if (html) {
+          try {
+            // Clean and sanitize HTML content
+            const cleanHtml = html
+              .replace(/<meta[^>]*>/g, '') // Remove meta tags
+              .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
+              .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove styles
+              .replace(/<!--[\s\S]*?-->/g, '') // Remove comments
+              .replace(/class="[^"]*"/g, '') // Remove classes
+              .replace(/style="[^"]*"/g, ''); // Remove inline styles
+
+            // Create a temporary div to hold the content
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = cleanHtml;
+
+            // Process common formatting elements
+            const processNode = (node: Element) => {
+              // Convert deprecated tags to modern equivalents
+              const tagMappings: Record<string, string> = {
+                'b': 'strong',
+                'i': 'em',
+                'strike': 'del',
+              };
+
+              // Handle block-level elements
+              const blockElements = ['p', 'h1', 'h2', 'h3', 'blockquote', 'ul', 'ol', 'li'];
+
+              Array.from(node.children).forEach(child => {
+                if (child instanceof Element) {
+                  const tagName = child.tagName.toLowerCase();
+                  
+                  // Convert deprecated inline tags
+                  if (tagMappings[tagName]) {
+                    const newElement = document.createElement(tagMappings[tagName]);
+                    newElement.innerHTML = child.innerHTML;
+                    child.parentNode?.replaceChild(newElement, child);
+                  }
+                  
+                  // Handle divs and other non-block elements
+                  if (!blockElements.includes(tagName)) {
+                    // Only wrap in paragraph if it's not already wrapped
+                    if (child.parentElement?.tagName.toLowerCase() !== 'p') {
+                      const p = document.createElement('p');
+                      child.parentNode?.replaceChild(p, child);
+                      p.appendChild(child);
+                    }
+                  }
+                  
+                  processNode(child);
+                }
+              });
+
+              // If the node has direct text nodes, wrap them in paragraphs
+              Array.from(node.childNodes).forEach(child => {
+                if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
+                  const p = document.createElement('p');
+                  p.textContent = child.textContent;
+                  child.parentNode?.replaceChild(p, child);
+                }
+              });
+            };
+
+            processNode(tempDiv);
+
+            // Handle plain text content
+            if (!tempDiv.innerHTML.trim()) {
+              const plainText = event.clipboardData?.getData('text/plain');
+              if (plainText) {
+                // Split by double newlines to create paragraphs
+                const paragraphs = plainText.split(/\n\s*\n/);
+                tempDiv.innerHTML = paragraphs
+                  .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+                  .join('');
+              }
+            }
+
+            // Use the editor's insertContent method for better parsing
+            editor?.commands.insertContent(tempDiv.innerHTML, {
+              parseOptions: {
+                preserveWhitespace: 'full',
+              },
+            });
+
+            return true;
+          } catch (error) {
+            console.error('Error processing pasted content:', error);
+            // Fallback to plain text paste
+            const plainText = event.clipboardData?.getData('text/plain');
+            if (plainText) {
+              editor?.commands.insertContent(plainText);
+            }
+            return true;
+          }
+        }
+
+        // Handle plain text paste
+        const plainText = event.clipboardData?.getData('text/plain');
+        if (plainText) {
+          // Split by double newlines to create paragraphs
+          const paragraphs = plainText.split(/\n\s*\n/);
+          const content = paragraphs
+            .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+            .join('');
+          editor?.commands.insertContent(content);
+          return true;
+        }
+
+        return false;
+      }
     },
   });
 
@@ -193,190 +315,213 @@ export default function Editor({ value, onChange }: EditorProps) {
         </div>
       )}
       
-      <div className="sticky top-0 z-10 bg-background border-b p-2 flex flex-wrap gap-1">
-        <div className="flex items-center gap-1 mr-2">
+      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 bg-background/90 backdrop-blur-sm supports-[backdrop-filter]:bg-background/70 border border-border/40 rounded-full shadow-lg px-3 py-1.5 flex flex-wrap gap-0.5 max-w-[calc(100%-1rem)] w-fit">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
             data-active={editor.isActive('heading', { level: 1 })}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Heading1 className="h-4 w-4" />
+            <Heading1 className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
             data-active={editor.isActive('heading', { level: 2 })}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Heading2 className="h-4 w-4" />
+            <Heading2 className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
             data-active={editor.isActive('heading', { level: 3 })}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Heading3 className="h-4 w-4" />
+            <Heading3 className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().setParagraph().run()}
             data-active={editor.isActive('paragraph')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Pilcrow className="h-4 w-4" />
+            <Pilcrow className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        <div className="w-px h-6 bg-border mx-1" />
+        <div className="w-px h-5 bg-border/50 mx-1" />
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleBold().run()}
             data-active={editor.isActive('bold')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Bold className="h-4 w-4" />
+            <Bold className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleItalic().run()}
             data-active={editor.isActive('italic')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Italic className="h-4 w-4" />
+            <Italic className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleStrike().run()}
             data-active={editor.isActive('strike')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Strikethrough className="h-4 w-4" />
+            <Strikethrough className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleCode().run()}
             data-active={editor.isActive('code')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Code className="h-4 w-4" />
+            <Code className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        <div className="w-px h-6 bg-border mx-1" />
+        <div className="w-px h-5 bg-border/50 mx-1" />
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             data-active={editor.isActive('bulletList')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <List className="h-4 w-4" />
+            <List className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
             data-active={editor.isActive('orderedList')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <ListOrdered className="h-4 w-4" />
+            <ListOrdered className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             data-active={editor.isActive('blockquote')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Quote className="h-4 w-4" />
+            <Quote className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        <div className="w-px h-6 bg-border mx-1" />
+        <div className="w-px h-5 bg-border/50 mx-1" />
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().setTextAlign('left').run()}
             data-active={editor.isActive({ textAlign: 'left' })}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <AlignLeft className="h-4 w-4" />
+            <AlignLeft className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().setTextAlign('center').run()}
             data-active={editor.isActive({ textAlign: 'center' })}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <AlignCenter className="h-4 w-4" />
+            <AlignCenter className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().setTextAlign('right').run()}
             data-active={editor.isActive({ textAlign: 'right' })}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <AlignRight className="h-4 w-4" />
+            <AlignRight className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        <div className="w-px h-6 bg-border mx-1" />
+        <div className="w-px h-5 bg-border/50 mx-1" />
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={setLink}
             data-active={editor.isActive('link')}
-            className="data-[active=true]:bg-muted"
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <LinkIcon className="h-4 w-4" />
+            <LinkIcon className="h-3.5 w-3.5" />
           </Button>
+          {editor.isActive('link') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().unsetLink().run()}
+              className="h-7 w-7 p-0 rounded-full"
+            >
+              <LinkIcon className="h-3.5 w-3.5 line-through" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowImageUpload(true)}
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <ImageIcon className="h-4 w-4" />
+            <ImageIcon className="h-3.5 w-3.5" />
           </Button>
+          {editor.isActive('image') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().deleteSelection().run()}
+              className="h-7 w-7 p-0 rounded-full"
+            >
+              <ImageIcon className="h-3.5 w-3.5 line-through" />
+            </Button>
+          )}
         </div>
 
-        <div className="w-px h-6 bg-border mx-1" />
+        <div className="w-px h-5 bg-border/50 mx-1" />
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Undo className="h-4 w-4" />
+            <Undo className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
+            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
           >
-            <Redo className="h-4 w-4" />
+            <Redo className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
@@ -443,6 +588,16 @@ export default function Editor({ value, onChange }: EditorProps) {
           >
             <LinkIcon className="h-4 w-4" />
           </Button>
+          {editor.isActive('link') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().unsetLink().run()}
+              className="data-[active=true]:bg-muted"
+            >
+              <LinkIcon className="h-4 w-4 line-through" />
+            </Button>
+          )}
         </div>
       </BubbleMenu>
 

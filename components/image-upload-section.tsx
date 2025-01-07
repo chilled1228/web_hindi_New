@@ -364,46 +364,47 @@ export function ImageUploadSection() {
       <div className="mt-16 mb-8 relative">
         {/* Creative Background Elements */}
         <div className="absolute inset-0 overflow-hidden -z-10">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-gray-200/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-40 h-40 bg-gray-300/20 rounded-full blur-3xl" />
+          <div className="absolute top-10 left-10 w-40 h-40 bg-gray-200/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-10 right-10 w-48 h-48 bg-gray-300/10 rounded-full blur-[100px]" />
         </div>
 
         <div className="text-center mb-12 relative">
-          <span className="inline-block mb-2 px-4 py-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-full text-xs font-medium text-gray-600/90">Quick Guide</span>
-          <h2 className="text-2xl font-medium bg-gradient-to-r from-gray-800 via-gray-600 to-gray-800 bg-clip-text text-transparent">
+          <span className="inline-block mb-2 px-4 py-1 bg-gray-100/60 dark:bg-gray-800/40 rounded-full text-xs font-medium text-gray-800/90 dark:text-gray-300/90 backdrop-blur-md">Quick Guide</span>
+          <h2 className="text-2xl font-medium bg-gradient-to-r from-gray-900/90 via-gray-800/90 to-gray-900/90 dark:from-gray-200/90 dark:via-gray-300/90 dark:to-gray-200/90 bg-clip-text text-transparent">
             Create Your Perfect Prompt
           </h2>
-          <div className="mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground/70">
-            <span className="inline-block w-12 h-[1px] bg-gray-300"></span>
-            <p>Three simple steps</p>
-            <span className="inline-block w-12 h-[1px] bg-gray-300"></span>
+          <div className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-600/80 dark:text-gray-400/80">
+            <span className="inline-block w-12 h-[1px] bg-gradient-to-r from-transparent via-gray-400/40 dark:via-gray-600/40 to-transparent"></span>
+            <p className="text-gray-700/80 dark:text-gray-400/80">Three simple steps</p>
+            <span className="inline-block w-12 h-[1px] bg-gradient-to-r from-transparent via-gray-400/40 dark:via-gray-600/40 to-transparent"></span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           {/* Step 1 */}
           <div className="group relative">
-            <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm rounded-xl p-6 border border-gray-100/20 
-                          transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 hover:-translate-y-1">
-              <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-600
-                            flex items-center justify-center text-white font-medium text-sm ring-4 ring-background">
+            <div className="bg-gradient-to-br from-white/90 to-white/50 dark:from-gray-800/50 dark:to-gray-800/30 backdrop-blur-xl rounded-xl p-6 
+                          border border-white/20 dark:border-gray-700/30 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.1)] dark:shadow-gray-900/20
+                          transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-900/10 hover:-translate-y-1 group-hover:border-gray-200/40 dark:group-hover:border-gray-700/40">
+              <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-gray-800/80 to-gray-700/80 dark:from-gray-700/60 dark:to-gray-600/60
+                            flex items-center justify-center text-white/90 font-medium text-sm ring-[3px] ring-white/60 dark:ring-gray-900/60 shadow-sm backdrop-blur-md">
                 1
               </div>
-              <div className="mb-4 p-3 bg-gradient-to-br from-gray-100/50 to-gray-50/30 dark:from-gray-800/50 dark:to-gray-700/30 rounded-lg w-fit
-                            group-hover:scale-110 transition-transform duration-300">
-                <ArrowUpFromLine className="h-5 w-5 text-gray-700" />
+              <div className="mb-4 p-3 bg-gradient-to-br from-gray-50/90 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg w-fit backdrop-blur-md
+                            group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                <ArrowUpFromLine className="h-5 w-5 text-gray-700/90 dark:text-gray-300/90" />
               </div>
-              <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Add Your Image</h3>
-              <p className="text-xs text-muted-foreground/80 leading-relaxed">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800/90 dark:text-gray-200/90 mb-2 group-hover:text-gray-900 dark:group-hover:text-white/90">Add Your Image</h3>
+              <p className="text-xs text-gray-600/80 dark:text-gray-400/80 leading-relaxed">
                 Drop, paste, or import your image – we make it easy
               </p>
             </div>
-            <div className="hidden md:block absolute -right-4 top-1/2 -translate-y-1/2 text-gray-300 z-10">
+            <div className="hidden md:block absolute -right-4 top-1/2 -translate-y-1/2 text-gray-300/40 z-10">
               <div className="relative">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="animate-pulse">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="animate-pulse opacity-70">
                   <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <div className="absolute inset-0 blur-sm -z-10">
+                <div className="absolute inset-0 blur-md -z-10">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2"/>
                   </svg>
@@ -414,14 +415,15 @@ export function ImageUploadSection() {
 
           {/* Step 2 */}
           <div className="group relative">
-            <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm rounded-xl p-6 border border-gray-100/20 
-                          transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 hover:-translate-y-1">
-              <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-600
-                            flex items-center justify-center text-white font-medium text-sm ring-4 ring-background">
+            <div className="bg-gradient-to-br from-white/90 to-white/50 dark:from-gray-800/50 dark:to-gray-800/30 backdrop-blur-xl rounded-xl p-6 
+                          border border-white/20 dark:border-gray-700/30 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.1)] dark:shadow-gray-900/20
+                          transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-900/10 hover:-translate-y-1 group-hover:border-gray-200/40 dark:group-hover:border-gray-700/40">
+              <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-gray-800/80 to-gray-700/80 dark:from-gray-700/60 dark:to-gray-600/60
+                            flex items-center justify-center text-white/90 font-medium text-sm ring-[3px] ring-white/60 dark:ring-gray-900/60 shadow-sm backdrop-blur-md">
                 2
               </div>
-              <div className="mb-4 p-3 bg-gradient-to-br from-gray-100/50 to-gray-50/30 dark:from-gray-800/50 dark:to-gray-700/30 rounded-lg w-fit
-                            group-hover:scale-110 transition-transform duration-300">
+              <div className="mb-4 p-3 bg-gradient-to-br from-gray-50/90 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg w-fit backdrop-blur-md
+                            group-hover:scale-110 transition-transform duration-300 shadow-sm">
                 <svg
                   width="20"
                   height="20"
@@ -431,41 +433,30 @@ export function ImageUploadSection() {
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-gray-700"
+                  className="text-gray-700/90 dark:text-gray-300/90"
                 >
                   <path d="M21 8v13H3V8M1 3h22v5H1z" />
                   <path d="M10 12h4" />
                 </svg>
               </div>
-              <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Pick Your Style</h3>
-              <p className="text-mobile-friendly text-muted-foreground/80">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800/90 dark:text-gray-200/90 mb-2 group-hover:text-gray-900 dark:group-hover:text-white/90">Pick Your Style</h3>
+              <p className="text-xs text-gray-600/80 dark:text-gray-400/80">
                 Choose from our curated collection of artistic styles
               </p>
-            </div>
-            <div className="hidden md:block absolute -right-4 top-1/2 -translate-y-1/2 text-gray-300 z-10">
-              <div className="relative">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="animate-pulse">
-                  <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <div className="absolute inset-0 blur-sm -z-10">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                </div>
-              </div>
             </div>
           </div>
 
           {/* Step 3 */}
           <div className="group">
-            <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm rounded-xl p-6 border border-gray-100/20 
-                          transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 hover:-translate-y-1">
-              <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-600
-                            flex items-center justify-center text-white font-medium text-sm ring-4 ring-background">
+            <div className="bg-gradient-to-br from-white/90 to-white/50 dark:from-gray-800/50 dark:to-gray-800/30 backdrop-blur-xl rounded-xl p-6 
+                          border border-white/20 dark:border-gray-700/30 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.1)] dark:shadow-gray-900/20
+                          transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-900/10 hover:-translate-y-1 group-hover:border-gray-200/40 dark:group-hover:border-gray-700/40">
+              <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-gray-800/80 to-gray-700/80 dark:from-gray-700/60 dark:to-gray-600/60
+                            flex items-center justify-center text-white/90 font-medium text-sm ring-[3px] ring-white/60 dark:ring-gray-900/60 shadow-sm backdrop-blur-md">
                 3
               </div>
-              <div className="mb-4 p-3 bg-gradient-to-br from-gray-100/50 to-gray-50/30 dark:from-gray-800/50 dark:to-gray-700/30 rounded-lg w-fit
-                            group-hover:scale-110 transition-transform duration-300">
+              <div className="mb-4 p-3 bg-gradient-to-br from-gray-50/90 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg w-fit backdrop-blur-md
+                            group-hover:scale-110 transition-transform duration-300 shadow-sm">
                 <svg
                   width="20"
                   height="20"
@@ -475,13 +466,13 @@ export function ImageUploadSection() {
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-gray-700"
+                  className="text-gray-700/90 dark:text-gray-300/90"
                 >
                   <path d="M12 2v20M2 12h20" />
                 </svg>
               </div>
-              <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-gray-900">Transform</h3>
-              <p className="text-mobile-friendly text-muted-foreground/80">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800/90 dark:text-gray-200/90 mb-2 group-hover:text-gray-900 dark:group-hover:text-white/90">Transform</h3>
+              <p className="text-xs text-gray-600/80 dark:text-gray-400/80">
                 Watch as your image inspires the perfect prompt
               </p>
             </div>
@@ -490,10 +481,11 @@ export function ImageUploadSection() {
 
         {/* Pro Tips with Creative Design */}
         <div className="mt-10">
-          <div className="bg-gradient-to-r from-background/60 via-background/80 to-background/60 backdrop-blur-sm rounded-xl p-5 border border-gray-100/20">
+          <div className="bg-gradient-to-br from-white/90 to-white/50 dark:from-gray-800/50 dark:to-gray-800/30 backdrop-blur-xl rounded-xl p-5 
+                        border border-white/20 dark:border-gray-700/30 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.1)] dark:shadow-gray-900/20">
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-gray-100/50 to-gray-50/30 dark:from-gray-800/50 dark:to-gray-700/30
-                            flex items-center justify-center">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-gray-50/90 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-700/30
+                            flex items-center justify-center backdrop-blur-md shadow-sm">
                 <svg
                   width="16"
                   height="16"
@@ -503,15 +495,15 @@ export function ImageUploadSection() {
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-gray-700"
+                  className="text-gray-700/90 dark:text-gray-300/90"
                 >
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 16v-4M12 8h.01" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-0.5">Quick Tip</p>
-                <p className="text-mobile-friendly text-muted-foreground/80">
+                <p className="text-sm font-medium text-gray-800/90 dark:text-gray-200/90 mb-0.5">Quick Tip</p>
+                <p className="text-xs text-gray-600/80 dark:text-gray-400/80">
                   Speed up your workflow by using Ctrl/Cmd + V to paste images directly from your clipboard
                 </p>
               </div>
