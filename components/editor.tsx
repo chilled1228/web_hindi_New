@@ -44,6 +44,8 @@ import { Editor as TipTapEditor } from '@tiptap/react';
 interface EditorProps {
   value: string;
   onChange: (content: string) => void;
+  onCoverImageChange?: (imageData: ImageData | null) => void;
+  coverImage?: ImageData | null;
 }
 
 interface ImageData {
@@ -51,10 +53,23 @@ interface ImageData {
   alt: string;
   title: string;
   description: string;
+  width: number;
+  height: number;
+  loading: 'lazy' | 'eager';
 }
 
-export default function Editor({ value, onChange }: EditorProps) {
+interface ExtendedImageOptions {
+  src: string;
+  alt?: string;
+  title?: string;
+  width?: number;
+  height?: number;
+  loading?: 'lazy' | 'eager';
+}
+
+export default function Editor({ value, onChange, onCoverImageChange, coverImage }: EditorProps) {
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showCoverImageUpload, setShowCoverImageUpload] = useState(false);
   const [pasting, setPasting] = useState(false);
   const [editorInstance, setEditorInstance] = useState<TipTapEditor | null>(null);
 
@@ -80,13 +95,19 @@ export default function Editor({ value, onChange }: EditorProps) {
         alt: 'Pasted image',
         title: 'Pasted image',
         description: '',
+        width: 0,
+        height: 0,
+        loading: 'lazy',
       };
       
       editorInstance?.chain().focus().setImage({
         src: imageData.url,
         alt: imageData.alt,
         title: imageData.title,
-      }).run();
+        width: imageData.width,
+        height: imageData.height,
+        loading: imageData.loading,
+      } as ExtendedImageOptions).run();
     } catch (error) {
       console.error('Error uploading pasted image:', error);
     } finally {
@@ -105,6 +126,7 @@ export default function Editor({ value, onChange }: EditorProps) {
         HTMLAttributes: {
           class: 'rounded-lg max-w-full mx-auto',
           draggable: 'false',
+          loading: 'lazy',
         },
         allowBase64: true,
       }),
@@ -290,11 +312,14 @@ export default function Editor({ value, onChange }: EditorProps) {
   };
 
   const addImage = (imageData: ImageData) => {
-    editor.chain().focus().setImage({
+    editor?.chain().focus().setImage({
       src: imageData.url,
       alt: imageData.alt,
       title: imageData.title,
-    }).run();
+      width: imageData.width,
+      height: imageData.height,
+      loading: imageData.loading,
+    } as ExtendedImageOptions).run();
 
     if (imageData.description) {
       editor.chain()
@@ -306,6 +331,43 @@ export default function Editor({ value, onChange }: EditorProps) {
 
   return (
     <div className="relative min-h-[500px] w-full border rounded-lg overflow-hidden bg-background">
+      {coverImage ? (
+        <div className="relative w-full h-[300px] bg-muted">
+          <img
+            src={coverImage.url}
+            alt={coverImage.alt}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-4 right-4 flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowCoverImageUpload(true)}
+            >
+              Change Cover
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onCoverImageChange?.(null)}
+            >
+              Remove Cover
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="w-full h-[100px] bg-muted flex items-center justify-center">
+          <Button
+            variant="secondary"
+            onClick={() => setShowCoverImageUpload(true)}
+            className="gap-2"
+          >
+            <ImagePlus className="h-4 w-4" />
+            Add Cover Image
+          </Button>
+        </div>
+      )}
+
       {pasting && (
         <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="flex items-center gap-2 bg-background rounded-lg shadow-lg px-4 py-2">
@@ -605,6 +667,13 @@ export default function Editor({ value, onChange }: EditorProps) {
         open={showImageUpload}
         onOpenChange={setShowImageUpload}
         onImageUploaded={addImage}
+      />
+
+      <ImageUpload
+        open={showCoverImageUpload}
+        onOpenChange={setShowCoverImageUpload}
+        onImageUploaded={(imageData) => onCoverImageChange?.(imageData)}
+        isCoverImage
       />
 
       <div className="p-4 prose prose-sm max-w-none">

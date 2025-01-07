@@ -27,6 +27,16 @@ const Editor = dynamic(() => import('@/components/editor'), {
   </div>
 }) as any;
 
+interface ImageData {
+  url: string;
+  alt: string;
+  title: string;
+  description: string;
+  width: number;
+  height: number;
+  loading: 'lazy' | 'eager';
+}
+
 interface BlogPost {
   title: string;
   slug: string;
@@ -409,6 +419,25 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
                     <Editor
                       value={post.content}
                       onChange={(content: string) => setPost(prev => ({ ...prev, content }))}
+                      coverImage={post.coverImage ? {
+                        url: post.coverImage,
+                        alt: post.title,
+                        title: post.title,
+                        description: post.excerpt,
+                        width: 1920,
+                        height: 1080,
+                        loading: 'eager'
+                      } : null}
+                      onCoverImageChange={(imageData: ImageData | null) => {
+                        setPost(prev => ({
+                          ...prev,
+                          coverImage: imageData?.url || '',
+                          seo: {
+                            ...prev.seo,
+                            ogImage: imageData?.url || prev.seo.ogImage || ''
+                          }
+                        }));
+                      }}
                     />
                   </div>
                 </div>
