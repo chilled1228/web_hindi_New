@@ -115,7 +115,7 @@ export default function BlogPage() {
                   <div className="relative w-full aspect-[4/3] mb-4">
                     <div className="absolute inset-0 bg-gray-100 rounded-2xl overflow-hidden">
                       <img
-                        src={post.coverImage}
+                        src={post.coverImage || undefined}
                         alt={post.title}
                         className="object-cover w-full h-full"
                       />
@@ -163,7 +163,7 @@ export default function BlogPage() {
                   <div className="relative w-full aspect-[4/3] mb-4">
                     <div className="absolute inset-0 bg-gray-100 rounded-2xl overflow-hidden">
                       <img
-                        src={post.coverImage}
+                        src={post.coverImage || undefined}
                         alt={post.title}
                         className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                       />
@@ -180,7 +180,7 @@ export default function BlogPage() {
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-gray-100 overflow-hidden">
                         <img
-                          src={post.author.image || '/default-avatar.png'}
+                          src={post.author.image || undefined}
                           alt={post.author.name}
                           className="w-full h-full object-cover"
                         />
@@ -225,7 +225,7 @@ export default function BlogPage() {
                   >
                     <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
                       <img
-                        src={post.coverImage}
+                        src={post.coverImage || undefined}
                         alt={post.title}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />

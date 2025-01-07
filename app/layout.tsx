@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import Head from 'next/head'
+import { SchemaMarkup, generateOrganizationSchema, generateWebsiteSchema } from '@/components/schema-markup'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -56,15 +57,39 @@ export default function RootLayout({
     fetchMetadata();
   }, []);
 
+  const websiteUrl = 'https://promptbase.com';
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />
         <meta name="keywords" content={metadata.keywords} />
+        <link rel="canonical" href={websiteUrl} />
       </head>
       <body className={`${inter.variable} ${outfit.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
         <Providers>
+          <SchemaMarkup
+            type="Organization"
+            data={generateOrganizationSchema({
+              name: metadata.title,
+              url: websiteUrl,
+              sameAs: [
+                'https://twitter.com/promptbase',
+                'https://github.com/promptbase',
+                'https://instagram.com/promptbase',
+                'https://linkedin.com/company/promptbase'
+              ]
+            })}
+          />
+          <SchemaMarkup
+            type="WebSite"
+            data={generateWebsiteSchema({
+              name: metadata.title,
+              url: websiteUrl,
+              description: metadata.description
+            })}
+          />
           <div className="relative min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-1 container mx-auto px-4 py-2 md:px-6 md:py-4">

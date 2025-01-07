@@ -40,7 +40,11 @@ interface BlogPost {
   author: {
     name: string;
   };
-  publishedAt: Timestamp;
+  publishedAt: {
+    toDate?: () => Date;
+    seconds?: number;
+    nanoseconds?: number;
+  } | string | null;
 }
 
 export default function AdminPage() {
@@ -296,6 +300,32 @@ export default function AdminPage() {
     }
   };
 
+  const formatPublishedDate = (publishedAt: any) => {
+    if (!publishedAt) return 'Draft';
+    
+    try {
+      // Handle Firestore Timestamp
+      if (publishedAt?.toDate) {
+        return formatDistanceToNow(publishedAt.toDate(), { addSuffix: true });
+      }
+      
+      // Handle string date
+      if (typeof publishedAt === 'string') {
+        return formatDistanceToNow(new Date(publishedAt), { addSuffix: true });
+      }
+      
+      // Handle timestamp object with seconds
+      if (publishedAt.seconds) {
+        return formatDistanceToNow(new Date(publishedAt.seconds * 1000), { addSuffix: true });
+      }
+      
+      return 'Draft';
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Draft';
+    }
+  };
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -503,7 +533,7 @@ export default function AdminPage() {
                       {post.author.name}
                     </td>
                     <td className="px-6 py-4">
-                      {post.publishedAt ? formatDistanceToNow(post.publishedAt.toDate(), { addSuffix: true }) : 'Draft'}
+                      {formatPublishedDate(post.publishedAt)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">

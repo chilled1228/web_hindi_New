@@ -5,7 +5,7 @@ const nextConfig = {
     GEMINI_MODEL: process.env.GEMINI_MODEL,
   },
   images: {
-    domains: ['firebasestorage.googleapis.com'],
+    domains: ['firebasestorage.googleapis.com', 'lh3.googleusercontent.com'],
   },
   server: {
     https: {
