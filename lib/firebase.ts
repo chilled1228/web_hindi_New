@@ -18,7 +18,6 @@ const firebaseConfig = {
 let app;
 try {
   app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-  console.log('Firebase initialized successfully');
 } catch (error) {
   console.error('Error initializing Firebase:', error);
   throw error;
@@ -26,9 +25,6 @@ try {
 
 // Initialize Auth with error handling
 const auth = getAuth(app);
-auth.onAuthStateChanged((user) => {
-  console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
-});
 
 // Initialize Firestore with error handling
 const db = getFirestore(app);
@@ -38,7 +34,6 @@ let analytics: Analytics | undefined;
 if (typeof window !== 'undefined') {
   try {
     analytics = getAnalytics(app);
-    console.log('Analytics initialized successfully');
   } catch (error) {
     console.error('Error initializing Analytics:', error);
   }
@@ -47,16 +42,16 @@ if (typeof window !== 'undefined') {
 // Initialize Storage
 const storage = getStorage(app);
 
-// Remove emulator connections for now
-// if (process.env.NODE_ENV === 'development') {
-//   try {
-//     connectFirestoreEmulator(db, 'localhost', 8080);
-//     connectAuthEmulator(auth, 'http://localhost:9099');
-//     console.log('Connected to Firebase emulators');
-//   } catch (error) {
-//     console.error('Error connecting to emulators:', error);
-//   }
-// }
+// Single auth state listener with error handling
+auth.onAuthStateChanged(async (user) => {
+  try {
+    if (user) {
+      await initializeUserCredits(user);
+    }
+  } catch (error) {
+    console.error('Error in auth state change:', error);
+  }
+});
 
 // Credit management functions
 export const DEFAULT_CREDITS = 10;
@@ -118,15 +113,5 @@ export async function updateUserCredits(userId: string, newCredits: number) {
     throw error;
   }
 }
-
-// Remove the duplicate auth.onAuthStateChanged listener and keep only one
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    console.log('User logged in:', user.uid);
-    await initializeUserCredits(user);
-  } else {
-    console.log('User logged out');
-  }
-});
 
 export { app, auth, db, analytics, storage }; 

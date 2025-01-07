@@ -5,7 +5,7 @@ import { collection, query, orderBy, getDocs, Timestamp } from 'firebase/firesto
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface BlogPost {
@@ -13,7 +13,10 @@ interface BlogPost {
   title: string;
   excerpt: string;
   coverImage: string;
-  publishedAt: Timestamp;
+  publishedAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
   author: {
     name: string;
     image?: string;
@@ -25,11 +28,14 @@ interface BlogPost {
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   useEffect(() => {
     async function fetchPosts() {
       try {
+        setLoading(true);
+        setError(null);
         const q = query(collection(db, 'blog_posts'), orderBy('publishedAt', 'desc'));
         const querySnapshot = await getDocs(q);
         const fetchedPosts = querySnapshot.docs.map(doc => ({
@@ -39,6 +45,7 @@ export default function BlogPage() {
         setPosts(fetchedPosts);
       } catch (error) {
         console.error('Error fetching blog posts:', error);
+        setError('Failed to load blog posts. Please try again later.');
         setPosts([]);
       } finally {
         setLoading(false);
@@ -48,10 +55,39 @@ export default function BlogPage() {
     fetchPosts();
   }, []);
 
+  const formatPublishedDate = (timestamp: { seconds: number; nanoseconds: number }) => {
+    if (!timestamp?.seconds) return 'Recently';
+    return formatDistanceToNow(new Date(timestamp.seconds * 1000));
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading blog posts...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-center text-destructive">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4">
+        <p className="text-center text-muted-foreground">No blog posts found.</p>
       </div>
     );
   }
@@ -92,7 +128,7 @@ export default function BlogPage() {
                   </div>
                   <h3 className="text-lg font-semibold mb-2 line-clamp-2 h-[3.5rem]">{post.title}</h3>
                   <div className="flex items-center text-sm text-gray-500">
-                    <span>{formatDistanceToNow(post.publishedAt.toDate())} ago</span>
+                    <span>{formatPublishedDate(post.publishedAt)} ago</span>
                   </div>
                 </Link>
               ))}
@@ -152,7 +188,7 @@ export default function BlogPage() {
                       <span className="text-sm text-gray-500">{post.author.name}</span>
                     </div>
                     <span className="text-sm text-gray-500">
-                      {formatDistanceToNow(post.publishedAt.toDate())} ago
+                      {formatPublishedDate(post.publishedAt)} ago
                     </span>
                   </div>
                 </Link>
@@ -197,7 +233,7 @@ export default function BlogPage() {
                     <div className="flex-grow min-w-0">
                       <h3 className="font-semibold line-clamp-2 mb-1">{post.title}</h3>
                       <span className="text-sm text-gray-500 block">
-                        {formatDistanceToNow(post.publishedAt.toDate())} ago
+                        {formatPublishedDate(post.publishedAt)} ago
                       </span>
                     </div>
                   </Link>

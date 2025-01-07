@@ -14,7 +14,10 @@ interface BlogPost {
   title: string;
   content: string;
   coverImage: string;
-  publishedAt: any;
+  publishedAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
   author: {
     name: string;
     avatar: string;
@@ -28,6 +31,11 @@ export default function BlogPostPage() {
   const pathname = usePathname();
   const slug = pathname?.split('/').pop() || '';
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const formatPublishedDate = (timestamp: { seconds: number; nanoseconds: number }) => {
+    if (!timestamp?.seconds) return 'Recently';
+    return formatDistanceToNow(new Date(timestamp.seconds * 1000));
+  };
 
   useEffect(() => {
     async function fetchPost() {
@@ -117,7 +125,7 @@ export default function BlogPostPage() {
               <div>
                 <div className="font-medium">{post.author.name}</div>
                 <time className="text-sm opacity-80">
-                  {formatDistanceToNow(post.publishedAt.toDate())} ago
+                  {formatPublishedDate(post.publishedAt)} ago
                 </time>
               </div>
             </div>
