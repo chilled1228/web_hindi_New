@@ -60,7 +60,7 @@ export default function RootLayout({
   const websiteUrl = 'https://freepromptbase.com';
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="light" suppressHydrationWarning>
       <head>
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />
