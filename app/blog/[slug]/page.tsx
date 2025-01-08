@@ -7,6 +7,7 @@ import { query, collection, where, getDocs } from 'firebase/firestore';
 import { SchemaMarkup, generateBlogPostSchema } from '@/components/schema-markup';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
+import { TableOfContents } from '@/components/ui/table-of-contents';
 
 interface BlogPost {
   title: string;
@@ -25,7 +26,6 @@ export default function BlogPost() {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
-  const { theme } = useTheme();
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -92,21 +92,25 @@ export default function BlogPost() {
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-[15px] mb-6">
-          <Link href="/" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200">
+          <Link href="/" className="text-gray-600 hover:text-gray-900">
             Home
           </Link>
-          <span className="text-gray-400 dark:text-gray-600">»</span>
-          <span className="text-gray-500 dark:text-gray-400">{post.title}</span>
+          <span className="text-gray-400">»</span>
+          <Link href="/blog" className="text-gray-600 hover:text-gray-900">
+            Blog
+          </Link>
+          <span className="text-gray-400">»</span>
+          <span className="text-gray-500">{post.title}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
           {/* Left Sidebar */}
-          <aside>
+          <aside className="space-y-6">
             {/* Article Information Card */}
-            <div className="bg-white dark:bg-gray-900 rounded-[20px] p-6 border border-black/10 dark:border-white/10">
+            <div className="bg-white rounded-[20px] p-6 border border-black/10">
               <h2 className="flex items-center gap-2 mb-6">
-                <span className="text-pink-500 dark:text-pink-400 text-2xl">♦</span>
-                <span className="text-lg font-semibold text-gray-900 dark:text-white">Article Information</span>
+                <span className="text-pink-500 text-2xl">♦</span>
+                <span className="text-lg font-semibold">Article Information</span>
               </h2>
 
               <div className="space-y-4">
@@ -117,7 +121,7 @@ export default function BlogPost() {
                   </svg>
                   <div>
                     <p className="text-sm text-gray-500">Category:</p>
-                    <p className="text-base font-medium text-gray-900">{post.category || 'CSS'}</p>
+                    <p className="text-base font-medium">{post.category || 'CSS'}</p>
                   </div>
                 </div>
 
@@ -128,7 +132,7 @@ export default function BlogPost() {
                   </svg>
                   <div>
                     <p className="text-sm text-gray-500">Updated:</p>
-                    <p className="text-base font-medium text-gray-900">Mar 27, 2024</p>
+                    <p className="text-base font-medium">Mar 27, 2024</p>
                   </div>
                 </div>
 
@@ -139,7 +143,7 @@ export default function BlogPost() {
                   </svg>
                   <div>
                     <p className="text-sm text-gray-500">Author:</p>
-                    <p className="text-base font-medium text-gray-900">{post.author.name}</p>
+                    <p className="text-base font-medium">{post.author.name}</p>
                   </div>
                 </div>
 
@@ -150,7 +154,7 @@ export default function BlogPost() {
                   </svg>
                   <div>
                     <p className="text-sm text-gray-500">Reading time:</p>
-                    <p className="text-base font-medium text-gray-900">1 Min</p>
+                    <p className="text-base font-medium">1 Min</p>
                   </div>
                 </div>
 
@@ -177,48 +181,53 @@ export default function BlogPost() {
                 </div>
               </div>
             </div>
+
+            {/* Table of Contents */}
+            <div className="bg-white rounded-[20px] border border-black/10">
+              <TableOfContents contentRef={contentRef} />
+            </div>
           </aside>
 
           {/* Main Content */}
           <main>
-            <article className="bg-white dark:bg-gray-900 rounded-[20px] p-8 border border-black/10 dark:border-white/10">
+            <article className="bg-white rounded-[20px] p-8 border border-black/10">
               <div className="max-w-[800px] mx-auto mb-8">
-                <h1 className="text-[40px] font-bold mb-6 tracking-tight text-gray-900 dark:text-white leading-[1.2] max-w-[700px]">
+                <h1 className="text-[40px] font-bold mb-6 tracking-tight leading-[1.2] max-w-[700px]">
                   {post.title}
                 </h1>
-                <div className="flex items-center gap-2 text-[15px] text-gray-500 dark:text-gray-400">
-                  <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <div className="flex items-center gap-2 text-[15px] text-gray-500">
+                  <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                   </svg>
                   <span>Published:</span>
-                  <time dateTime={post.publishedAt} className="text-gray-900 dark:text-gray-100 font-medium">
+                  <time dateTime={post.publishedAt} className="text-gray-900 font-medium">
                     Jan 19, 2024
                   </time>
                 </div>
               </div>
 
               <div className="max-w-[800px] mx-auto">
-                <div className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed mb-8">
+                <div className="text-gray-600 text-lg leading-relaxed mb-8">
                   {post.description}
                 </div>
 
                 <div 
                   ref={contentRef}
-                  className="prose prose-lg max-w-none dark:prose-invert
-                    prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-4 
+                  className="prose prose-lg max-w-none
+                    prose-headings:text-gray-900 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-4 
                     prose-h2:text-2xl prose-h2:mt-8 prose-h2:leading-tight
                     prose-h3:text-xl prose-h3:mt-6 prose-h3:leading-tight
-                    prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-4 
-                    prose-a:text-pink-500 dark:prose-a:text-pink-400 hover:prose-a:text-pink-600 dark:hover:prose-a:text-pink-300 prose-a:no-underline hover:prose-a:underline
-                    prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-semibold
-                    prose-code:text-gray-800 dark:prose-code:text-gray-200 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm
-                    prose-pre:bg-gray-900 dark:prose-pre:bg-gray-800 prose-pre:rounded-lg prose-pre:p-4 prose-pre:my-4
+                    prose-p:text-gray-600 prose-p:leading-relaxed prose-p:mb-4 
+                    prose-a:text-pink-500 hover:prose-a:text-pink-600 prose-a:no-underline hover:prose-a:underline
+                    prose-strong:text-gray-900 prose-strong:font-semibold
+                    prose-code:text-gray-800 prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm
+                    prose-pre:bg-gray-900 prose-pre:rounded-lg prose-pre:p-4 prose-pre:my-4
                     prose-img:rounded-lg prose-img:my-6
-                    prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6 prose-ul:marker:text-gray-400 dark:prose-ul:marker:text-gray-500
+                    prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6 prose-ul:marker:text-gray-400
                     prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
-                    prose-li:text-gray-600 dark:prose-li:text-gray-300 prose-li:mb-2 prose-li:leading-relaxed
-                    prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-300 prose-blockquote:border-l-4 prose-blockquote:border-pink-500 dark:prose-blockquote:border-pink-400 prose-blockquote:pl-4 prose-blockquote:my-4 prose-blockquote:leading-relaxed prose-blockquote:not-italic
-                    prose-hr:my-8 prose-hr:border-gray-200 dark:prose-hr:border-gray-800
+                    prose-li:text-gray-600 prose-li:mb-2 prose-li:leading-relaxed
+                    prose-blockquote:text-gray-600 prose-blockquote:border-l-4 prose-blockquote:border-pink-500 prose-blockquote:pl-4 prose-blockquote:my-4 prose-blockquote:leading-relaxed prose-blockquote:not-italic
+                    prose-hr:my-8 prose-hr:border-gray-200
                     [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
                   dangerouslySetInnerHTML={{ __html: post.content }} 
                 />

@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { ArrowUpFromLine, ImageIcon, Loader2 } from 'lucide-react'
+import { ArrowUpFromLine, ImageIcon, Loader2, ChevronDown, Image, Zap, Lock, HelpCircle } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,7 @@ export function ImageUploadSection() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
 
   // Check authentication state
   useEffect(() => {
@@ -187,6 +188,29 @@ export function ImageUploadSection() {
     setGeneratedPrompt(null)
     setError(null)
   }
+
+  const faqItems = [
+    {
+      icon: <Image className="w-5 h-5" />,
+      question: "What types of images work best?",
+      answer: "Clear, high-quality images work best. The AI can analyze a wide range of subjects, from landscapes to portraits, but the clearer and more focused the image, the better the generated prompt will be."
+    },
+    {
+      icon: <Zap className="w-5 h-5" />,
+      question: "How accurate are the generated prompts?",
+      answer: "Our AI strives to generate accurate and relevant prompts based on your images. However, results may vary depending on image quality and complexity. Feel free to modify the prompts to better match your needs."
+    },
+    {
+      icon: <Lock className="w-5 h-5" />,
+      question: "Can I use the prompts commercially?",
+      answer: "Yes, the prompts generated are free to use for both personal and commercial purposes. However, please ensure you have the necessary rights to use the images you upload."
+    },
+    {
+      icon: <HelpCircle className="w-5 h-5" />,
+      question: "Is there a limit to how many prompts I can generate?",
+      answer: "Currently, our service is free to use without any strict limits. However, we encourage responsible usage to ensure the best experience for all users."
+    }
+  ]
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
@@ -508,6 +532,63 @@ export function ImageUploadSection() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div className="mt-16 mb-8 relative">
+          {/* Creative Background Elements */}
+          <div className="absolute inset-0 overflow-hidden -z-10">
+            <div className="absolute top-10 left-10 w-40 h-40 bg-gray-200/10 rounded-full blur-[100px]" />
+            <div className="absolute bottom-10 right-10 w-48 h-48 bg-gray-300/10 rounded-full blur-[100px]" />
+          </div>
+
+          <div className="text-center mb-12 relative">
+            <span className="inline-block mb-2 px-4 py-1 bg-gray-100/60 dark:bg-gray-800/40 rounded-full text-xs font-medium text-gray-800/90 dark:text-gray-300/90 backdrop-blur-md">FAQ</span>
+            <h2 className="text-2xl font-medium bg-gradient-to-r from-gray-900/90 via-gray-800/90 to-gray-900/90 dark:from-gray-200/90 dark:via-gray-300/90 dark:to-gray-200/90 bg-clip-text text-transparent">
+              Frequently Asked Questions
+            </h2>
+          </div>
+
+          <div className="grid gap-4">
+            {faqItems.map((item, index) => (
+              <div
+                key={index}
+                className="bg-gradient-to-br from-white/90 to-white/50 dark:from-gray-800/50 dark:to-gray-800/30 backdrop-blur-xl rounded-xl 
+                          border border-white/20 dark:border-gray-700/30 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.1)] dark:shadow-gray-900/20
+                          transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-900/10"
+              >
+                <button
+                  onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                  className="w-full px-6 py-4 flex items-center justify-between gap-4 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gray-100/80 dark:bg-gray-800/80">
+                      {item.icon}
+                    </div>
+                    <h3 className="text-base font-semibold text-gray-800/90 dark:text-gray-200/90">
+                      {item.question}
+                    </h3>
+                  </div>
+                  <ChevronDown 
+                    className={cn(
+                      "w-5 h-5 text-gray-500 transition-transform duration-200",
+                      openFaqIndex === index ? "transform rotate-180" : ""
+                    )} 
+                  />
+                </button>
+                <div className={cn(
+                  "grid transition-all duration-200",
+                  openFaqIndex === index ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                )}>
+                  <div className="overflow-hidden">
+                    <p className="px-6 pb-4 text-sm text-gray-600/80 dark:text-gray-400/80">
+                      {item.answer}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
