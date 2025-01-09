@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Image, Text, Code } from 'lucide-react'
+import { Image, Text, Code, Wand2 } from 'lucide-react'
 import { LucideIcon } from 'lucide-react'
 
 interface TabNavigationProps {
@@ -16,6 +16,11 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
       value: 'Image to Prompt',
       label: 'Image to Prompt',
       icon: Image
+    },
+    {
+      value: 'Text Humanizer',
+      label: 'Text Humanizer',
+      icon: Wand2
     },
     {
       value: 'Text',

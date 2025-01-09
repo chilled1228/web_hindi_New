@@ -5,9 +5,21 @@ import dynamic from 'next/dynamic'
 import { useState, Suspense } from "react"
 import { Loader2 } from 'lucide-react'
 
-// Lazy load the ImageUploadSection component
+// Lazy load components
 const ImageUploadSection = dynamic(
   () => import('../components/image-upload-section').then(mod => ({ default: mod.ImageUploadSection })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    ),
+    ssr: false
+  }
+)
+
+const TextHumanizerSection = dynamic(
+  () => import('../components/text-humanizer-section').then(mod => ({ default: mod.TextHumanizerSection })),
   {
     loading: () => (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -42,7 +54,8 @@ export default function Home() {
           </div>
         }>
           {activeTab === 'Image to Prompt' && <ImageUploadSection />}
-          {activeTab !== 'Image to Prompt' && (
+          {activeTab === 'Text Humanizer' && <TextHumanizerSection />}
+          {activeTab !== 'Image to Prompt' && activeTab !== 'Text Humanizer' && (
             <div className="text-center py-20">
               <h2 className="text-2xl font-semibold mb-4">Coming Soon</h2>
               <p className="text-muted-foreground">This feature is currently under development.</p>
