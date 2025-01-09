@@ -1,13 +1,13 @@
 'use client';
 
+import { Star } from 'lucide-react'
+import { Card, CardContent } from "@/components/ui/card"
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { query, collection, where, getDocs } from 'firebase/firestore';
 import { SchemaMarkup, generateBlogPostSchema } from '@/components/schema-markup';
-import Link from 'next/link';
-import { useTheme } from 'next-themes';
-import { TableOfContents } from '@/components/ui/table-of-contents';
+import { Breadcrumb } from '@/components/breadcrumb';
 
 interface BlogPost {
   title: string;
@@ -21,11 +21,12 @@ interface BlogPost {
   difficulty?: number;
 }
 
-export default function BlogPost() {
+export default function ArticlePage() {
   const params = useParams();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const tocRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -60,6 +61,128 @@ export default function BlogPost() {
     }
   }, [params.slug]);
 
+  useEffect(() => {
+    if (!contentRef.current || !tocRef.current || !post) return;
+
+    const generateTOC = () => {
+      const contentArea = contentRef.current;
+      const tocContainer = tocRef.current;
+      
+      if (!contentArea || !tocContainer) return;
+
+      // Find all h2 and h3 headings
+      const headings = Array.from(contentArea.querySelectorAll('h2, h3'));
+      if (headings.length === 0) return;
+
+      // Create main list
+      const mainList = document.createElement('ul');
+      mainList.className = 'flex flex-col w-full';
+
+      headings.forEach((heading) => {
+        const level = parseInt(heading.tagName.substring(1), 10) - 1;
+        const id = heading.id || `section-${Math.random().toString(36).substr(2, 9)}`;
+        heading.id = id;
+        const text = heading.textContent || '';
+
+        const li = document.createElement('li');
+        li.className = 'relative group w-full';
+
+        const a = document.createElement('a');
+        a.href = `#${id}`;
+        a.className = level === 1
+          ? 'flex items-center text-[15px] text-gray-600 hover:text-[#6366F1] transition-colors py-2 relative block w-full break-words'
+          : 'flex items-center text-[15px] text-gray-500 hover:text-[#6366F1] transition-colors pl-4 py-2 relative block w-full break-words';
+
+        // Create active background element
+        const activeBg = document.createElement('div');
+        activeBg.className = 'absolute inset-0 bg-[#6366F1]/5 opacity-0 transition-opacity';
+        a.appendChild(activeBg);
+
+        // Create text container
+        const textSpan = document.createElement('span');
+        textSpan.className = 'relative z-10 w-full';
+        textSpan.textContent = text;
+        a.appendChild(textSpan);
+
+        li.appendChild(a);
+        mainList.appendChild(li);
+      });
+
+      // Clear previous TOC and append new one
+      tocContainer.innerHTML = '';
+      tocContainer.appendChild(mainList);
+
+      // Add smooth scrolling
+      mainList.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement;
+        const link = target.closest('a');
+        if (link) {
+          event.preventDefault();
+          const targetId = link.getAttribute('href')?.substring(1);
+          if (targetId) {
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+              window.scrollTo({
+                top: targetElement.offsetTop - 100,
+                behavior: 'smooth'
+              });
+
+              // Update active state
+              const allLinks = mainList.querySelectorAll('a');
+              allLinks.forEach(l => {
+                const bg = l.querySelector('div');
+                if (bg) bg.classList.add('opacity-0');
+                l.classList.remove('text-[#6366F1]', 'font-medium');
+              });
+              const bg = link.querySelector('div');
+              if (bg) bg.classList.remove('opacity-0');
+              link.classList.add('text-[#6366F1]', 'font-medium');
+            }
+          }
+        }
+      });
+
+      // Add scroll spy
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            const link = mainList.querySelector(`a[href="#${id}"]`);
+            if (link) {
+              const allLinks = mainList.querySelectorAll('a');
+              allLinks.forEach(l => {
+                const bg = l.querySelector('div');
+                if (bg) bg.classList.add('opacity-0');
+                l.classList.remove('text-[#6366F1]', 'font-medium');
+              });
+              const bg = link.querySelector('div');
+              if (bg) bg.classList.remove('opacity-0');
+              link.classList.add('text-[#6366F1]', 'font-medium');
+            }
+          }
+        });
+      }, {
+        rootMargin: '-100px 0px -66%',
+        threshold: 0
+      });
+
+      headings.forEach(heading => observer.observe(heading));
+    };
+
+    // Initial generation
+    generateTOC();
+
+    // Re-generate TOC when content changes
+    const observer = new MutationObserver(generateTOC);
+    observer.observe(contentRef.current, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+
+    return () => observer.disconnect();
+  }, [post]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -80,160 +203,197 @@ export default function BlogPost() {
   const postUrl = `${websiteUrl}/blog/${params.slug}`;
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-[1200px] mx-auto px-4">
-        <SchemaMarkup
-          type="BlogPosting"
-          data={generateBlogPostSchema({
-            ...post,
-            url: postUrl
-          })}
-        />
-
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-[15px] mb-6">
-          <Link href="/" className="text-gray-600 hover:text-gray-900">
-            Home
-          </Link>
-          <span className="text-gray-400">»</span>
-          <Link href="/blog" className="text-gray-600 hover:text-gray-900">
-            Blog
-          </Link>
-          <span className="text-gray-400">»</span>
-          <span className="text-gray-500">{post.title}</span>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
+    <div className="min-h-screen bg-transparent dark:bg-transparent py-8 px-4 sm:px-6 lg:px-8">
+      <SchemaMarkup
+        type="BlogPosting"
+        data={generateBlogPostSchema({
+          ...post,
+          url: postUrl
+        })}
+      />
+      <div className="mx-auto max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
           {/* Left Sidebar */}
-          <aside className="space-y-6">
-            {/* Article Information Card */}
-            <div className="bg-white rounded-[20px] p-6 border border-black/10">
-              <h2 className="flex items-center gap-2 mb-6">
-                <span className="text-pink-500 text-2xl">♦</span>
-                <span className="text-lg font-semibold">Article Information</span>
-              </h2>
+          <div className="space-y-6 lg:space-y-8">
+            <div className="hidden lg:block">
+              <div className="fixed w-[280px] space-y-6">
+                {/* Article Information */}
+                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 lg:p-8 border border-zinc-200 dark:border-zinc-800">
+                  <h2 className="flex items-center gap-2 font-semibold text-lg mb-6 text-zinc-900 dark:text-zinc-100">
+                    <span className="text-indigo-500 dark:text-indigo-400">✦</span> Article Information
+                  </h2>
+                  <div className="space-y-5">
+                    <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                      <svg
+                        className="w-4 h-4 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium">{post.category || 'CSS'}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+                      <svg
+                        className="w-4 h-4 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-sm">Updated: {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
 
-              <div className="space-y-4">
-                {/* Category */}
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm text-gray-500">Category:</p>
-                    <p className="text-base font-medium">{post.category || 'CSS'}</p>
-                  </div>
-                </div>
+                    <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+                      <svg
+                        className="w-4 h-4 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                      <span className="text-sm">{post.author.name}</span>
+                    </div>
 
-                {/* Updated */}
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                  </svg>
-                  <div>
-                    <p className="text-sm text-gray-500">Updated:</p>
-                    <p className="text-base font-medium">Mar 27, 2024</p>
-                  </div>
-                </div>
+                    <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+                      <svg
+                        className="w-4 h-4 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                        />
+                      </svg>
+                      <span className="text-sm">2 min read</span>
+                    </div>
 
-                {/* Author */}
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm text-gray-500">Author:</p>
-                    <p className="text-base font-medium">{post.author.name}</p>
-                  </div>
-                </div>
-
-                {/* Reading time */}
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm text-gray-500">Reading time:</p>
-                    <p className="text-base font-medium">1 Min</p>
-                  </div>
-                </div>
-
-                {/* Difficulty */}
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm text-gray-500">Difficulty:</p>
-                    <div className="flex gap-1 mt-1">
-                      {[1, 2, 3].map((star) => (
-                        <svg
-                          key={star}
-                          className={`w-4 h-4 ${star <= (post.difficulty || 3) ? 'text-yellow-400' : 'text-gray-300'}`}
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
+                    <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+                      <svg
+                        className="w-4 h-4 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                        />
+                      </svg>
+                      <span className="text-sm">Difficulty:</span>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3].map((star) => (
+                          <Star 
+                            key={star}
+                            className={`w-4 h-4 ${star <= (post.difficulty || 3) ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}`} 
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Table of Contents */}
+                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 lg:p-8 border border-zinc-200 dark:border-zinc-800">
+                  <h2 className="flex items-center gap-2 font-semibold text-lg mb-6 text-zinc-900 dark:text-zinc-100">
+                    <span className="text-indigo-500 dark:text-indigo-400">✦</span> Table of Contents
+                  </h2>
+                  <div ref={tocRef} className="relative w-full max-h-[calc(100vh-24rem)] overflow-y-auto" />
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Table of Contents */}
-            <div className="bg-white rounded-[20px] border border-black/10">
-              <TableOfContents contentRef={contentRef} />
+          {/* Main Content Column */}
+          <div className="space-y-4">
+            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+              <Breadcrumb
+                items={[
+                  { name: 'Blog', url: '/blog' },
+                  { name: post.title, url: postUrl }
+                ]}
+              />
             </div>
-          </aside>
 
-          {/* Main Content */}
-          <main>
-            <article className="bg-white rounded-[20px] p-8 border border-black/10">
-              <div className="max-w-[800px] mx-auto mb-8">
-                <h1 className="text-[40px] font-bold mb-6 tracking-tight leading-[1.2] max-w-[700px]">
+            {/* Main Content Box */}
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl px-6 sm:px-10 lg:px-16 py-12 lg:py-16 border border-zinc-200 dark:border-zinc-800">
+              <div className="text-center mb-12">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-zinc-900 dark:text-zinc-100 tracking-tight leading-[1.4] sm:leading-[1.4] max-w-2xl mx-auto">
                   {post.title}
                 </h1>
-                <div className="flex items-center gap-2 text-[15px] text-gray-500">
-                  <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                
+                <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 mb-6">
+                  <svg
+                    className="w-4 h-4 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
-                  <span>Published:</span>
-                  <time dateTime={post.publishedAt} className="text-gray-900 font-medium">
-                    Jan 19, 2024
-                  </time>
+                  <span className="text-sm">Published: {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 </div>
-              </div>
 
-              <div className="max-w-[800px] mx-auto">
-                <div className="text-gray-600 text-lg leading-relaxed mb-8">
+                <div className="text-zinc-600 dark:text-zinc-400 text-base max-w-2xl mx-auto leading-relaxed">
                   {post.description}
                 </div>
-
-                <div 
-                  ref={contentRef}
-                  className="prose prose-lg max-w-none
-                    prose-headings:text-gray-900 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-4 
-                    prose-h2:text-2xl prose-h2:mt-8 prose-h2:leading-tight
-                    prose-h3:text-xl prose-h3:mt-6 prose-h3:leading-tight
-                    prose-p:text-gray-600 prose-p:leading-relaxed prose-p:mb-4 
-                    prose-a:text-pink-500 hover:prose-a:text-pink-600 prose-a:no-underline hover:prose-a:underline
-                    prose-strong:text-gray-900 prose-strong:font-semibold
-                    prose-code:text-gray-800 prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm
-                    prose-pre:bg-gray-900 prose-pre:rounded-lg prose-pre:p-4 prose-pre:my-4
-                    prose-img:rounded-lg prose-img:my-6
-                    prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6 prose-ul:marker:text-gray-400
-                    prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
-                    prose-li:text-gray-600 prose-li:mb-2 prose-li:leading-relaxed
-                    prose-blockquote:text-gray-600 prose-blockquote:border-l-4 prose-blockquote:border-pink-500 prose-blockquote:pl-4 prose-blockquote:my-4 prose-blockquote:leading-relaxed prose-blockquote:not-italic
-                    prose-hr:my-8 prose-hr:border-gray-200
-                    [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-                  dangerouslySetInnerHTML={{ __html: post.content }} 
-                />
               </div>
-            </article>
-          </main>
+
+              <div 
+                ref={contentRef}
+                className="prose prose-lg dark:prose-invert max-w-none
+                  prose-headings:text-zinc-900 dark:prose-headings:text-zinc-100 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-8 
+                  prose-h2:text-2xl prose-h2:mt-16 prose-h2:leading-snug
+                  prose-h3:text-xl prose-h3:mt-12 prose-h3:leading-snug
+                  prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-p:leading-7 prose-p:mb-7 prose-p:text-lg
+                  prose-a:text-indigo-600 dark:prose-a:text-indigo-400 hover:prose-a:text-indigo-700 dark:hover:prose-a:text-indigo-300 prose-a:no-underline hover:prose-a:underline prose-a:font-medium
+                  prose-strong:text-zinc-900 dark:prose-strong:text-zinc-100 prose-strong:font-semibold
+                  prose-code:text-zinc-800 dark:prose-code:text-zinc-200 prose-code:bg-zinc-100/80 dark:prose-code:bg-zinc-800/80 prose-code:px-2 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[15px] prose-code:before:content-[''] prose-code:after:content-['']
+                  prose-pre:bg-zinc-900 dark:prose-pre:bg-zinc-800/90 prose-pre:rounded-xl prose-pre:p-6 prose-pre:my-8 prose-pre:shadow-lg
+                  prose-img:rounded-xl prose-img:my-10 prose-img:shadow-lg prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800
+                  prose-ul:my-7 prose-ul:list-disc prose-ul:pl-8 prose-ul:marker:text-zinc-500 dark:prose-ul:marker:text-zinc-400
+                  prose-ol:my-7 prose-ol:list-decimal prose-ol:pl-8
+                  prose-li:text-zinc-600 dark:prose-li:text-zinc-400 prose-li:mb-3 prose-li:leading-7 prose-li:text-lg prose-li:pl-2
+                  [&_ul]:list-disc [&_ul]:pl-5 [&_ul>li]:mt-2
+                  [&_ol]:list-decimal [&_ol]:pl-5 [&_ol>li]:mt-2
+                  prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-400 prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 dark:prose-blockquote:border-indigo-400 prose-blockquote:pl-8 prose-blockquote:my-10 prose-blockquote:leading-7 prose-blockquote:not-italic prose-blockquote:bg-zinc-50 dark:prose-blockquote:bg-zinc-900/50 prose-blockquote:py-2 prose-blockquote:rounded-r-lg
+                  prose-hr:my-16 prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800
+                  [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
+                  selection:bg-indigo-100 dark:selection:bg-indigo-900/50"
+                dangerouslySetInnerHTML={{ __html: post.content }} 
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
