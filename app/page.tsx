@@ -146,15 +146,15 @@ export default function Home() {
                       <button
                         key={tool.id}
                         onClick={() => setSelectedTool(tool.id)}
-                        className="group aspect-square flex flex-col border backdrop-blur-sm bg-background/50 hover:bg-background/60 shadow-sm transition-all overflow-hidden rounded-xl"
+                        className="w-full h-full flex border backdrop-blur-sm bg-background/50 hover:bg-background/60 shadow-sm transition-all rounded-xl p-6"
                       >
-                        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                          <div className="w-12 h-12 bg-background/50 flex items-center justify-center mb-4 rounded-xl">
+                        <div className="flex flex-col items-center w-full">
+                          <div className="w-12 h-12 bg-background/50 flex items-center justify-center rounded-xl mb-4">
                             <tool.icon className="w-6 h-6" />
                           </div>
-                          <div>
-                            <h3 className="font-medium text-base mb-2">{tool.title}</h3>
-                            <p className="text-xs text-muted-foreground">{tool.description}</p>
+                          <div className="w-full text-center">
+                            <h3 className="font-medium text-base">{tool.title}</h3>
+                            <p className="text-xs text-muted-foreground mt-1">{tool.description}</p>
                           </div>
                         </div>
                       </button>
