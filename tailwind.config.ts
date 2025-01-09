@@ -19,7 +19,7 @@ const config: Config = {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
-          accent: '#3AA39F',
+          accent: '#374151',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -63,6 +63,34 @@ const config: Config = {
       boxShadow: {
         'soft': '0 2px 8px -2px rgba(0, 0, 0, 0.1)',
         'soft-lg': '0 4px 16px -4px rgba(0, 0, 0, 0.15)',
+      },
+      keyframes: {
+        'float-slow': {
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '50%': { transform: 'translate(20px, -20px)' },
+        },
+        'float-slower': {
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '50%': { transform: 'translate(-20px, 20px)' },
+        },
+        gradient: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
+        'pulse-slow': {
+          '0%, 100%': { opacity: '0.3' },
+          '50%': { opacity: '0.1' },
+        }
+      },
+      animation: {
+        'float-slow': 'float-slow 8s ease-in-out infinite',
+        'float-slower': 'float-slower 12s ease-in-out infinite',
+        'gradient': 'gradient 15s ease infinite',
+        'pulse-slow': 'pulse-slow 20s ease-in-out infinite',
+      },
+      backgroundSize: {
+        'gradient-size': '200% 200%',
       },
     }
   },
