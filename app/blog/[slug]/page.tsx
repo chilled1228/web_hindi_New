@@ -185,8 +185,60 @@ export default function ArticlePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin">Loading...</div>
+      <div className="min-h-screen bg-transparent dark:bg-transparent py-4 sm:py-6 lg:py-8 px-3 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(250px,280px)_1fr] gap-4 lg:gap-8">
+            {/* Sidebar Skeleton */}
+            <div className="hidden lg:block space-y-4 lg:space-y-8">
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 lg:p-8 border border-zinc-200 dark:border-zinc-800">
+                <div className="h-6 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse mb-6" />
+                <div className="space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="h-4 w-4 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse" />
+                      <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 lg:p-8 border border-zinc-200 dark:border-zinc-800">
+                <div className="h-6 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse mb-6" />
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-4 w-full bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse" />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Skeleton */}
+            <div className="space-y-4">
+              <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse" />
+              
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl px-4 sm:px-8 lg:px-16 py-8 lg:py-16 border border-zinc-200 dark:border-zinc-800">
+                <div className="text-center mb-8 lg:mb-12">
+                  <div className="h-8 sm:h-10 lg:h-12 w-3/4 mx-auto bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse mb-6" />
+                  <div className="flex items-center justify-center gap-2 mb-6">
+                    <div className="h-4 w-4 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse" />
+                    <div className="h-4 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse" />
+                  </div>
+                  <div className="h-16 w-2/3 mx-auto bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+                </div>
+
+                <div className="space-y-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-4">
+                      <div className="h-6 w-64 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+                      {[1, 2, 3].map((j) => (
+                        <div key={j} className="h-4 w-full bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -343,11 +395,11 @@ export default function ArticlePage() {
             {/* Main Content Box */}
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl px-4 sm:px-8 lg:px-16 py-8 lg:py-16 border border-zinc-200 dark:border-zinc-800">
               <div className="text-center mb-8 lg:mb-12">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4 text-zinc-900 dark:text-zinc-100 tracking-tight leading-[1.4] sm:leading-[1.4] max-w-2xl mx-auto">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-zinc-900 dark:text-zinc-100 tracking-tight leading-[1.2] sm:leading-[1.2] max-w-3xl mx-auto">
                   {post.title}
                 </h1>
                 
-                <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 mb-4 lg:mb-6">
+                <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 mb-6 lg:mb-8">
                   <svg
                     className="w-4 h-4 flex-shrink-0"
                     fill="none"
@@ -361,33 +413,33 @@ export default function ArticlePage() {
                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <span className="text-sm">Published: {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                  <span className="text-base">Published: {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 </div>
 
-                <div className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+                <div className="text-zinc-600 dark:text-zinc-400 text-base sm:text-lg max-w-3xl mx-auto leading-relaxed">
                   {post.description}
                 </div>
               </div>
 
               <div 
                 ref={contentRef}
-                className="prose prose-base sm:prose-lg dark:prose-invert max-w-none
-                  prose-headings:text-zinc-900 dark:prose-headings:text-zinc-100 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-6 lg:prose-headings:mb-8 
-                  prose-h2:text-xl sm:prose-h2:text-2xl prose-h2:mt-12 lg:prose-h2:mt-16 prose-h2:leading-snug
-                  prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mt-8 lg:prose-h3:mt-12 prose-h3:leading-snug
-                  prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-p:leading-7 prose-p:mb-5 lg:prose-p:mb-7 prose-p:text-base sm:prose-p:text-lg
+                className="prose prose-lg sm:prose-xl dark:prose-invert max-w-none
+                  prose-headings:text-zinc-900 dark:prose-headings:text-zinc-100 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-8 lg:prose-headings:mb-10 
+                  prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:mt-16 lg:prose-h2:mt-20 prose-h2:leading-tight
+                  prose-h3:text-xl sm:prose-h3:text-2xl prose-h3:mt-12 lg:prose-h3:mt-16 prose-h3:leading-tight
+                  prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-p:leading-[1.8] prose-p:mb-6 lg:prose-p:mb-8 prose-p:text-lg sm:prose-p:text-xl
                   prose-a:text-indigo-600 dark:prose-a:text-indigo-400 hover:prose-a:text-indigo-700 dark:hover:prose-a:text-indigo-300 prose-a:no-underline hover:prose-a:underline prose-a:font-medium
                   prose-strong:text-zinc-900 dark:prose-strong:text-zinc-100 prose-strong:font-semibold
-                  prose-code:text-zinc-800 dark:prose-code:text-zinc-200 prose-code:bg-zinc-100/80 dark:prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[14px] sm:prose-code:text-[15px] prose-code:before:content-[''] prose-code:after:content-['']
-                  prose-pre:bg-zinc-900 dark:prose-pre:bg-zinc-800/90 prose-pre:rounded-xl prose-pre:p-4 sm:prose-pre:p-6 prose-pre:my-6 lg:prose-pre:my-8 prose-pre:shadow-lg prose-pre:overflow-x-auto
-                  prose-img:rounded-xl prose-img:my-6 lg:prose-img:my-10 prose-img:shadow-lg prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800 prose-img:max-w-full prose-img:h-auto
-                  prose-ul:my-5 lg:prose-ul:my-7 prose-ul:list-disc prose-ul:pl-6 sm:prose-ul:pl-8 prose-ul:marker:text-zinc-500 dark:prose-ul:marker:text-zinc-400
-                  prose-ol:my-5 lg:prose-ol:my-7 prose-ol:list-decimal prose-ol:pl-6 sm:prose-ol:pl-8
-                  prose-li:text-zinc-600 dark:prose-li:text-zinc-400 prose-li:mb-2 lg:prose-li:mb-3 prose-li:leading-7 prose-li:text-base sm:prose-li:text-lg prose-li:pl-2
-                  [&_ul]:list-disc [&_ul]:pl-4 sm:[&_ul]:pl-5 [&_ul>li]:mt-2
-                  [&_ol]:list-decimal [&_ol]:pl-4 sm:[&_ol]:pl-5 [&_ol>li]:mt-2
-                  prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-400 prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 dark:prose-blockquote:border-indigo-400 prose-blockquote:pl-6 sm:prose-blockquote:pl-8 prose-blockquote:my-8 lg:prose-blockquote:my-10 prose-blockquote:leading-7 prose-blockquote:not-italic prose-blockquote:bg-zinc-50 dark:prose-blockquote:bg-zinc-900/50 prose-blockquote:py-2 prose-blockquote:rounded-r-lg
-                  prose-hr:my-12 lg:prose-hr:my-16 prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800
+                  prose-code:text-zinc-800 dark:prose-code:text-zinc-200 prose-code:bg-zinc-100/80 dark:prose-code:bg-zinc-800/80 prose-code:px-2 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[15px] sm:prose-code:text-[16px] prose-code:before:content-[''] prose-code:after:content-[''] prose-code:font-mono
+                  prose-pre:bg-zinc-900 dark:prose-pre:bg-zinc-800/90 prose-pre:rounded-xl prose-pre:p-6 sm:prose-pre:p-8 prose-pre:my-8 lg:prose-pre:my-10 prose-pre:shadow-lg prose-pre:overflow-x-auto
+                  prose-img:rounded-xl prose-img:my-8 lg:prose-img:my-12 prose-img:shadow-lg prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800 prose-img:max-w-full prose-img:h-auto
+                  prose-ul:my-6 lg:prose-ul:my-8 prose-ul:list-disc prose-ul:pl-8 sm:prose-ul:pl-10 prose-ul:marker:text-zinc-500 dark:prose-ul:marker:text-zinc-400
+                  prose-ol:my-6 lg:prose-ol:my-8 prose-ol:list-decimal prose-ol:pl-8 sm:prose-ol:pl-10
+                  prose-li:text-zinc-600 dark:prose-li:text-zinc-400 prose-li:mb-3 lg:prose-li:mb-4 prose-li:leading-[1.7] prose-li:text-lg sm:prose-li:text-xl prose-li:pl-2
+                  [&_ul]:list-disc [&_ul]:pl-5 sm:[&_ul]:pl-6 [&_ul>li]:mt-3
+                  [&_ol]:list-decimal [&_ol]:pl-5 sm:[&_ol]:pl-6 [&_ol>li]:mt-3
+                  prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-400 prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 dark:prose-blockquote:border-indigo-400 prose-blockquote:pl-8 sm:prose-blockquote:pl-10 prose-blockquote:my-10 lg:prose-blockquote:my-12 prose-blockquote:leading-[1.7] prose-blockquote:not-italic prose-blockquote:bg-zinc-50 dark:prose-blockquote:bg-zinc-900/50 prose-blockquote:py-3 prose-blockquote:rounded-r-lg prose-blockquote:text-lg sm:prose-blockquote:text-xl
+                  prose-hr:my-16 lg:prose-hr:my-20 prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800
                   [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
                   selection:bg-indigo-100 dark:selection:bg-indigo-900/50"
                 dangerouslySetInnerHTML={{ __html: post.content }} 
