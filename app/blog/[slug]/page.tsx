@@ -203,7 +203,7 @@ export default function ArticlePage() {
   const postUrl = `${websiteUrl}/blog/${params.slug}`;
 
   return (
-    <div className="min-h-screen bg-transparent dark:bg-transparent py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-transparent dark:bg-transparent py-4 sm:py-6 lg:py-8 px-3 sm:px-6 lg:px-8">
       <SchemaMarkup
         type="BlogPosting"
         data={generateBlogPostSchema({
@@ -212,14 +212,14 @@ export default function ArticlePage() {
         })}
       />
       <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(250px,280px)_1fr] gap-4 lg:gap-8">
           {/* Left Sidebar */}
-          <div className="space-y-6 lg:space-y-8">
+          <div className="space-y-4 lg:space-y-8">
             <div className="hidden lg:block">
-              <div className="fixed w-[280px] space-y-6">
+              <div className="fixed w-[250px] xl:w-[280px] space-y-4 lg:space-y-6">
                 {/* Article Information */}
-                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 lg:p-8 border border-zinc-200 dark:border-zinc-800">
-                  <h2 className="flex items-center gap-2 font-semibold text-lg mb-6 text-zinc-900 dark:text-zinc-100">
+                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 lg:p-8 border border-zinc-200 dark:border-zinc-800">
+                  <h2 className="flex items-center gap-2 font-semibold text-base lg:text-lg mb-4 lg:mb-6 text-zinc-900 dark:text-zinc-100">
                     <span className="text-indigo-500 dark:text-indigo-400">✦</span> Article Information
                   </h2>
                   <div className="space-y-5">
@@ -319,11 +319,11 @@ export default function ArticlePage() {
                 </div>
 
                 {/* Table of Contents */}
-                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 lg:p-8 border border-zinc-200 dark:border-zinc-800">
-                  <h2 className="flex items-center gap-2 font-semibold text-lg mb-6 text-zinc-900 dark:text-zinc-100">
+                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 lg:p-8 border border-zinc-200 dark:border-zinc-800">
+                  <h2 className="flex items-center gap-2 font-semibold text-base lg:text-lg mb-4 lg:mb-6 text-zinc-900 dark:text-zinc-100">
                     <span className="text-indigo-500 dark:text-indigo-400">✦</span> Table of Contents
                   </h2>
-                  <div ref={tocRef} className="relative w-full max-h-[calc(100vh-24rem)] overflow-y-auto" />
+                  <div ref={tocRef} className="relative w-full max-h-[calc(100vh-24rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600" />
                 </div>
               </div>
             </div>
@@ -341,13 +341,13 @@ export default function ArticlePage() {
             </div>
 
             {/* Main Content Box */}
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl px-6 sm:px-10 lg:px-16 py-12 lg:py-16 border border-zinc-200 dark:border-zinc-800">
-              <div className="text-center mb-12">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-zinc-900 dark:text-zinc-100 tracking-tight leading-[1.4] sm:leading-[1.4] max-w-2xl mx-auto">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl px-4 sm:px-8 lg:px-16 py-8 lg:py-16 border border-zinc-200 dark:border-zinc-800">
+              <div className="text-center mb-8 lg:mb-12">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4 text-zinc-900 dark:text-zinc-100 tracking-tight leading-[1.4] sm:leading-[1.4] max-w-2xl mx-auto">
                   {post.title}
                 </h1>
                 
-                <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 mb-6">
+                <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 mb-4 lg:mb-6">
                   <svg
                     className="w-4 h-4 flex-shrink-0"
                     fill="none"
@@ -364,30 +364,30 @@ export default function ArticlePage() {
                   <span className="text-sm">Published: {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 </div>
 
-                <div className="text-zinc-600 dark:text-zinc-400 text-base max-w-2xl mx-auto leading-relaxed">
+                <div className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
                   {post.description}
                 </div>
               </div>
 
               <div 
                 ref={contentRef}
-                className="prose prose-lg dark:prose-invert max-w-none
-                  prose-headings:text-zinc-900 dark:prose-headings:text-zinc-100 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-8 
-                  prose-h2:text-2xl prose-h2:mt-16 prose-h2:leading-snug
-                  prose-h3:text-xl prose-h3:mt-12 prose-h3:leading-snug
-                  prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-p:leading-7 prose-p:mb-7 prose-p:text-lg
+                className="prose prose-base sm:prose-lg dark:prose-invert max-w-none
+                  prose-headings:text-zinc-900 dark:prose-headings:text-zinc-100 prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-6 lg:prose-headings:mb-8 
+                  prose-h2:text-xl sm:prose-h2:text-2xl prose-h2:mt-12 lg:prose-h2:mt-16 prose-h2:leading-snug
+                  prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mt-8 lg:prose-h3:mt-12 prose-h3:leading-snug
+                  prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-p:leading-7 prose-p:mb-5 lg:prose-p:mb-7 prose-p:text-base sm:prose-p:text-lg
                   prose-a:text-indigo-600 dark:prose-a:text-indigo-400 hover:prose-a:text-indigo-700 dark:hover:prose-a:text-indigo-300 prose-a:no-underline hover:prose-a:underline prose-a:font-medium
                   prose-strong:text-zinc-900 dark:prose-strong:text-zinc-100 prose-strong:font-semibold
-                  prose-code:text-zinc-800 dark:prose-code:text-zinc-200 prose-code:bg-zinc-100/80 dark:prose-code:bg-zinc-800/80 prose-code:px-2 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[15px] prose-code:before:content-[''] prose-code:after:content-['']
-                  prose-pre:bg-zinc-900 dark:prose-pre:bg-zinc-800/90 prose-pre:rounded-xl prose-pre:p-6 prose-pre:my-8 prose-pre:shadow-lg
-                  prose-img:rounded-xl prose-img:my-10 prose-img:shadow-lg prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800
-                  prose-ul:my-7 prose-ul:list-disc prose-ul:pl-8 prose-ul:marker:text-zinc-500 dark:prose-ul:marker:text-zinc-400
-                  prose-ol:my-7 prose-ol:list-decimal prose-ol:pl-8
-                  prose-li:text-zinc-600 dark:prose-li:text-zinc-400 prose-li:mb-3 prose-li:leading-7 prose-li:text-lg prose-li:pl-2
-                  [&_ul]:list-disc [&_ul]:pl-5 [&_ul>li]:mt-2
-                  [&_ol]:list-decimal [&_ol]:pl-5 [&_ol>li]:mt-2
-                  prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-400 prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 dark:prose-blockquote:border-indigo-400 prose-blockquote:pl-8 prose-blockquote:my-10 prose-blockquote:leading-7 prose-blockquote:not-italic prose-blockquote:bg-zinc-50 dark:prose-blockquote:bg-zinc-900/50 prose-blockquote:py-2 prose-blockquote:rounded-r-lg
-                  prose-hr:my-16 prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800
+                  prose-code:text-zinc-800 dark:prose-code:text-zinc-200 prose-code:bg-zinc-100/80 dark:prose-code:bg-zinc-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[14px] sm:prose-code:text-[15px] prose-code:before:content-[''] prose-code:after:content-['']
+                  prose-pre:bg-zinc-900 dark:prose-pre:bg-zinc-800/90 prose-pre:rounded-xl prose-pre:p-4 sm:prose-pre:p-6 prose-pre:my-6 lg:prose-pre:my-8 prose-pre:shadow-lg prose-pre:overflow-x-auto
+                  prose-img:rounded-xl prose-img:my-6 lg:prose-img:my-10 prose-img:shadow-lg prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800 prose-img:max-w-full prose-img:h-auto
+                  prose-ul:my-5 lg:prose-ul:my-7 prose-ul:list-disc prose-ul:pl-6 sm:prose-ul:pl-8 prose-ul:marker:text-zinc-500 dark:prose-ul:marker:text-zinc-400
+                  prose-ol:my-5 lg:prose-ol:my-7 prose-ol:list-decimal prose-ol:pl-6 sm:prose-ol:pl-8
+                  prose-li:text-zinc-600 dark:prose-li:text-zinc-400 prose-li:mb-2 lg:prose-li:mb-3 prose-li:leading-7 prose-li:text-base sm:prose-li:text-lg prose-li:pl-2
+                  [&_ul]:list-disc [&_ul]:pl-4 sm:[&_ul]:pl-5 [&_ul>li]:mt-2
+                  [&_ol]:list-decimal [&_ol]:pl-4 sm:[&_ol]:pl-5 [&_ol>li]:mt-2
+                  prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-400 prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 dark:prose-blockquote:border-indigo-400 prose-blockquote:pl-6 sm:prose-blockquote:pl-8 prose-blockquote:my-8 lg:prose-blockquote:my-10 prose-blockquote:leading-7 prose-blockquote:not-italic prose-blockquote:bg-zinc-50 dark:prose-blockquote:bg-zinc-900/50 prose-blockquote:py-2 prose-blockquote:rounded-r-lg
+                  prose-hr:my-12 lg:prose-hr:my-16 prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800
                   [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
                   selection:bg-indigo-100 dark:selection:bg-indigo-900/50"
                 dangerouslySetInnerHTML={{ __html: post.content }} 
