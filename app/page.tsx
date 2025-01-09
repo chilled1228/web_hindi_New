@@ -30,6 +30,18 @@ const TextHumanizerSection = dynamic(
   }
 )
 
+const BackstoryGeneratorSection = dynamic(
+  () => import('../components/backstory-generator-section').then(mod => ({ default: mod.BackstoryGeneratorSection })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    ),
+    ssr: false
+  }
+)
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState('Image to Prompt')
 
@@ -55,7 +67,8 @@ export default function Home() {
         }>
           {activeTab === 'Image to Prompt' && <ImageUploadSection />}
           {activeTab === 'Text Humanizer' && <TextHumanizerSection />}
-          {activeTab !== 'Image to Prompt' && activeTab !== 'Text Humanizer' && (
+          {activeTab === 'Backstory' && <BackstoryGeneratorSection />}
+          {activeTab !== 'Image to Prompt' && activeTab !== 'Text Humanizer' && activeTab !== 'Backstory' && (
             <div className="text-center py-20">
               <h2 className="text-2xl font-semibold mb-4">Coming Soon</h2>
               <p className="text-muted-foreground">This feature is currently under development.</p>
