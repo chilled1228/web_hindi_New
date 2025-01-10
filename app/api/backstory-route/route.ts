@@ -13,7 +13,26 @@ async function getUserCredits(userId: string): Promise<number> {
     if (!userDoc.exists) {
       throw new Error('User document not found');
     }
-    return userDoc.data()?.credits || 0;
+
+    const userData = userDoc.data();
+    if (!userData) {
+      throw new Error('User data is empty');
+    }
+
+    // Check for daily credit refresh
+    const lastRefresh = userData.lastCreditRefresh ? new Date(userData.lastCreditRefresh) : null;
+    const now = new Date();
+
+    // If never refreshed or last refresh was more than 24 hours ago
+    if (!lastRefresh || (now.getTime() - lastRefresh.getTime() > 24 * 60 * 60 * 1000)) {
+      await db.collection('users').doc(userId).update({
+        credits: 10, // Default credits
+        lastCreditRefresh: now.toISOString(),
+      });
+      return 10;
+    }
+
+    return userData.credits || 0;
   } catch (error) {
     console.error('Error getting user credits:', error);
     throw error;

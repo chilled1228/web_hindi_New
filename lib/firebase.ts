@@ -56,6 +56,39 @@ auth.onAuthStateChanged(async (user) => {
 // Credit management functions
 export const DEFAULT_CREDITS = 10;
 
+export async function refreshDailyCredits(userId: string) {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      return;
+    }
+
+    const userData = userDoc.data();
+    if (!userData) {
+      return;
+    }
+
+    const lastRefresh = userData.lastCreditRefresh ? new Date(userData.lastCreditRefresh) : null;
+    const now = new Date();
+
+    // If never refreshed or last refresh was more than 24 hours ago
+    if (!lastRefresh || (now.getTime() - lastRefresh.getTime() > 24 * 60 * 60 * 1000)) {
+      await updateDoc(userRef, {
+        credits: DEFAULT_CREDITS,
+        lastCreditRefresh: now.toISOString(),
+      });
+      console.log('Daily credits refreshed for user:', userId);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error refreshing daily credits:', error);
+    throw error;
+  }
+}
+
 export async function initializeUserCredits(user: User) {
   if (!user) return;
   
@@ -68,6 +101,7 @@ export async function initializeUserCredits(user: User) {
         email: user.email,
         credits: DEFAULT_CREDITS,
         createdAt: new Date().toISOString(),
+        lastCreditRefresh: new Date().toISOString(),
         isAdmin: false, // Default to non-admin
       });
       console.log('Initialized credits for new user:', user.uid);
@@ -88,7 +122,12 @@ export async function getUserCredits(userId: string): Promise<number> {
       return 0;
     }
     
-    return userDoc.data().credits || 0;
+    // Check and refresh daily credits before returning
+    await refreshDailyCredits(userId);
+    
+    // Get the latest user document after potential refresh
+    const updatedDoc = await getDoc(userRef);
+    return updatedDoc.data().credits || 0;
   } catch (error) {
     console.error('Error getting user credits:', error);
     throw error;
