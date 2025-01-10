@@ -127,7 +127,11 @@ export async function getUserCredits(userId: string): Promise<number> {
     
     // Get the latest user document after potential refresh
     const updatedDoc = await getDoc(userRef);
-    return updatedDoc.data().credits || 0;
+    const userData = updatedDoc.data();
+    if (!userData) {
+      return 0;
+    }
+    return userData.credits || 0;
   } catch (error) {
     console.error('Error getting user credits:', error);
     throw error;
