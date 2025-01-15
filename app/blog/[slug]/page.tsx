@@ -76,11 +76,10 @@ export async function generateMetadata(
 }
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }
 
-export default async function Page(props: PageProps) {
-  const params = await props.params;
+export default async function Page({ params }: PageProps) {
   const post = await getPost(params.slug);
 
   if (!post) {
