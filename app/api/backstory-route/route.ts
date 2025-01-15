@@ -12,14 +12,9 @@ export async function POST(request: Request) {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     // Generate the backstory
-    const result = await model.generateContent([
-      {
-        role: "user",
-        parts: [`Create a compelling character backstory based on this prompt: ${prompt}
+    const result = await model.generateContent(`Create a compelling character backstory based on this prompt: ${prompt}
         
-        Please write a detailed, engaging backstory that incorporates all elements while maintaining consistency and emotional depth. The backstory should be well-structured, approximately 2-3 paragraphs long.`]
-      }
-    ]);
+    Please write a detailed, engaging backstory that incorporates all elements while maintaining consistency and emotional depth. The backstory should be well-structured, approximately 2-3 paragraphs long.`);
 
     const response = await result.response;
     const backstory = response.text();
