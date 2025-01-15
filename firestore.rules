@@ -15,6 +15,7 @@ service cloud.firestore {
     match /blog_posts/{post} {
       allow read: if true;  // Anyone can read blog posts
       allow write: if isAdmin();  // Only admins can write
+      allow list: if true;  // Allow listing blog posts
     }
 
     // User profiles
