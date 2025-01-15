@@ -75,12 +75,7 @@ export async function generateMetadata(
   };
 }
 
-type PageProps = {
-  params: { slug: string };
-  searchParams: Record<string, string | string[] | undefined>;
-};
-
-const ArticlePage = async ({ params }: PageProps) => {
+export default async function Page({ params }: { params: { slug: string } }) {
   const post = await getPost(params.slug);
 
   if (!post) {
@@ -164,6 +159,4 @@ const ArticlePage = async ({ params }: PageProps) => {
       </div>
     </>
   );
-}
-
-export default ArticlePage; 
+} 
