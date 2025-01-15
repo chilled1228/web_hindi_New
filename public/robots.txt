@@ -1,23 +1,15 @@
-# Allow all web crawlers
+# Allow all crawlers
 User-agent: *
-
-# Allow public pages
 Allow: /
-Allow: /home/
-Allow: /blog/
-Allow: /text-humanizer/
-Allow: /backstory/
-Allow: /image-to-prompt/
 
-# Protect sensitive routes
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-Disallow: /static/
-
-# Sitemap location
+# Sitemaps
 Sitemap: https://freepromptbase.com/api/sitemap
+Sitemap: https://freepromptbase.com/sitemap.xml
 
-# Crawl-delay (in seconds)
-Crawl-delay: 5
+# Disallow API routes except sitemap
+Disallow: /api/*
+Allow: /api/sitemap
+
+# Crawl delay
+Crawl-delay: 1
 
