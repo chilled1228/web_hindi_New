@@ -19,10 +19,19 @@ interface BlogPost {
   slug: string;
 }
 
+interface PageParams {
+  slug: string;
+}
+
+interface PageProps {
+  params: PageParams;
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  props: PageProps
 ): Promise<Metadata> {
-  const post = await getPost(params.slug);
+  const post = await getPost(props.params.slug);
   
   if (!post) {
     return {
@@ -75,10 +84,8 @@ async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
-export default async function ArticlePage(
-  { params }: { params: { slug: string } }
-) {
-  const post = await getPost(params.slug);
+export default async function ArticlePage(props: PageProps) {
+  const post = await getPost(props.params.slug);
 
   if (!post) {
     return (
