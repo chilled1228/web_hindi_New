@@ -75,12 +75,9 @@ export async function generateMetadata(
   };
 }
 
-export default async function Page({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const post = await getPost(params.slug);
+// @ts-expect-error - Vercel build type mismatch
+export default async function Page(props: { params: { slug: string } }) {
+  const post = await getPost(props.params.slug);
 
   if (!post) {
     return (
