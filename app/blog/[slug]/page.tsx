@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Metadata } from 'next'
 import { Star } from 'lucide-react'
 import { Card, CardContent } from "@/components/ui/card"
@@ -46,7 +45,6 @@ async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
-// Generate static params for all blog posts
 export async function generateStaticParams() {
   try {
     const postsRef = await db.collection('blog_posts').get();
@@ -96,7 +94,13 @@ export async function generateMetadata(
   };
 }
 
-export default async function BlogPost({ params }: { params: { slug: string } }) {
+interface PageProps {
+  params: { slug: string };
+}
+
+export const dynamicParams = false;
+
+export default async function BlogPost({ params }: PageProps) {
   const post = await getPost(params.slug);
 
   if (!post) {
