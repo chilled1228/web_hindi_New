@@ -1,13 +1,13 @@
 import * as admin from 'firebase-admin';
 import { getApps, initializeApp, getApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 // Check all required environment variables
 const requiredEnvVars = {
   FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
   FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
   FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
-};
+} as const;
 
 // Validate environment variables
 Object.entries(requiredEnvVars).forEach(([key, value]) => {
@@ -22,7 +22,7 @@ const privateKey = process.env.FIREBASE_PRIVATE_KEY!.includes('\\n')
   : process.env.FIREBASE_PRIVATE_KEY;
 
 // Initialize Firebase Admin
-let app;
+let app: admin.app.App;
 try {
   if (!getApps().length) {
     const config = {
@@ -35,8 +35,8 @@ try {
     };
     
     console.log('Initializing Firebase Admin with config:', {
-      projectId: config.credential.projectId,
-      clientEmail: config.credential.clientEmail,
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       databaseURL: config.databaseURL,
     });
     
@@ -50,7 +50,7 @@ try {
 }
 
 // Initialize Firestore with error handling
-let db;
+let db: Firestore;
 try {
   db = getFirestore(app);
   console.log('Firestore initialized successfully');
