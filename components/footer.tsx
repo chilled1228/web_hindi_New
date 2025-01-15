@@ -110,7 +110,7 @@ export function Footer() {
             <ul className="space-y-4">
               <li>
                 <Link 
-                  href="/tools/image-to-prompt" 
+                  href="/image-to-prompt" 
                   className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                   Image to Prompt
@@ -119,19 +119,19 @@ export function Footer() {
               </li>
               <li>
                 <Link 
-                  href="/tools/text-to-prompt" 
+                  href="/text-humanizer" 
                   className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
-                  Text to Prompt
+                  Text Humanizer
                   <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                 </Link>
               </li>
               <li>
                 <Link 
-                  href="/tools/prompt-generator" 
+                  href="/backstory" 
                   className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
-                  Prompt Generator
+                  Backstory Generator
                   <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                 </Link>
               </li>

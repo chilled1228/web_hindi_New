@@ -67,13 +67,13 @@ export function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-48 animate-in fade-in">
                 <DropdownMenuItem className="cursor-pointer">
-                  <Link href="/tools/image-to-prompt" className="flex w-full">Image to Prompt</Link>
+                  <Link href="/image-to-prompt" className="flex w-full">Image to Prompt</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
-                  <Link href="/tools/text-to-prompt" className="flex w-full">Text to Prompt</Link>
+                  <Link href="/text-humanizer" className="flex w-full">Text Humanizer</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
-                  <Link href="/tools/prompt-generator" className="flex w-full">Prompt Generator</Link>
+                  <Link href="/backstory" className="flex w-full">Backstory Generator</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -129,6 +129,29 @@ export function Navbar() {
                   >
                     Tools
                   </Link>
+                  <div className="pl-4 space-y-2">
+                    <Link
+                      href="/image-to-prompt"
+                      className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Image to Prompt
+                    </Link>
+                    <Link
+                      href="/text-humanizer"
+                      className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Text Humanizer
+                    </Link>
+                    <Link
+                      href="/backstory"
+                      className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Backstory Generator
+                    </Link>
+                  </div>
                   <Link 
                     href="/pricing"
                     className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
