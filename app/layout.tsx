@@ -8,8 +8,6 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { PrivacyConsent } from '@/components/privacy-consent'
 import { useEffect, useState } from 'react'
-import { db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
 import Head from 'next/head'
 import { SchemaMarkup, generateOrganizationSchema, generateWebsiteSchema } from '@/components/schema-markup'
 
@@ -43,12 +41,12 @@ export default function RootLayout({
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        const metadataRef = doc(db, 'metadata', 'website');
-        const metadataSnap = await getDoc(metadataRef);
-        
-        if (metadataSnap.exists()) {
-          setMetadata(metadataSnap.data() as WebsiteMetadata);
+        const response = await fetch('/api/metadata');
+        if (!response.ok) {
+          throw new Error('Failed to fetch metadata');
         }
+        const data = await response.json();
+        setMetadata(data);
       } catch (error) {
         console.error('Error fetching metadata:', error);
       }
