@@ -18,12 +18,20 @@ interface BlogPost {
 
 async function getAllPosts(): Promise<BlogPost[]> {
   try {
+    console.log('Fetching blog posts...');
     const postsRef = await db.collection('blog_posts')
       .orderBy('publishedAt', 'desc')
-      .get();
+      .get()
+      .catch(error => {
+        console.error('Error in Firestore query:', error);
+        throw error;
+      });
 
+    console.log(`Found ${postsRef.docs.length} blog posts`);
+    
     return postsRef.docs.map(doc => {
       const data = doc.data();
+      console.log('Processing post:', { id: doc.id, slug: data.slug });
       return {
         ...data,
         publishedAt: data.publishedAt?.toDate?.() 
@@ -36,6 +44,12 @@ async function getAllPosts(): Promise<BlogPost[]> {
     });
   } catch (error) {
     console.error('Error fetching blog posts:', error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return [];
   }
 }
