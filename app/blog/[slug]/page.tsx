@@ -19,12 +19,8 @@ interface BlogPost {
   slug: string;
 }
 
-type Props = {
-  params: { slug: string };
-}
-
 export async function generateMetadata(
-  { params }: Props
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
   const post = await getPost(params.slug);
   
@@ -79,7 +75,9 @@ async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
-export default async function ArticlePage({ params }: Props) {
+export default async function ArticlePage(
+  { params }: { params: { slug: string } }
+) {
   const post = await getPost(params.slug);
 
   if (!post) {
