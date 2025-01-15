@@ -75,11 +75,12 @@ export async function generateMetadata(
   };
 }
 
-interface PageProps {
-  params: { slug: string };
+type Props = {
+  params: { slug: string }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params, searchParams }: Props) {
   const post = await getPost(params.slug);
 
   if (!post) {
