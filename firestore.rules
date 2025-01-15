@@ -16,6 +16,12 @@ service cloud.firestore {
       allow read: if true;  // Anyone can read blog posts
       allow write: if isAdmin();  // Only admins can write
       allow list: if true;  // Allow listing blog posts
+      
+      // Allow access to post metadata
+      match /{metadata=**} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
 
     // User profiles

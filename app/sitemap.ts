@@ -1,6 +1,5 @@
 import { MetadataRoute } from 'next'
-import { db } from '@/lib/firebase'
-import { collection, getDocs } from 'firebase/firestore'
+import { db } from '@/lib/firebase-admin'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://freepromptbase.com'
@@ -19,9 +18,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     // Get all blog posts
-    const blogSnapshot = await getDocs(collection(db, 'blogs'))
+    const blogSnapshot = await db.collection('blog_posts').get()
     const blogUrls = blogSnapshot.docs.map((doc) => ({
-      url: `${baseUrl}/blog/${doc.id}`,
+      url: `${baseUrl}/blog/${doc.data().slug}`,
       lastModified: new Date(doc.data().updatedAt?.toDate() || new Date()),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
