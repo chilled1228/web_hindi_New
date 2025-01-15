@@ -5,7 +5,6 @@ import { db } from '@/lib/firebase-admin'
 import { SchemaMarkup } from '@/components/schema-markup'
 import { Breadcrumb } from '@/components/breadcrumb'
 import { TableOfContents } from '@/components/table-of-contents/index'
-import { PageProps } from 'next'
 
 interface BlogPost {
   title: string;
@@ -76,7 +75,12 @@ export async function generateMetadata(
   };
 }
 
-export default async function Page({ params }: PageProps) {
+type Props = {
+  params: { slug: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function Page({ params }: Props) {
   const post = await getPost(params.slug);
 
   if (!post) {
