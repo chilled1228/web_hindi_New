@@ -1,30 +1,28 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { NextResponse } from "next/server";
 import { db } from '@/lib/firebase-admin';
-import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
   try {
     const { prompt } = await request.json();
 
-    const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are a creative writer specializing in character backstories. Create engaging, detailed character backstories based on the user's prompt. Include personality traits, motivations, and key life events."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      model: "gpt-3.5-turbo",
-    });
+    // Initialize the model
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    const backstory = completion.choices[0].message.content;
+    // Generate the backstory
+    const result = await model.generateContent([
+      {
+        role: "user",
+        parts: [`Create a compelling character backstory based on this prompt: ${prompt}
+        
+        Please write a detailed, engaging backstory that incorporates all elements while maintaining consistency and emotional depth. The backstory should be well-structured, approximately 2-3 paragraphs long.`]
+      }
+    ]);
+
+    const response = await result.response;
+    const backstory = response.text();
 
     // Store in Firestore
     await db.collection('backstories').add({
