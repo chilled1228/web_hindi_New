@@ -19,45 +19,6 @@ interface BlogPost {
   slug: string;
 }
 
-interface PageParams {
-  slug: string;
-}
-
-interface PageProps {
-  params: PageParams;
-  searchParams: { [key: string]: string | string[] | undefined };
-}
-
-export async function generateMetadata(
-  props: PageProps
-): Promise<Metadata> {
-  const post = await getPost(props.params.slug);
-  
-  if (!post) {
-    return {
-      title: 'Post Not Found',
-      description: 'The requested blog post could not be found.'
-    };
-  }
-
-  return {
-    title: post.title,
-    description: post.description,
-    openGraph: {
-      title: post.title,
-      description: post.description,
-      type: 'article',
-      publishedTime: post.publishedAt,
-      authors: [post.author.name],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.title,
-      description: post.description,
-    }
-  };
-}
-
 async function getPost(slug: string): Promise<BlogPost | null> {
   try {
     const postRef = await db.collection('blog_posts').where('slug', '==', slug).limit(1).get();
@@ -84,8 +45,43 @@ async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
-export default async function ArticlePage(props: PageProps) {
-  const post = await getPost(props.params.slug);
+export async function generateMetadata(
+  { params }: { params: { slug: string } }
+): Promise<Metadata> {
+  const post = await getPost(params.slug);
+  
+  if (!post) {
+    return {
+      title: 'Post Not Found',
+      description: 'The requested blog post could not be found.'
+    };
+  }
+
+  return {
+    title: post.title,
+    description: post.description,
+    openGraph: {
+      title: post.title,
+      description: post.description,
+      type: 'article',
+      publishedTime: post.publishedAt,
+      authors: [post.author.name],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+    }
+  };
+}
+
+type PageProps = {
+  params: { slug: string };
+  searchParams: Record<string, string | string[] | undefined>;
+};
+
+const ArticlePage = async ({ params }: PageProps) => {
+  const post = await getPost(params.slug);
 
   if (!post) {
     return (
@@ -168,4 +164,6 @@ export default async function ArticlePage(props: PageProps) {
       </div>
     </>
   );
-} 
+}
+
+export default ArticlePage; 
