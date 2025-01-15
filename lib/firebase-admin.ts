@@ -9,53 +9,52 @@ const requiredEnvVars = {
   FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
 } as const;
 
-// Validate environment variables
-Object.entries(requiredEnvVars).forEach(([key, value]) => {
-  if (!value) {
-    throw new Error(`${key} is not set in environment variables`);
-  }
-});
+// Validate environment variables and assign types
+const projectId = process.env.FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const privateKeyBase = process.env.FIREBASE_PRIVATE_KEY;
 
-// Format private key
-const privateKey = process.env.FIREBASE_PRIVATE_KEY!.includes('\\n')
-  ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-  : process.env.FIREBASE_PRIVATE_KEY;
-
-// Initialize Firebase Admin
-let app: admin.app.App;
-try {
-  if (!getApps().length) {
-    const config = {
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey,
-      } as admin.ServiceAccount),
-      databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
-    };
-    
-    console.log('Initializing Firebase Admin with config:', {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      databaseURL: config.databaseURL,
-    });
-    
-    app = initializeApp(config);
-  } else {
-    app = getApp();
-  }
-} catch (error) {
-  console.error('Error initializing Firebase Admin:', error);
-  throw error;
+if (!projectId || !clientEmail || !privateKeyBase) {
+  throw new Error('Missing required Firebase Admin environment variables');
 }
 
-// Initialize Firestore with error handling
+// Format private key
+const privateKey = privateKeyBase.includes('\\n')
+  ? privateKeyBase.replace(/\\n/g, '\n')
+  : privateKeyBase;
+
+// Initialize Firebase Admin
+const getFirebaseApp = () => {
+  if (getApps().length > 0) {
+    return getApp();
+  }
+
+  const config = {
+    credential: admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    } as admin.ServiceAccount),
+    databaseURL: `https://${projectId}.firebaseio.com`
+  };
+    
+  console.log('Initializing Firebase Admin with config:', {
+    projectId,
+    clientEmail,
+    databaseURL: config.databaseURL,
+  });
+    
+  return initializeApp(config);
+};
+
+// Initialize app and Firestore with error handling
 let db: Firestore;
 try {
+  const app = getFirebaseApp();
   db = getFirestore(app);
   console.log('Firestore initialized successfully');
 } catch (error) {
-  console.error('Error initializing Firestore:', error);
+  console.error('Error initializing Firebase Admin:', error);
   throw error;
 }
 
