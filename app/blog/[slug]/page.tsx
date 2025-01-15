@@ -58,9 +58,10 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
-  const post = await getPost(params.slug);
+  const resolvedParams = await params;
+  const post = await getPost(resolvedParams.slug);
   
   if (!post) {
     return {
@@ -94,14 +95,13 @@ export async function generateMetadata(
   };
 }
 
-interface PageProps {
-  params: { slug: string };
+interface Props {
+  params: Promise<{ slug: string }>;
 }
 
-export const dynamicParams = false;
-
-export default async function BlogPost({ params }: PageProps) {
-  const post = await getPost(params.slug);
+export default async function BlogPost({ params }: Props) {
+  const resolvedParams = await params;
+  const post = await getPost(resolvedParams.slug);
 
   if (!post) {
     return (
