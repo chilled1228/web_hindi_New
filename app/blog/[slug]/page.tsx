@@ -46,11 +46,23 @@ async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
+// Generate static params for all blog posts
+export async function generateStaticParams() {
+  try {
+    const postsRef = await db.collection('blog_posts').get();
+    return postsRef.docs.map(doc => ({
+      slug: doc.data().slug
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return [];
+  }
+}
+
 export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
-  const resolvedParams = await params;
-  const post = await getPost(resolvedParams.slug);
+  const post = await getPost(params.slug);
   
   if (!post) {
     return {
@@ -59,8 +71,11 @@ export async function generateMetadata(
     };
   }
 
+  const baseUrl = 'https://freepromptbase.com';
+  const postUrl = `${baseUrl}/blog/${post.slug}`;
+
   return {
-    title: post.title,
+    title: `${post.title} | Prompt Engineering Blog`,
     description: post.description,
     openGraph: {
       title: post.title,
@@ -68,22 +83,21 @@ export async function generateMetadata(
       type: 'article',
       publishedTime: post.publishedAt,
       authors: [post.author.name],
+      url: postUrl,
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.description,
+    },
+    alternates: {
+      canonical: postUrl
     }
   };
 }
 
-interface PageProps {
-  params: Promise<{ slug: string }>;
-}
-
-export default async function Page(props: PageProps) {
-  const { slug } = await props.params;
-  const post = await getPost(slug);
+export default async function BlogPost({ params }: { params: { slug: string } }) {
+  const post = await getPost(params.slug);
 
   if (!post) {
     return (
@@ -97,6 +111,8 @@ export default async function Page(props: PageProps) {
   const postUrl = `${baseUrl}/blog/${post.slug}`;
 
   const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
     headline: post.title,
     description: post.description,
     author: {
@@ -104,7 +120,12 @@ export default async function Page(props: PageProps) {
       name: post.author.name,
     },
     datePublished: post.publishedAt,
+    dateModified: post.publishedAt,
     url: postUrl,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': postUrl
+    }
   };
 
   return (
