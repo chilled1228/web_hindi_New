@@ -6,10 +6,27 @@ Allow: /
 Sitemap: https://freepromptbase.com/api/sitemap
 Sitemap: https://freepromptbase.com/sitemap.xml
 
-# Disallow API routes except sitemap
+# Allow RSS feed
+Allow: /api/feed
+
+# Disallow API routes except sitemap and feed
 Disallow: /api/*
 Allow: /api/sitemap
+Allow: /api/feed
 
 # Crawl delay
+Crawl-delay: 1
+
+# Special directives for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: DuckDuckBot
+Allow: /
 Crawl-delay: 1
 

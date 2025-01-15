@@ -52,6 +52,11 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Blog | Prompt Engineering Insights',
     description: 'Explore our collection of articles about prompt engineering, AI tools, and best practices for working with language models.',
+  },
+  alternates: {
+    types: {
+      'application/rss+xml': 'https://freepromptbase.com/api/feed',
+    }
   }
 };
 
@@ -66,6 +71,14 @@ export default async function BlogIndex() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Discover insights, tips, and best practices for prompt engineering and working with AI language models.
           </p>
+          <div className="mt-4">
+            <Link 
+              href="/api/feed"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              RSS Feed
+            </Link>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
