@@ -2,45 +2,15 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
+    // Allow public read access to blog posts
+    match /blog_posts/{post} {
+      allow read: true;  // Anyone can read blog posts
+      allow write: if request.auth != null && request.auth.token.admin == true;  // Only admins can write
     }
 
-    function isAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // User profiles with credit management security
-    match /users/{userId} {
-      // Allow read if user is authenticated and is either the owner or admin
-      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      
-      // Allow update if user is authenticated and is the owner
-      allow update: if isAuthenticated() && isOwner(userId);
-      
-      // Allow initial user document creation
-      allow create: if isAuthenticated() && 
-        isOwner(userId) && 
-        request.resource.data.credits == 10 &&
-        request.resource.data.isAdmin == false;
-    }
-
-    // Blog posts
-    match /blog_posts/{postId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    // Website metadata
-    match /metadata/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // Default rule - deny everything else
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
