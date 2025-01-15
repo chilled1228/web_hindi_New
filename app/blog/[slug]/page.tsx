@@ -75,13 +75,13 @@ export async function generateMetadata(
   };
 }
 
-type Props = {
-  params: { slug: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+interface PageProps {
+  params: Promise<{ slug: string }>;
 }
 
-export default async function Page({ params, searchParams }: Props) {
-  const post = await getPost(params.slug);
+export default async function Page(props: PageProps) {
+  const { slug } = await props.params;
+  const post = await getPost(slug);
 
   if (!post) {
     return (
