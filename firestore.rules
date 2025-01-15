@@ -18,13 +18,11 @@ service cloud.firestore {
 
     // User profiles with credit management security
     match /users/{userId} {
+      // Allow read if user is authenticated and is either the owner or admin
       allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       
-      // Only allow users to update specific fields, not credits or refresh timestamps
-      allow update: if isAuthenticated() && 
-        isOwner(userId) && 
-        (!request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['credits', 'lastCreditRefresh', 'isAdmin']));
+      // Allow update if user is authenticated and is the owner
+      allow update: if isAuthenticated() && isOwner(userId);
       
       // Allow initial user document creation
       allow create: if isAuthenticated() && 
@@ -35,7 +33,7 @@ service cloud.firestore {
 
     // Blog posts
     match /blog_posts/{postId} {
-      allow read: if true; // Public read access
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 

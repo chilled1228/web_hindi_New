@@ -2,30 +2,46 @@ import { useEffect } from 'react';
 
 interface SchemaMarkupProps {
   type: 'Organization' | 'WebSite' | 'BlogPosting' | 'BreadcrumbList';
-  data: any;
+  data: Record<string, any>;
 }
 
 export function SchemaMarkup({ type, data }: SchemaMarkupProps) {
-  useEffect(() => {
-    // Create the schema script tag
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.textContent = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': type,
-      ...data,
-    });
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': type,
+    ...data
+  };
 
-    // Add the script to the document head
-    document.head.appendChild(script);
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
 
-    // Cleanup on unmount
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, [type, data]);
+interface BlogPostSchemaInput {
+  title: string;
+  description: string;
+  publishedAt: string;
+  author: { name: string };
+  url: string;
+  image?: string;
+}
 
-  return null;
+export function generateBlogPostSchema(post: BlogPostSchemaInput) {
+  return {
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.description,
+    author: {
+      '@type': 'Person',
+      name: post.author.name,
+    },
+    datePublished: post.publishedAt,
+    image: post.image,
+    url: post.url,
+  };
 }
 
 // Helper function to generate breadcrumb schema
@@ -40,29 +56,6 @@ export function generateBreadcrumbSchema(items: { name: string; url: string }[])
         name: item.name,
       },
     })),
-  };
-}
-
-// Helper function to generate blog post schema
-export function generateBlogPostSchema(post: {
-  title: string;
-  description: string;
-  publishedAt: string;
-  author: { name: string };
-  url: string;
-  image?: string;
-}) {
-  return {
-    '@type': 'BlogPosting',
-    headline: post.title,
-    description: post.description,
-    author: {
-      '@type': 'Person',
-      name: post.author.name,
-    },
-    datePublished: post.publishedAt,
-    image: post.image,
-    url: post.url,
   };
 }
 
