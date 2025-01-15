@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase-admin'
 import { SchemaMarkup } from '@/components/schema-markup'
 import { Breadcrumb } from '@/components/breadcrumb'
 import { TableOfContents } from '@/components/table-of-contents/index'
+import { PageProps } from 'next'
 
 interface BlogPost {
   title: string;
@@ -75,9 +76,8 @@ export async function generateMetadata(
   };
 }
 
-// @ts-expect-error - Vercel build type mismatch
-export default async function Page(props: { params: { slug: string } }) {
-  const post = await getPost(props.params.slug);
+export default async function Page({ params }: PageProps) {
+  const post = await getPost(params.slug);
 
   if (!post) {
     return (
