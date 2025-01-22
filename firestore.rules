@@ -8,7 +8,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
     // Blog posts - public read access
@@ -32,9 +34,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Default rule - deny everything else
-    match /{document=**} {
-      allow read, write: if false;
+    // Metadata collection
+    match /metadata/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // All other collections - admin access only
+    match /{collection}/{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }
