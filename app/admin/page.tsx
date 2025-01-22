@@ -129,6 +129,28 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchUsers = async () => {
+    console.log('Fetching users...');
+    try {
+      const usersRef = collection(db, 'users');
+      const usersSnapshot = await getDocs(usersRef);
+      
+      const usersData = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        email: doc.data().email || '',
+        credits: doc.data().credits || 0,
+        isAdmin: doc.data().isAdmin || false,
+        createdAt: doc.data().createdAt || new Date().toISOString()
+      }));
+      
+      setUsers(usersData);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setError('Failed to fetch users');
+    }
+  };
+
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
@@ -153,10 +175,14 @@ export default function AdminDashboard() {
         }
 
         setIsAdmin(true);
-        fetchUsers();
-        fetchMetadata();
-        fetchBlogPosts();
-        fetchStats();
+        await Promise.all([
+          fetchUsers(),
+          fetchMetadata(),
+          fetchBlogPosts(),
+          fetchStats()
+        ]).catch(error => {
+          console.error('Error fetching initial data:', error);
+        });
       } catch (error) {
         console.error('Error checking admin status:', error);
         setError('Failed to verify admin status. Please try logging out and back in.');
@@ -214,37 +240,6 @@ export default function AdminDashboard() {
       setError(error.message || 'Failed to update metadata');
     } finally {
       setIsMetadataLoading(false);
-    }
-  };
-
-  const fetchUsers = async () => {
-    console.log('Fetching users...');
-    try {
-      const usersRef = collection(db, 'users');
-      console.log('Getting users collection...');
-      const usersSnapshot = await getDocs(usersRef);
-      console.log('Users snapshot size:', usersSnapshot.size);
-      
-      const usersData = usersSnapshot.docs.map(doc => {
-        const data = doc.data();
-        console.log('User data:', doc.id, data);
-        return {
-          id: doc.id,
-          email: data.email || '',
-          credits: data.credits || 0,
-          isAdmin: data.isAdmin || false,
-          createdAt: data.createdAt || new Date().toISOString(),
-        } as User;
-      });
-      
-      console.log('Processed users data:', usersData);
-      setUsers(usersData);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setError('Failed to fetch users. Please check your admin privileges and try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -370,6 +365,10 @@ export default function AdminDashboard() {
       return 'Draft';
     }
   };
+
+  if (typeof window === 'undefined') {
+    return null;
+  }
 
   if (authLoading || (!isAdmin && isLoading)) {
     return (

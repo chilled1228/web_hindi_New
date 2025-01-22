@@ -20,31 +20,55 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Set persistence to LOCAL
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
+    if (typeof window === 'undefined') return;
+    
+    let unsubscribe: (() => void) | undefined;
+
+    const initializeAuth = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
         console.log('Auth persistence set to LOCAL');
-      })
-      .catch((error) => {
-        console.error('Error setting auth persistence:', error);
-      });
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user ? `User logged in: ${user.email}` : 'User logged out');
-      if (user) {
-        // Force token refresh
-        const token = await user.getIdToken(true);
-        setUser(user);
-      } else {
-        setUser(null);
+        
+        unsubscribe = onAuthStateChanged(auth, async (user) => {
+          console.log('Auth state changed:', user ? `User logged in: ${user.email}` : 'User logged out');
+          if (user) {
+            try {
+              // Force token refresh
+              await user.getIdToken(true);
+              setUser(user);
+            } catch (error) {
+              console.error('Error refreshing token:', error);
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+          setLoading(false);
+          setInitialized(true);
+        });
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        setLoading(false);
+        setInitialized(true);
       }
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    initializeAuth();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
+
+  // Don't render anything until we've initialized
+  if (!initialized && typeof window !== 'undefined') {
+    return null;
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
