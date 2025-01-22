@@ -685,7 +685,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-sm font-medium">
-                      {prompt.price === 0 ? 'Free' : `$${prompt.price.toFixed(2)}`}
+                      {prompt.price === 0 ? 'Free' : prompt.price ? `$${prompt.price.toFixed(2)}` : '$0.00'}
                     </span>
                     <Link href={`/admin/prompts/${prompt.id}`}>
                       <Button variant="ghost" size="sm">
