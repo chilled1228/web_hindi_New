@@ -391,12 +391,18 @@
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
   color: #4b5563;
+  list-style: disc;
+}
+
+.prose ol {
+  list-style: decimal;
 }
 
 .prose li {
   margin-bottom: 0.5rem;
   line-height: 1.75;
   font-size: 1.125rem;
+  display: list-item;
 }
 
 .prose li::marker {
@@ -444,4 +450,35 @@
   .prose li {
     font-size: 1rem;
   }
+}
+
+/* Add these styles to your existing CSS */
+.toc-container {
+  scrollbar-width: thin;
+  scrollbar-color: #6366F1 #F3F4F6;
+  padding-right: 0.5rem;
+  margin-top: 1rem;
+}
+
+.toc-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.toc-container::-webkit-scrollbar-track {
+  background: #F3F4F6;
+  border-radius: 3px;
+}
+
+.toc-container::-webkit-scrollbar-thumb {
+  background-color: #6366F1;
+  border-radius: 3px;
+}
+
+.dark .toc-container {
+  scrollbar-color: #6366F1 #1F2937;
+}
+
+.dark .toc-container::-webkit-scrollbar-track {
+  background: #1F2937;
+  border-radius: 3px;
 }

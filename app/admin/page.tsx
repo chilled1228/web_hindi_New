@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/providers';
 import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, doc, getDoc, updateDoc, setDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, setDoc, deleteDoc, Timestamp, query, where, orderBy, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -15,9 +15,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface User {
   id: string;
@@ -47,7 +49,24 @@ interface BlogPost {
   } | string | null;
 }
 
-export default function AdminPage() {
+interface Prompt {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  createdAt: string;
+  imageUrl: string;
+}
+
+interface DashboardStats {
+  totalPrompts: number;
+  freePrompts: number;
+  totalUsers: number;
+  recentPrompts: Prompt[];
+}
+
+export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
@@ -62,6 +81,12 @@ export default function AdminPage() {
   });
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalPrompts: 0,
+    freePrompts: 0,
+    totalUsers: 0,
+    recentPrompts: []
+  });
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -114,6 +139,55 @@ export default function AdminPage() {
       fetchBlogPosts();
     }
   }, [isAdmin]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Get total prompts
+        const promptsSnapshot = await getDocs(collection(db, 'prompts'));
+        const totalPrompts = promptsSnapshot.size;
+
+        // Get free prompts
+        const freePromptsQuery = query(collection(db, 'prompts'), where('price', '==', 0));
+        const freePromptsSnapshot = await getDocs(freePromptsQuery);
+        const freePrompts = freePromptsSnapshot.size;
+
+        // Get total users
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const totalUsers = usersSnapshot.size;
+
+        // Get recent prompts
+        const recentPromptsQuery = query(
+          collection(db, 'prompts'),
+          orderBy('createdAt', 'desc'),
+          limit(5)
+        );
+        const recentPromptsSnapshot = await getDocs(recentPromptsQuery);
+        const recentPrompts = recentPromptsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          title: doc.data().title,
+          description: doc.data().description,
+          category: doc.data().category,
+          price: doc.data().price,
+          createdAt: doc.data().createdAt,
+          imageUrl: doc.data().imageUrl
+        }));
+
+        setStats({
+          totalPrompts,
+          freePrompts,
+          totalUsers,
+          recentPrompts
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const fetchMetadata = async () => {
     try {
@@ -573,6 +647,80 @@ export default function AdminPage() {
             )}
           </div>
         </div>
+
+        {/* Stats Grid */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Prompts
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalPrompts}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stats.freePrompts} free prompts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Users
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Paid Prompts
+              </CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalPrompts - stats.freePrompts}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Prompts */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Prompts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.recentPrompts.map((prompt) => (
+                <div
+                  key={prompt.id}
+                  className="flex items-center justify-between p-4 rounded-lg border"
+                >
+                  <div>
+                    <h3 className="font-medium">{prompt.title}</h3>
+                    <p className="text-sm text-muted-foreground">{prompt.category}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-medium">
+                      {prompt.price === 0 ? 'Free' : `$${prompt.price.toFixed(2)}`}
+                    </span>
+                    <Link href={`/admin/prompts/${prompt.id}`}>
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

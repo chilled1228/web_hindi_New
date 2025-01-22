@@ -5,11 +5,12 @@ import { Loader2, Upload } from 'lucide-react';
 import { uploadImage, generateStoragePath } from '@/lib/storage-utils';
 
 interface ImageUploadProps {
-  onImageUploaded: (url: string) => void;
+  onChange: (url: string) => void;
+  onRemove: () => void;
   className?: string;
 }
 
-export function ImageUpload({ onImageUploaded, className = '' }: ImageUploadProps) {
+export function ImageUpload({ onChange, onRemove, className = '' }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,9 +19,9 @@ export function ImageUpload({ onImageUploaded, className = '' }: ImageUploadProp
 
     try {
       setUploading(true);
-      const path = generateStoragePath('blog-images', file.name);
+      const path = generateStoragePath('prompt-images', file.name);
       const imageUrl = await uploadImage(file, path);
-      onImageUploaded(imageUrl);
+      onChange(imageUrl);
     } catch (error) {
       console.error('Error uploading image:', error);
       // You might want to add proper error handling here

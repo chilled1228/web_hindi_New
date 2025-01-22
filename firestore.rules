@@ -26,6 +26,12 @@ service cloud.firestore {
       }
     }
 
+    // Prompts collection - public read access
+    match /prompts/{prompt} {
+      allow read, list: if true;  // Anyone can read and list prompts
+      allow write: if isAdmin();  // Only admins can create/update/delete prompts
+    }
+
     // User profiles
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());

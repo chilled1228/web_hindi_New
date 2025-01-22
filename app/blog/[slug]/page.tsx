@@ -17,6 +17,7 @@ interface BlogPost {
   category?: string;
   difficulty?: number;
   slug: string;
+  coverImage?: string;
 }
 
 async function getPost(slug: string): Promise<BlogPost | null> {
@@ -154,6 +155,15 @@ export default async function BlogPost({ params }: Props) {
 
             <article className="prose prose-zinc dark:prose-invert max-w-none">
               <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl px-4 sm:px-8 lg:px-16 py-8 lg:py-16 border border-zinc-200 dark:border-zinc-800">
+                {post.coverImage && (
+                  <div className="relative w-full h-64 sm:h-80 lg:h-96 mb-8 overflow-hidden rounded-lg">
+                    <img
+                      src={post.coverImage}
+                      alt={post.title}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                )}
                 <header className="text-center mb-8 lg:mb-12">
                   <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">{post.title}</h1>
                   <div className="flex items-center justify-center gap-2 text-muted-foreground mb-6">

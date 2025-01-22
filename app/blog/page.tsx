@@ -14,6 +14,7 @@ interface BlogPost {
   category?: string;
   difficulty?: number;
   slug: string;
+  coverImage?: string;
 }
 
 async function getAllPosts(): Promise<BlogPost[]> {
@@ -99,6 +100,15 @@ export default async function BlogIndex() {
           {posts.map((post) => (
             <Link key={post.slug} href={`/blog/${post.slug}`} className="transition-transform hover:scale-[1.02]">
               <Card className="h-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
+                {post.coverImage && (
+                  <div className="relative w-full h-48 overflow-hidden rounded-t-lg">
+                    <img
+                      src={post.coverImage}
+                      alt={post.title}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                )}
                 <CardHeader>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <time dateTime={post.publishedAt}>

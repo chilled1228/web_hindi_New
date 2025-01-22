@@ -179,5 +179,10 @@ export function TableOfContents({
     return () => observer.disconnect();
   }, [contentRef, defaultOpen, excludeHeadings]);
 
-  return <div ref={tocRef} className="toc-container" />;
+  return (
+    <div 
+      ref={tocRef} 
+      className="toc-container sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto"
+    />
+  );
 } 
