@@ -67,7 +67,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -88,39 +88,75 @@ export default function AdminDashboard() {
     recentPrompts: []
   });
 
+  const fetchStats = async () => {
+    try {
+      const promptsSnapshot = await getDocs(collection(db, 'prompts'));
+      const totalPrompts = promptsSnapshot.size;
+
+      const freePromptsQuery = query(collection(db, 'prompts'), where('price', '==', 0));
+      const freePromptsSnapshot = await getDocs(freePromptsQuery);
+      const freePrompts = freePromptsSnapshot.size;
+
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const totalUsers = usersSnapshot.size;
+
+      const recentPromptsQuery = query(
+        collection(db, 'prompts'),
+        orderBy('createdAt', 'desc'),
+        limit(5)
+      );
+      const recentPromptsSnapshot = await getDocs(recentPromptsQuery);
+      const recentPrompts = recentPromptsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        title: doc.data().title,
+        description: doc.data().description,
+        category: doc.data().category,
+        price: doc.data().price,
+        createdAt: doc.data().createdAt,
+        imageUrl: doc.data().imageUrl
+      }));
+
+      setStats({
+        totalPrompts,
+        freePrompts,
+        totalUsers,
+        recentPrompts
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (!user) {
-        console.log('No user found, redirecting to auth...');
-        router.push('/auth?redirect=/admin');
-        return;
-      }
-
-      console.log('Checking admin status for user:', user.email);
       try {
-        // Force token refresh to ensure we have the latest claims
-        await auth.currentUser?.getIdToken(true);
-        
+        if (!user) {
+          console.log('No user found, redirecting to auth...');
+          router.push('/auth?redirect=/admin');
+          return;
+        }
+
+        const token = await auth.currentUser?.getIdToken(true);
+        if (!token) {
+          throw new Error('Failed to get auth token');
+        }
+
         const userDocRef = doc(db, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
         
-        console.log('User document exists:', userDocSnap.exists());
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          console.log('User data:', userData);
-          
-          if (!userData?.isAdmin) {
-            console.log('User is not admin, redirecting to home...');
-            router.push('/');
-            return;
-          }
-          console.log('User is admin, proceeding...');
-          setIsAdmin(true);
-          fetchUsers();
-        } else {
-          console.log('User document does not exist');
+        if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
+          console.log('User is not admin, redirecting to home...');
           router.push('/');
+          return;
         }
+
+        setIsAdmin(true);
+        fetchUsers();
+        fetchMetadata();
+        fetchBlogPosts();
+        fetchStats();
       } catch (error) {
         console.error('Error checking admin status:', error);
         setError('Failed to verify admin status. Please try logging out and back in.');
@@ -128,66 +164,10 @@ export default function AdminDashboard() {
       }
     };
 
-    if (!loading) {
+    if (!authLoading) {
       checkAdminStatus();
     }
-  }, [user, loading, router]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      fetchMetadata();
-      fetchBlogPosts();
-    }
-  }, [isAdmin]);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Get total prompts
-        const promptsSnapshot = await getDocs(collection(db, 'prompts'));
-        const totalPrompts = promptsSnapshot.size;
-
-        // Get free prompts
-        const freePromptsQuery = query(collection(db, 'prompts'), where('price', '==', 0));
-        const freePromptsSnapshot = await getDocs(freePromptsQuery);
-        const freePrompts = freePromptsSnapshot.size;
-
-        // Get total users
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const totalUsers = usersSnapshot.size;
-
-        // Get recent prompts
-        const recentPromptsQuery = query(
-          collection(db, 'prompts'),
-          orderBy('createdAt', 'desc'),
-          limit(5)
-        );
-        const recentPromptsSnapshot = await getDocs(recentPromptsQuery);
-        const recentPrompts = recentPromptsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          title: doc.data().title,
-          description: doc.data().description,
-          category: doc.data().category,
-          price: doc.data().price,
-          createdAt: doc.data().createdAt,
-          imageUrl: doc.data().imageUrl
-        }));
-
-        setStats({
-          totalPrompts,
-          freePrompts,
-          totalUsers,
-          recentPrompts
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  }, [user, authLoading, router]);
 
   const fetchMetadata = async () => {
     try {
@@ -197,7 +177,6 @@ export default function AdminDashboard() {
       if (metadataSnap.exists()) {
         setMetadata(metadataSnap.data() as WebsiteMetadata);
       } else {
-        // Initialize with default values if document doesn't exist
         const defaultMetadata = {
           title: 'PromptBase',
           description: 'Your AI Prompt Management Tool',
@@ -292,7 +271,7 @@ export default function AdminDashboard() {
       });
       
       console.log('Credits updated successfully');
-      await fetchUsers(); // Refresh the list
+      await fetchUsers();
       setError(null);
     } catch (error: any) {
       console.error('Error updating credits:', error);
@@ -347,27 +326,22 @@ export default function AdminDashboard() {
 
   const handleDuplicatePost = async (postId: string) => {
     try {
-      // Get the original post
       const postDoc = await getDoc(doc(db, 'blog_posts', postId));
       if (!postDoc.exists()) return;
 
       const originalPost = postDoc.data();
       
-      // Create new post data maintaining original status and publishedAt if published
       const newPostData = {
         ...originalPost,
         title: `${originalPost.title} (Copy)`,
         updatedAt: Timestamp.now(),
-        // Maintain original status and publishedAt
         status: originalPost.status,
         publishedAt: originalPost.status === 'published' ? Timestamp.now() : null
       };
 
-      // Create a new document
       const newDocRef = doc(collection(db, 'blog_posts'));
       await setDoc(newDocRef, newPostData);
       
-      // Refresh the posts list
       fetchBlogPosts();
     } catch (error) {
       console.error('Error duplicating post:', error);
@@ -378,17 +352,14 @@ export default function AdminDashboard() {
     if (!publishedAt) return 'Draft';
     
     try {
-      // Handle Firestore Timestamp
       if (publishedAt?.toDate) {
         return formatDistanceToNow(publishedAt.toDate(), { addSuffix: true });
       }
       
-      // Handle string date
       if (typeof publishedAt === 'string') {
         return formatDistanceToNow(new Date(publishedAt), { addSuffix: true });
       }
       
-      // Handle timestamp object with seconds
       if (publishedAt.seconds) {
         return formatDistanceToNow(new Date(publishedAt.seconds * 1000), { addSuffix: true });
       }
@@ -400,15 +371,28 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading || isLoading) {
+  if (authLoading || (!isAdmin && isLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
 
-  if (!user || !isAdmin) {
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Error</h1>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={() => router.push('/')}>Go Home</Button>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
@@ -442,7 +426,6 @@ export default function AdminDashboard() {
       )}
 
       <div className="space-y-8">
-        {/* Website Metadata Section */}
         <div className="rounded-md border p-6">
           <h2 className="text-xl font-semibold mb-4">Website Metadata</h2>
           <div className="space-y-4">
@@ -491,7 +474,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Users Table Section */}
         {isLoading ? (
           <div className="flex items-center justify-center py-10">
             <Loader2 className="w-6 h-6 animate-spin" />
@@ -533,7 +515,6 @@ export default function AdminDashboard() {
                               }
                             }}
                             onChange={(e) => {
-                              // Clear error when user starts typing
                               if (error) setError(null);
                             }}
                           />
@@ -566,7 +547,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Blog Posts Management Section */}
         <div className="rounded-md border p-6 mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Blog Posts</h2>
@@ -648,7 +628,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -690,7 +669,6 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Recent Prompts */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Prompts</CardTitle>
