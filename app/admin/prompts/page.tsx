@@ -27,19 +27,25 @@ export default function AdminPromptsPage() {
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      const user = auth.currentUser
-      if (!user) {
-        console.log('No user found, redirecting to auth...')
-        router.push('/auth?redirect=/admin/prompts')
-        return
-      }
-
       try {
+        const user = auth.currentUser
+        console.log('Checking auth state:', { userExists: !!user })
+        
+        if (!user) {
+          console.log('No user found, redirecting to auth...')
+          router.push('/auth?redirect=/admin/prompts')
+          return
+        }
+
         // Force token refresh to ensure we have the latest claims
+        console.log('Refreshing user token...')
         await user.getIdToken(true)
         
+        console.log('Fetching user document...')
         const userDocRef = doc(db, 'users', user.uid)
         const userDocSnap = await getDoc(userDocRef)
+        
+        console.log('User document exists:', userDocSnap.exists(), 'Is admin:', userDocSnap.data()?.isAdmin)
         
         if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
           console.log('User is not admin, redirecting to home...')
@@ -49,8 +55,12 @@ export default function AdminPromptsPage() {
 
         setIsAdmin(true)
         setIsLoading(false)
-      } catch (error) {
-        console.error('Error checking admin status:', error)
+      } catch (error: any) {
+        console.error('Detailed error in checkAdminStatus:', {
+          errorMessage: error.message,
+          errorCode: error.code,
+          errorStack: error.stack
+        })
         router.push('/')
       }
     }
