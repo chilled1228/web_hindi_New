@@ -30,13 +30,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         await setPersistence(auth, browserLocalPersistence);
-        console.log('Auth persistence set to LOCAL');
         
         unsubscribe = onAuthStateChanged(auth, async (user) => {
-          console.log('Auth state changed:', user ? `User logged in: ${user.email}` : 'User logged out');
           if (user) {
             try {
-              // Force token refresh
               await user.getIdToken(true);
               setUser(user);
             } catch (error) {
@@ -78,6 +75,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <NextThemeProvider
       attribute="class"

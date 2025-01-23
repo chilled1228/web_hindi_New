@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
 import { defaultMetadata } from './metadata'
-import { TabNavigation } from "../components/tab-navigation"
 import { ContentSection } from "../components/content-section"
 import dynamic from 'next/dynamic'
 import { Suspense } from "react"
@@ -66,33 +65,29 @@ interface Prompt {
 
 export default async function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-background">
+    <div className="relative w-full">
       <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-50"></div>
       
-      <div className="relative w-full min-h-screen">
-        <main className="relative max-w-[1400px] mx-auto px-4 pt-8 pb-6">
-          {/* Hero Section */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
-                Free AI Prompts
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-[600px] mx-auto">
-              Discover and use high-quality AI prompts for your projects
-            </p>
-          </div>
-
-          {/* Search and Prompts Grid */}
-          <Suspense fallback={
-            <div className="flex items-center justify-center min-h-[400px]">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          }>
-            <PromptGrid />
-          </Suspense>
-        </main>
+      {/* Hero Section */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
+            Free AI Prompts
+          </span>
+        </h1>
+        <p className="text-base sm:text-lg text-muted-foreground max-w-[600px] mx-auto">
+          Discover and use high-quality AI prompts for your projects
+        </p>
       </div>
+
+      {/* Search and Prompts Grid */}
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      }>
+        <PromptGrid />
+      </Suspense>
     </div>
   )
 }

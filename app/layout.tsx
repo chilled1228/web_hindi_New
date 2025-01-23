@@ -37,6 +37,7 @@ export default function RootLayout({
     description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
     keywords: 'AI prompts, prompt generator, image to prompt, text to prompt, free AI tools'
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchMetadata = async () => {
@@ -49,6 +50,8 @@ export default function RootLayout({
         setMetadata(data);
       } catch (error) {
         console.error('Error fetching metadata:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -111,7 +114,7 @@ export default function RootLayout({
               }]
             })}
           />
-          <div className="relative min-h-screen flex flex-col">
+          <div className="relative flex min-h-screen flex-col">
             <Navbar />
             <main className="flex-1 container mx-auto px-4 py-2 md:px-6 md:py-4">
               {children}
