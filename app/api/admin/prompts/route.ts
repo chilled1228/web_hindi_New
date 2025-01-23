@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
 import { initializeApp, cert, getApps } from 'firebase-admin/app'
+import { z } from 'zod'
 
 // Initialize Firebase Admin
 if (!process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PROJECT_ID) {
@@ -57,12 +58,35 @@ async function generateUniqueSlug(title: string, db: FirebaseFirestore.Firestore
   return newSlug;
 }
 
+// Validation schemas
+const ImageSchema = z.object({
+  url: z.string().url('Invalid image URL'),
+  alt: z.string().optional(),
+  caption: z.string().optional()
+});
+
+const PromptSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(3, 'Title must be at least 3 characters').max(100, 'Title must not exceed 100 characters'),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(500, 'Description must not exceed 500 characters'),
+  promptText: z.string().min(10, 'Prompt text must be at least 10 characters'),
+  category: z.string().min(1, 'Category is required'),
+  imageUrl: z.string().url('Invalid main image URL'),
+  additionalImages: z.array(ImageSchema).max(5, 'Maximum 5 additional images allowed').optional(),
+  tags: z.array(z.string()).max(10, 'Maximum 10 tags allowed').optional(),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  estimatedTime: z.number().min(1).max(180).optional(), // in minutes
+  requirements: z.array(z.string()).optional(),
+  isPublic: z.boolean().default(true),
+  price: z.number().min(0).optional(),
+});
+
 export async function POST(request: Request) {
   try {
     // Get the authorization token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const token = authHeader.split('Bearer ')[1];
@@ -73,113 +97,159 @@ export async function POST(request: Request) {
     // Check if user exists and is admin
     const userDoc = await db.collection('users').doc(decodedToken.uid).get();
     if (!userDoc.exists || !userDoc.data()?.isAdmin) {
-      return new Response('Forbidden', { status: 403 });
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Parse the request body
-    const data = await request.json();
-    const { id, title, description, promptText, category, imageUrl, additionalImages } = data;
+    // Parse and validate the request body
+    const rawData = await request.json();
+    
+    try {
+      const validatedData = PromptSchema.parse(rawData);
+      const { id, title, description, promptText, category, imageUrl, additionalImages, tags, difficulty, estimatedTime, requirements, isPublic, price } = validatedData;
 
-    // Validate required fields
-    if (!title || !description || !promptText || !category || !imageUrl) {
-      return new Response('Missing required fields', { status: 400 });
-    }
-
-    // If id is provided, update existing prompt
-    if (id) {
-      const promptRef = db.collection('prompts').doc(id);
-      const promptDoc = await promptRef.get();
-      
-      if (!promptDoc.exists) {
-        return new Response('Prompt not found', { status: 404 });
-      }
-
-      const currentData = promptDoc.data();
-      
-      // Only generate new slug if title has changed
-      let newSlug = id;
-      if (currentData?.title !== title) {
-        newSlug = await generateUniqueSlug(title, db);
-        
-        if (newSlug !== id) {
-          // Create new document with new slug
-          const newPromptRef = db.collection('prompts').doc(newSlug);
-          
-          // Copy data to new document with updated fields
-          await newPromptRef.set({
-            ...currentData,
-            title,
-            description,
-            promptText,
-            category,
-            imageUrl,
-            additionalImages: additionalImages || [],
-            updatedAt: new Date().toISOString(),
-            updatedBy: decodedToken.uid,
-            slug: newSlug,
-          });
-          
-          // Delete old document
-          await promptRef.delete();
-          
-          return Response.json({ 
-            success: true, 
-            message: 'Prompt updated successfully',
-            promptId: newSlug,
-            slug: newSlug
-          });
+      // Process images - ensure they're accessible
+      const imageUrls = [imageUrl, ...(additionalImages?.map(img => img.url) || [])];
+      const imagePromises = imageUrls.map(async (url) => {
+        try {
+          const response = await fetch(url, { method: 'HEAD' });
+          if (!response.ok) throw new Error(`Image not accessible: ${url}`);
+        } catch (error) {
+          throw new Error(`Invalid image URL: ${url}`);
         }
-      }
+      });
       
-      // Update existing document if slug hasn't changed
-      await promptRef.update({
+      await Promise.all(imagePromises);
+
+      // If id is provided, update existing prompt
+      if (id) {
+        const promptRef = db.collection('prompts').doc(id);
+        const promptDoc = await promptRef.get();
+        
+        if (!promptDoc.exists) {
+          return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
+        }
+
+        const currentData = promptDoc.data();
+        
+        // Only generate new slug if title has changed
+        let newSlug = id;
+        if (currentData?.title !== title) {
+          newSlug = await generateUniqueSlug(title, db);
+          
+          if (newSlug !== id) {
+            // Create new document with new slug
+            const newPromptRef = db.collection('prompts').doc(newSlug);
+            
+            // Copy data to new document with updated fields
+            await newPromptRef.set({
+              ...currentData,
+              title,
+              description,
+              promptText,
+              category,
+              imageUrl,
+              additionalImages: additionalImages || [],
+              tags: tags || [],
+              difficulty,
+              estimatedTime,
+              requirements: requirements || [],
+              isPublic,
+              price,
+              updatedAt: new Date().toISOString(),
+              updatedBy: decodedToken.uid,
+              slug: newSlug,
+            });
+            
+            // Delete old document
+            await promptRef.delete();
+            
+            return NextResponse.json({ 
+              success: true, 
+              message: 'Prompt updated successfully',
+              promptId: newSlug,
+              slug: newSlug
+            });
+          }
+        }
+        
+        // Update existing document if slug hasn't changed
+        await promptRef.update({
+          title,
+          description,
+          promptText,
+          category,
+          imageUrl,
+          additionalImages: additionalImages || [],
+          tags: tags || [],
+          difficulty,
+          estimatedTime,
+          requirements: requirements || [],
+          isPublic,
+          price,
+          updatedAt: new Date().toISOString(),
+          updatedBy: decodedToken.uid,
+          slug: newSlug,
+        });
+
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Prompt updated successfully',
+          promptId: newSlug,
+          slug: newSlug
+        });
+      }
+
+      // Create new prompt
+      const slug = await generateUniqueSlug(title, db);
+      const promptRef = db.collection('prompts').doc(slug);
+      
+      await promptRef.set({
         title,
         description,
         promptText,
         category,
         imageUrl,
         additionalImages: additionalImages || [],
+        tags: tags || [],
+        difficulty,
+        estimatedTime,
+        requirements: requirements || [],
+        isPublic,
+        price,
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        updatedBy: decodedToken.uid,
-        slug: newSlug,
+        createdBy: decodedToken.uid,
+        views: 0,
+        favorites: 0,
+        featured: false,
+        slug,
+        status: 'active',
+        version: 1,
       });
 
-      return Response.json({ 
+      return NextResponse.json({ 
         success: true, 
-        message: 'Prompt updated successfully',
-        promptId: newSlug,
-        slug: newSlug
+        message: 'Prompt created successfully',
+        promptId: slug,
+        slug
       });
+
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json({ 
+          error: 'Validation failed', 
+          details: validationError.errors 
+        }, { status: 400 });
+      }
+      throw validationError;
     }
-
-    // Create new prompt
-    const slug = await generateUniqueSlug(title, db);
-    const promptRef = db.collection('prompts').doc(slug);
-    await promptRef.set({
-      title,
-      description,
-      promptText,
-      category,
-      imageUrl,
-      additionalImages: additionalImages || [],
-      createdAt: new Date().toISOString(),
-      createdBy: decodedToken.uid,
-      views: 0,
-      favorites: 0,
-      featured: false,
-      slug,
-    });
-
-    return Response.json({ 
-      success: true, 
-      message: 'Prompt created successfully',
-      promptId: slug,
-      slug
-    });
 
   } catch (error) {
     console.error('Error creating/updating prompt:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal Server Error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    }, { status: 500 });
   }
 }
 

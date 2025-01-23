@@ -10,7 +10,7 @@ import { ImageUpload } from '@/components/blog/image-upload'
 import { toast } from '@/components/ui/use-toast'
 import { db, auth } from '@/lib/firebase'
 import { doc, getDoc, collection, getDocs, orderBy, query } from 'firebase/firestore'
-import { Loader2, Trash2, Edit, Plus } from 'lucide-react'
+import { Loader2, Trash2, Edit, Plus, Image as ImageIcon, Tag, Clock, FileText } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   Table,
@@ -28,7 +29,25 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { MultiImageUpload } from '@/components/blog/multi-image-upload'
-import { DialogFooter } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card"
+
+interface ImageMetadata {
+  url: string
+  alt: string
+  title: string
+  caption: string
+  description: string
+}
 
 interface Prompt {
   id: string
@@ -37,9 +56,23 @@ interface Prompt {
   promptText: string
   category: string
   imageUrl: string
-  additionalImages?: string[]
+  imageMetadata?: ImageMetadata
+  additionalImages?: ImageMetadata[]
+  isPublic?: boolean
+  price: number
   createdAt: string
+  status?: 'active' | 'draft' | 'archived'
 }
+
+const categories = [
+  'Writing',
+  'Art',
+  'Code',
+  'Business',
+  'Academic',
+  'Personal',
+  'Other'
+]
 
 export default function AdminPromptsPage() {
   const router = useRouter()
@@ -47,17 +80,27 @@ export default function AdminPromptsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [formData, setFormData] = useState({
     title: '',
-    description: '', // SEO description
-    promptText: '', // Actual prompt text
+    description: '',
+    promptText: '',
     price: '0',
     category: '',
     imageUrl: '',
-    additionalImages: [] as string[]
+    imageMetadata: {
+      url: '',
+      alt: '',
+      title: '',
+      caption: '',
+      description: ''
+    },
+    additionalImages: [] as ImageMetadata[],
+    isPublic: true,
+    status: 'active' as 'active' | 'draft' | 'archived'
   })
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [isCreating, setIsCreating] = useState(false)
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -147,12 +190,8 @@ export default function AdminPromptsPage() {
         },
         body: JSON.stringify({
           id: selectedPrompt?.id,
-          title: formData.title,
-          description: formData.description,
-          promptText: formData.promptText,
-          category: formData.category,
-          imageUrl: formData.imageUrl,
-          additionalImages: formData.additionalImages
+          ...formData,
+          price: Number(formData.price)
         })
       })
 
@@ -163,6 +202,7 @@ export default function AdminPromptsPage() {
         description: isCreating ? 'New prompt has been created successfully.' : 'Prompt has been updated successfully.'
       })
 
+      setDialogOpen(false)
       setIsCreating(false)
       setSelectedPrompt(null)
       fetchPrompts()
@@ -223,7 +263,16 @@ export default function AdminPromptsPage() {
       price: '0',
       category: prompt.category,
       imageUrl: prompt.imageUrl,
-      additionalImages: prompt.additionalImages || []
+      imageMetadata: prompt.imageMetadata || {
+        url: prompt.imageUrl,
+        alt: '',
+        title: '',
+        caption: '',
+        description: ''
+      },
+      additionalImages: prompt.additionalImages || [],
+      isPublic: prompt.isPublic || true,
+      status: prompt.status || 'active'
     })
     setIsCreating(false)
   }
@@ -239,24 +288,360 @@ export default function AdminPromptsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Prompts</h1>
-        <Button onClick={() => { setIsCreating(true); setSelectedPrompt(null) }} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          New Prompt
-        </Button>
+        <h1 className="text-3xl font-bold">Prompts</h1>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => { setIsCreating(true); setSelectedPrompt(null) }}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Prompt
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{isCreating ? 'Create New Prompt' : 'Edit Prompt'}</DialogTitle>
+              <DialogDescription>
+                Fill in the details below to {isCreating ? 'create a new prompt' : 'update the prompt'}.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                  <TabsTrigger value="content">Content</TabsTrigger>
+                  <TabsTrigger value="media">Media</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="basic" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Enter prompt title"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={value => setFormData(prev => ({ ...prev, category: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat} value={cat.toLowerCase()}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Enter prompt description"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="isPublic"
+                      checked={formData.isPublic}
+                      onCheckedChange={checked => setFormData(prev => ({ ...prev, isPublic: checked }))}
+                    />
+                    <Label htmlFor="isPublic">Make this prompt public</Label>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="content" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="promptText">Prompt Text</Label>
+                    <Textarea
+                      id="promptText"
+                      value={formData.promptText}
+                      onChange={e => setFormData(prev => ({ ...prev, promptText: e.target.value }))}
+                      placeholder="Enter the actual prompt text"
+                      className="min-h-[200px]"
+                      required
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="media" className="space-y-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Main Image</Label>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Add your main image and its SEO metadata to improve visibility and accessibility.
+                          </p>
+                          <ImageUpload
+                            value={formData.imageUrl}
+                            onChange={url => {
+                              setFormData(prev => ({
+                                ...prev,
+                                imageUrl: url,
+                                imageMetadata: {
+                                  ...prev.imageMetadata,
+                                  url
+                                }
+                              }))
+                            }}
+                            onRemove={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                imageUrl: '',
+                                imageMetadata: {
+                                  url: '',
+                                  alt: '',
+                                  title: '',
+                                  caption: '',
+                                  description: ''
+                                }
+                              }))
+                            }}
+                          />
+                        </div>
+
+                        {formData.imageUrl && (
+                          <div className="grid gap-4 mt-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="imageTitle">Image Title</Label>
+                                <Input
+                                  id="imageTitle"
+                                  placeholder="Enter SEO-friendly image title"
+                                  value={formData.imageMetadata.title}
+                                  onChange={e => setFormData(prev => ({
+                                    ...prev,
+                                    imageMetadata: {
+                                      ...prev.imageMetadata,
+                                      title: e.target.value
+                                    }
+                                  }))}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="imageAlt">Alt Text</Label>
+                                <Input
+                                  id="imageAlt"
+                                  placeholder="Describe image for accessibility"
+                                  value={formData.imageMetadata.alt}
+                                  onChange={e => setFormData(prev => ({
+                                    ...prev,
+                                    imageMetadata: {
+                                      ...prev.imageMetadata,
+                                      alt: e.target.value
+                                    }
+                                  }))}
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="imageCaption">Caption</Label>
+                              <Input
+                                id="imageCaption"
+                                placeholder="Add a caption to display with the image"
+                                value={formData.imageMetadata.caption}
+                                onChange={e => setFormData(prev => ({
+                                  ...prev,
+                                  imageMetadata: {
+                                    ...prev.imageMetadata,
+                                    caption: e.target.value
+                                  }
+                                }))}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="imageDescription">SEO Description</Label>
+                              <Textarea
+                                id="imageDescription"
+                                placeholder="Detailed description for search engines"
+                                value={formData.imageMetadata.description}
+                                onChange={e => setFormData(prev => ({
+                                  ...prev,
+                                  imageMetadata: {
+                                    ...prev.imageMetadata,
+                                    description: e.target.value
+                                  }
+                                }))}
+                                className="h-20"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Additional Images</Label>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Add up to 5 additional images with SEO metadata.
+                          </p>
+                          <MultiImageUpload
+                            onImagesSelected={(urls: string[]) => {
+                              const newImages = urls.map(url => ({
+                                url,
+                                alt: '',
+                                title: '',
+                                caption: '',
+                                description: ''
+                              }))
+                              setFormData(prev => ({
+                                ...prev,
+                                additionalImages: [...prev.additionalImages, ...newImages]
+                              }))
+                            }}
+                            disabled={isLoading || formData.additionalImages.length >= 5}
+                          />
+                        </div>
+
+                        {formData.additionalImages.length > 0 && (
+                          <div className="space-y-6 mt-4">
+                            {formData.additionalImages.map((img, index) => (
+                              <div key={index} className="border rounded-lg p-4 space-y-4">
+                                <div className="flex justify-between items-center">
+                                  <h4 className="font-medium">Image {index + 1}</h4>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        additionalImages: prev.additionalImages.filter((_, i) => i !== index)
+                                      }))
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Title</Label>
+                                    <Input
+                                      placeholder="SEO-friendly image title"
+                                      value={img.title}
+                                      onChange={e => {
+                                        const newImages = [...formData.additionalImages]
+                                        newImages[index] = {
+                                          ...newImages[index],
+                                          title: e.target.value
+                                        }
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          additionalImages: newImages
+                                        }))
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Alt Text</Label>
+                                    <Input
+                                      placeholder="Describe image for accessibility"
+                                      value={img.alt}
+                                      onChange={e => {
+                                        const newImages = [...formData.additionalImages]
+                                        newImages[index] = {
+                                          ...newImages[index],
+                                          alt: e.target.value
+                                        }
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          additionalImages: newImages
+                                        }))
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label>Caption</Label>
+                                  <Input
+                                    placeholder="Add a caption to display with the image"
+                                    value={img.caption}
+                                    onChange={e => {
+                                      const newImages = [...formData.additionalImages]
+                                      newImages[index] = {
+                                        ...newImages[index],
+                                        caption: e.target.value
+                                      }
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        additionalImages: newImages
+                                      }))
+                                    }}
+                                  />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label>SEO Description</Label>
+                                  <Textarea
+                                    placeholder="Detailed description for search engines"
+                                    value={img.description}
+                                    onChange={e => {
+                                      const newImages = [...formData.additionalImages]
+                                      newImages[index] = {
+                                        ...newImages[index],
+                                        description: e.target.value
+                                      }
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        additionalImages: newImages
+                                      }))
+                                    }}
+                                    className="h-20"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isCreating ? 'Create Prompt' : 'Update Prompt'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Prompts Table */}
-      <div className="rounded-lg border overflow-hidden">
+      <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -264,147 +649,30 @@ export default function AdminPromptsPage() {
               <TableRow key={prompt.id}>
                 <TableCell className="font-medium">{prompt.title}</TableCell>
                 <TableCell>{prompt.category}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {new Date(prompt.createdAt).toLocaleDateString()}
-                </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => handleEdit(prompt)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-destructive"
-                      onClick={() => handleDelete(prompt.id)}
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Badge variant={prompt.status === 'active' ? 'default' : 'secondary'}>
+                    {prompt.status || 'active'}
+                  </Badge>
+                </TableCell>
+                <TableCell>{new Date(prompt.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(prompt)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(prompt.id)}
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
-            {prompts.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
-                  No prompts found
-                </TableCell>
-              </TableRow>
-            )}
           </TableBody>
         </Table>
       </div>
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={isCreating || !!selectedPrompt} onOpenChange={(open) => {
-        if (!open) {
-          setIsCreating(false)
-          setSelectedPrompt(null)
-          setFormData({
-            title: '',
-            description: '',
-            promptText: '',
-            price: '0',
-            category: '',
-            imageUrl: '',
-            additionalImages: []
-          })
-        }
-      }}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>{isCreating ? 'Create Prompt' : 'Edit Prompt'}</DialogTitle>
-            <DialogDescription>
-              {isCreating ? 'Add a new prompt to the marketplace' : 'Edit an existing prompt'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="mt-1.5"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="mt-1.5 h-20"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="promptText">Prompt Text</Label>
-                <Textarea
-                  id="promptText"
-                  value={formData.promptText}
-                  onChange={(e) => setFormData(prev => ({ ...prev, promptText: e.target.value }))}
-                  className="mt-1.5 h-32 font-mono text-sm"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="price">Price</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    className="mt-1.5"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="mt-1.5"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="imageUrl">Image URL</Label>
-                <Input
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                  className="mt-1.5"
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="submit" size="sm">
-                {isCreating ? 'Create Prompt' : 'Save Changes'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 } 
