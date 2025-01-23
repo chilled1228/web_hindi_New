@@ -82,10 +82,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Marketplace Settings</h1>
-        <Button onClick={saveSettings} disabled={isSaving}>
+        <h1 className="text-xl font-semibold">Settings</h1>
+        <Button onClick={saveSettings} disabled={isSaving} size="sm">
           {isSaving ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -97,91 +97,61 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6">
-        {/* General Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>General Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Allow New Prompts</Label>
-                <p className="text-sm text-muted-foreground">
-                  Allow users to submit new prompts to the marketplace
-                </p>
-              </div>
-              <Switch
-                checked={settings.allowNewPrompts}
-                onCheckedChange={(checked) =>
-                  setSettings(prev => ({ ...prev, allowNewPrompts: checked }))
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Require Approval</Label>
-                <p className="text-sm text-muted-foreground">
-                  Require admin approval before prompts are published
-                </p>
-              </div>
-              <Switch
-                checked={settings.requireApproval}
-                onCheckedChange={(checked) =>
-                  setSettings(prev => ({ ...prev, requireApproval: checked }))
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Limits Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Limits</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="maxPromptsPerUser">Max Prompts Per User</Label>
-              <Input
-                id="maxPromptsPerUser"
-                type="number"
-                min="1"
-                value={settings.maxPromptsPerUser}
-                onChange={(e) =>
-                  setSettings(prev => ({
-                    ...prev,
-                    maxPromptsPerUser: parseInt(e.target.value) || 1
-                  }))
-                }
-              />
+      <Card className="p-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Allow New Prompts</Label>
               <p className="text-sm text-muted-foreground">
-                Maximum number of prompts a user can submit
+                Allow users to submit new prompts
               </p>
             </div>
+            <Switch
+              checked={settings.allowNewPrompts}
+              onCheckedChange={(checked) =>
+                setSettings(prev => ({ ...prev, allowNewPrompts: checked }))
+              }
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="maxFreePrompts">Max Free Prompts</Label>
-              <Input
-                id="maxFreePrompts"
-                type="number"
-                min="0"
-                value={settings.maxFreePrompts}
-                onChange={(e) =>
-                  setSettings(prev => ({
-                    ...prev,
-                    maxFreePrompts: parseInt(e.target.value) || 0
-                  }))
-                }
-              />
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Require Approval</Label>
               <p className="text-sm text-muted-foreground">
-                Maximum number of free prompts allowed in the marketplace
+                Require admin approval for new prompts
               </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Switch
+              checked={settings.requireApproval}
+              onCheckedChange={(checked) =>
+                setSettings(prev => ({ ...prev, requireApproval: checked }))
+              }
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="maxPromptsPerUser">Max Prompts Per User</Label>
+            <Input
+              id="maxPromptsPerUser"
+              type="number"
+              min="0"
+              value={settings.maxPromptsPerUser}
+              onChange={(e) => setSettings(prev => ({ ...prev, maxPromptsPerUser: parseInt(e.target.value) }))}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="maxFreePrompts">Max Free Prompts</Label>
+            <Input
+              id="maxFreePrompts"
+              type="number"
+              min="0"
+              value={settings.maxFreePrompts}
+              onChange={(e) => setSettings(prev => ({ ...prev, maxFreePrompts: parseInt(e.target.value) }))}
+            />
+          </div>
+        </div>
+      </Card>
     </div>
   )
 } 

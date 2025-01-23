@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { MultiImageUpload } from '@/components/blog/multi-image-upload'
+import { DialogFooter } from '@/components/ui/dialog'
 
 interface Prompt {
   id: string
@@ -238,27 +239,24 @@ export default function AdminPromptsPage() {
   }
 
   return (
-    <div className="container max-w-7xl py-10">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Manage Prompts</h1>
-          <p className="text-muted-foreground">Create and manage prompts in the marketplace</p>
-        </div>
-        <Button onClick={() => { setIsCreating(true); setSelectedPrompt(null) }}>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-xl font-semibold">Prompts</h1>
+        <Button onClick={() => { setIsCreating(true); setSelectedPrompt(null) }} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Create New
+          New Prompt
         </Button>
       </div>
 
       {/* Prompts Table */}
-      <div className="rounded-md border">
+      <div className="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -266,33 +264,44 @@ export default function AdminPromptsPage() {
               <TableRow key={prompt.id}>
                 <TableCell className="font-medium">{prompt.title}</TableCell>
                 <TableCell>{prompt.category}</TableCell>
-                <TableCell>{new Date(prompt.createdAt).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
+                <TableCell className="text-muted-foreground text-sm">
+                  {new Date(prompt.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
+                      className="h-8 w-8 p-0"
                       onClick={() => handleEdit(prompt)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
+                      className="h-8 w-8 p-0 text-destructive"
                       onClick={() => handleDelete(prompt.id)}
                       disabled={isDeleting}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
               </TableRow>
             ))}
+            {prompts.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                  No prompts found
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
 
-      {/* Create/Edit Form Dialog */}
+      {/* Create/Edit Dialog */}
       <Dialog open={isCreating || !!selectedPrompt} onOpenChange={(open) => {
         if (!open) {
           setIsCreating(false)
@@ -308,63 +317,51 @@ export default function AdminPromptsPage() {
           })
         }
       }}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-          <DialogHeader className="sticky top-0 bg-background z-10 pb-6">
-            <DialogTitle>{isCreating ? 'Create New Prompt' : 'Edit Prompt'}</DialogTitle>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{isCreating ? 'Create Prompt' : 'Edit Prompt'}</DialogTitle>
             <DialogDescription>
               {isCreating ? 'Add a new prompt to the marketplace' : 'Edit an existing prompt'}
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-6">
-              <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <div>
                 <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Enter prompt title"
+                  className="mt-1.5"
                   required
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">
-                  SEO Description
-                  <span className="text-sm text-muted-foreground ml-2">
-                    (This will be shown in search results and listings)
-                  </span>
-                </Label>
+              <div>
+                <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Enter SEO-friendly description"
+                  className="mt-1.5 h-20"
                   required
-                  className="h-20"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="promptText">
-                  Prompt Text
-                  <span className="text-sm text-muted-foreground ml-2">
-                    (The actual prompt that users will use)
-                  </span>
-                </Label>
+              <div>
+                <Label htmlFor="promptText">Prompt Text</Label>
                 <Textarea
                   id="promptText"
                   value={formData.promptText}
                   onChange={(e) => setFormData(prev => ({ ...prev, promptText: e.target.value }))}
-                  placeholder="Enter the actual prompt text"
-                  className="h-32 font-mono"
+                  className="mt-1.5 h-32 font-mono text-sm"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="price">Price</Label>
                   <Input
                     id="price"
@@ -373,79 +370,38 @@ export default function AdminPromptsPage() {
                     step="0.01"
                     value={formData.price}
                     onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    placeholder="Enter price (0 for free)"
+                    className="mt-1.5"
                     required
                   />
                 </div>
-
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="category">Category</Label>
                   <Input
                     id="category"
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="Enter prompt category"
+                    className="mt-1.5"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Preview Image</Label>
-                <ImageUpload
+              <div>
+                <Label htmlFor="imageUrl">Image URL</Label>
+                <Input
+                  id="imageUrl"
                   value={formData.imageUrl}
-                  onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-                  onRemove={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  className="mt-1.5"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label>Additional Images</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {formData.additionalImages.map((image, index) => (
-                    <div key={index} className="relative group aspect-square">
-                      <img
-                        src={image}
-                        alt={`Additional image ${index + 1}`}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({
-                          ...prev,
-                          additionalImages: prev.additionalImages.filter((_, i) => i !== index)
-                        }))}
-                        className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <div className="aspect-square border-2 border-dashed rounded-lg">
-                    <MultiImageUpload
-                      onImagesSelected={(urls) => setFormData(prev => ({
-                        ...prev,
-                        additionalImages: [...prev.additionalImages, ...urls]
-                      }))}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <div className="sticky bottom-0 bg-background pt-4 pb-2 mt-6">
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {isCreating ? 'Creating...' : 'Saving...'}
-                  </>
-                ) : (
-                  isCreating ? 'Create Prompt' : 'Save Changes'
-                )}
+            <DialogFooter>
+              <Button type="submit" size="sm">
+                {isCreating ? 'Create Prompt' : 'Save Changes'}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   Loader2,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { db, auth } from '@/lib/firebase'
@@ -27,6 +28,11 @@ const navigation = [
     name: 'Prompts',
     href: '/admin/prompts',
     icon: ListPlus
+  },
+  {
+    name: 'Blog',
+    href: '/admin/blog',
+    icon: FileText
   },
   {
     name: 'Users',
@@ -55,20 +61,16 @@ export default function AdminLayout({
     const checkAdminStatus = async () => {
       const user = auth.currentUser
       if (!user) {
-        console.log('No user found, redirecting to auth...')
         router.push('/auth?redirect=/admin')
         return
       }
 
       try {
-        // Force token refresh to ensure we have the latest claims
         await user.getIdToken(true)
-        
         const userDocRef = doc(db, 'users', user.uid)
         const userDocSnap = await getDoc(userDocRef)
         
         if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
-          console.log('User is not admin, redirecting to home...')
           router.push('/')
           return
         }
@@ -76,7 +78,6 @@ export default function AdminLayout({
         setIsAdmin(true)
         setIsLoading(false)
       } catch (error) {
-        console.error('Error checking admin status:', error)
         router.push('/')
       }
     }
@@ -103,81 +104,69 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
       {/* Mobile sidebar */}
       <div className="lg:hidden">
         <Button
           variant="ghost"
           size="icon"
-          className="fixed top-4 left-4 z-50"
+          className="fixed top-2 left-2 z-50"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
-          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
 
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={() => setSidebarOpen(false)}>
-            <div className="fixed inset-y-0 left-0 w-64 bg-background border-r" onClick={e => e.stopPropagation()}>
-              <div className="flex flex-col h-full">
-                <div className="p-4 border-b">
-                  <h2 className="text-lg font-semibold">Admin Dashboard</h2>
-                </div>
-                <nav className="flex-1 p-4 space-y-1">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors',
-                        pathname === item.href
-                          ? 'bg-primary/10 text-primary hover:bg-primary/15'
-                          : 'text-muted-foreground hover:bg-muted'
-                      )}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {item.name}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
+            <div className="fixed inset-y-0 left-0 w-56 bg-background border-r" onClick={e => e.stopPropagation()}>
+              <nav className="flex flex-col h-full py-2">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg mx-2 transition-colors',
+                      pathname === item.href
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-muted'
+                    )}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
             </div>
           </div>
         )}
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:w-64 lg:block lg:border-r">
-        <div className="flex flex-col h-full">
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold">Admin Dashboard</h2>
-          </div>
-          <nav className="flex-1 p-4 space-y-1">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors',
-                  pathname === item.href
-                    ? 'bg-primary/10 text-primary hover:bg-primary/15'
-                    : 'text-muted-foreground hover:bg-muted'
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-        </div>
+      <div className="hidden lg:block w-56 border-r">
+        <nav className="flex flex-col h-full py-2">
+          {navigation.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                'flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg mx-2 transition-colors',
+                pathname === item.href
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-muted'
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.name}
+            </Link>
+          ))}
+        </nav>
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
-        <main className="py-10">
-          <div className="px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
+      <div className="flex-1">
+        <main className="p-4">
+          {children}
         </main>
       </div>
     </div>

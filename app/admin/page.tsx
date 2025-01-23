@@ -20,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
 interface User {
   id: string;
@@ -402,9 +403,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-xl font-semibold">Dashboard</h1>
         <Button 
           onClick={fetchUsers}
           disabled={isLoading}
@@ -414,289 +415,197 @@ export default function AdminDashboard() {
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
           ) : null}
-          Refresh Users
+          Refresh
         </Button>
       </div>
       
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
           {error}
         </div>
       )}
 
-      <div className="space-y-8">
-        <div className="rounded-md border p-6">
-          <h2 className="text-xl font-semibold mb-4">Website Metadata</h2>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Total Prompts</p>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <p className="text-2xl font-semibold mt-2">{stats.totalPrompts}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {stats.freePrompts} free prompts
+          </p>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Total Users</p>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <p className="text-2xl font-semibold mt-2">{stats.totalUsers}</p>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Paid Prompts</p>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <p className="text-2xl font-semibold mt-2">{stats.totalPrompts - stats.freePrompts}</p>
+        </Card>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Recent Prompts</h2>
+        </div>
+        <div className="space-y-2">
+          {stats.recentPrompts.map((prompt) => (
+            <div
+              key={prompt.id}
+              className="flex items-center justify-between p-3 rounded-lg border bg-card"
+            >
+              <div>
+                <h3 className="font-medium text-sm">{prompt.title}</h3>
+                <p className="text-xs text-muted-foreground">{prompt.category}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm">
+                  {prompt.price === 0 ? 'Free' : prompt.price ? `$${prompt.price.toFixed(2)}` : '$0.00'}
+                </span>
+                <Link href={`/admin/prompts/${prompt.id}`}>
+                  <Button variant="ghost" size="sm" className="h-8">
+                    View
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Blog Posts Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Blog Posts</h2>
+          <Button
+            onClick={() => router.push('/admin/blog/new')}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Post
+          </Button>
+        </div>
+        <div className="rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Author</TableHead>
+                <TableHead>Published</TableHead>
+                <TableHead className="w-[200px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {blogPosts.map((post) => (
+                <TableRow key={post.id}>
+                  <TableCell className="font-medium">{post.title}</TableCell>
+                  <TableCell>
+                    <span className={cn(
+                      "px-2 py-1 rounded-full text-xs font-medium",
+                      post.status === 'published' ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                    )}>
+                      {post.status}
+                    </span>
+                  </TableCell>
+                  <TableCell>{post.author.name}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatPublishedDate(post.publishedAt)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/admin/blog/edit/${post.id}`)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={() => handleDeletePost(post.id)}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDuplicatePost(post.id)}
+                      >
+                        Duplicate
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {blogPosts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                    No blog posts yet
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Website Settings</h2>
+        </div>
+        <Card className="p-4">
           <div className="space-y-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium mb-1">
-                Website Title
-              </label>
+              <Label htmlFor="title">Website Title</Label>
               <Input
                 id="title"
                 value={metadata.title}
                 onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter website title"
+                className="mt-1"
               />
             </div>
             <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-1">
-                Description
-              </label>
+              <Label htmlFor="description">Description</Label>
               <Input
                 id="description"
                 value={metadata.description}
                 onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter website description"
+                className="mt-1"
               />
             </div>
             <div>
-              <label htmlFor="keywords" className="block text-sm font-medium mb-1">
-                Keywords
-              </label>
+              <Label htmlFor="keywords">Keywords</Label>
               <Input
                 id="keywords"
                 value={metadata.keywords}
                 onChange={(e) => setMetadata(prev => ({ ...prev, keywords: e.target.value }))}
-                placeholder="Enter keywords (comma-separated)"
+                className="mt-1"
               />
             </div>
             <Button
               onClick={updateMetadata}
               disabled={isMetadataLoading}
+              size="sm"
             >
               {isMetadataLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : null}
-              Update Metadata
+              Update Settings
             </Button>
           </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="w-6 h-6 animate-spin" />
-          </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>Admin Status</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4">
-                      No users found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            defaultValue={user.credits}
-                            className="w-24"
-                            min="0"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                const target = e.target as HTMLInputElement;
-                                handleCreditUpdate(user.id, target);
-                              }
-                            }}
-                            onChange={(e) => {
-                              if (error) setError(null);
-                            }}
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              const input = e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement;
-                              handleCreditUpdate(user.id, input);
-                            }}
-                            disabled={updateLoading === user.id}
-                          >
-                            Update
-                          </Button>
-                          {updateLoading === user.id && (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{user.isAdmin ? 'Yes' : 'No'}</TableCell>
-                      <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        {/* Future actions can be added here */}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        <div className="rounded-md border p-6 mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Blog Posts</h2>
-            <Button
-              onClick={() => router.push('/admin/blog/new')}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Create New Post
-            </Button>
-          </div>
-
-          <div className="relative overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs uppercase bg-muted">
-                <tr>
-                  <th scope="col" className="px-6 py-3">Title</th>
-                  <th scope="col" className="px-6 py-3">Status</th>
-                  <th scope="col" className="px-6 py-3">Author</th>
-                  <th scope="col" className="px-6 py-3">Published</th>
-                  <th scope="col" className="px-6 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {blogPosts.map((post) => (
-                  <tr key={post.id} className="bg-background border-b">
-                    <td className="px-6 py-4 font-medium">
-                      {post.title}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "px-2 py-1 rounded-full text-xs font-medium",
-                        post.status === 'published' ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                      )}>
-                        {post.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {post.author.name}
-                    </td>
-                    <td className="px-6 py-4">
-                      {formatPublishedDate(post.publishedAt)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/admin/blog/edit/${post.id}`)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700"
-                          onClick={() => handleDeletePost(post.id)}
-                        >
-                          Delete
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDuplicatePost(post.id)}
-                        >
-                          Duplicate
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {blogPosts.length === 0 && (
-              <div className="text-center py-4 text-muted-foreground">
-                No blog posts yet
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Prompts
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalPrompts}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.freePrompts} free prompts
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Users
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Paid Prompts
-              </CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalPrompts - stats.freePrompts}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Prompts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.recentPrompts.map((prompt) => (
-                <div
-                  key={prompt.id}
-                  className="flex items-center justify-between p-4 rounded-lg border"
-                >
-                  <div>
-                    <h3 className="font-medium">{prompt.title}</h3>
-                    <p className="text-sm text-muted-foreground">{prompt.category}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium">
-                      {prompt.price === 0 ? 'Free' : prompt.price ? `$${prompt.price.toFixed(2)}` : '$0.00'}
-                    </span>
-                    <Link href={`/admin/prompts/${prompt.id}`}>
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
         </Card>
       </div>
     </div>
