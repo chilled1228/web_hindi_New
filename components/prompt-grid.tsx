@@ -18,6 +18,7 @@ interface Prompt {
   category: string
   imageUrl: string
   createdAt: string
+  slug: string
 }
 
 export function PromptGrid() {
@@ -95,7 +96,7 @@ export function PromptGrid() {
             {featuredPrompts.map((prompt) => (
               <Link
                 key={prompt.id}
-                href={`/prompts/${prompt.id}`}
+                href={`/prompts/${prompt.slug || prompt.id}`}
                 className="group"
               >
                 <Card className="overflow-hidden hover:shadow-lg transition-all duration-200">
@@ -135,7 +136,7 @@ export function PromptGrid() {
           {filteredPrompts.map((prompt) => (
             <Link
               key={prompt.id}
-              href={`/prompts/${prompt.id}`}
+              href={`/prompts/${prompt.slug || prompt.id}`}
               className="group"
             >
               <Card className="overflow-hidden hover:shadow-lg transition-all duration-200">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { db, auth } from '@/lib/firebase'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, collection, getDocs, where, query } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import { Loader2, Heart, Eye, Check, Edit, Copy, ChevronLeft, ChevronRight, Expand, Plus, X } from 'lucide-react'
 import NextImage from 'next/image'
@@ -39,10 +39,11 @@ interface Prompt {
     avatar?: string
   }
   promptText?: string
+  slug: string
 }
 
 export default function PromptPage() {
-  const { id } = useParams()
+  const params = useParams()
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -70,32 +71,41 @@ export default function PromptPage() {
   useEffect(() => {
     const fetchPrompt = async () => {
       try {
-        const promptDoc = await getDoc(doc(db, 'prompts', id as string))
-        if (!promptDoc.exists()) {
-          setError('Prompt not found')
+        setLoading(true)
+        // First try to find by slug
+        const slugQuery = query(
+          collection(db, 'prompts'),
+          where('slug', '==', params.id)
+        )
+        const slugSnapshot = await getDocs(slugQuery)
+        
+        if (!slugSnapshot.empty) {
+          const doc = slugSnapshot.docs[0]
+          setPrompt({ id: doc.id, ...doc.data() } as Prompt)
           return
         }
-        const promptData = {
-          id: promptDoc.id,
-          ...promptDoc.data()
-        } as Prompt
-        setPrompt(promptData)
-        if (promptData.promptText) {
-          setEditedPrompt(promptData.promptText)
+
+        // If not found by slug, try to find by ID (for backward compatibility)
+        const docRef = doc(db, 'prompts', params.id as string)
+        const docSnap = await getDoc(docRef)
+
+        if (docSnap.exists()) {
+          setPrompt({ id: docSnap.id, ...docSnap.data() } as Prompt)
+        } else {
+          setError('Prompt not found')
         }
-        if (promptData.additionalImages) {
-          setAdditionalImages(promptData.additionalImages)
-        }
-      } catch (err) {
-        setError('Error fetching prompt')
-        console.error('Error fetching prompt:', err)
+      } catch (error) {
+        console.error('Error fetching prompt:', error)
+        setError('Failed to load prompt')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchPrompt()
-  }, [id])
+    if (params.id) {
+      fetchPrompt()
+    }
+  }, [params.id])
 
   useEffect(() => {
     if (prompt?.additionalImages) {
