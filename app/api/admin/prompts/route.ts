@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     // Parse the request body
     const data = await request.json();
-    const { id, title, description, promptText, category, imageUrl } = data;
+    const { id, title, description, promptText, category, imageUrl, additionalImages } = data;
 
     // Validate required fields
     if (!title || !description || !promptText || !category || !imageUrl) {
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         promptText,
         category,
         imageUrl,
+        additionalImages: additionalImages || [],
         updatedAt: new Date().toISOString(),
         updatedBy: decodedToken.uid,
       });
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
       promptText,
       category,
       imageUrl,
+      additionalImages: additionalImages || [],
       createdAt: new Date().toISOString(),
       createdBy: decodedToken.uid,
       views: 0,

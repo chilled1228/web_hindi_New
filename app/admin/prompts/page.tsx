@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { MultiImageUpload } from '@/components/blog/multi-image-upload'
 
 interface Prompt {
   id: string
@@ -35,6 +36,7 @@ interface Prompt {
   promptText: string
   category: string
   imageUrl: string
+  additionalImages?: string[]
   createdAt: string
 }
 
@@ -49,6 +51,7 @@ export default function AdminPromptsPage() {
     price: '0',
     category: '',
     imageUrl: '',
+    additionalImages: [] as string[]
   })
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [isCreating, setIsCreating] = useState(false)
@@ -98,95 +101,76 @@ export default function AdminPromptsPage() {
     checkAdminStatus()
   }, [router])
 
-  useEffect(() => {
-    const fetchPrompts = async () => {
-      try {
-        const promptsQuery = query(collection(db, 'prompts'), orderBy('createdAt', 'desc'))
-        const promptsSnapshot = await getDocs(promptsQuery)
-        const promptsData = promptsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Prompt[]
-        setPrompts(promptsData)
-      } catch (error) {
-        console.error('Error fetching prompts:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to load prompts',
-          variant: 'destructive',
-        })
-      }
-    }
+  const fetchPrompts = async () => {
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) throw new Error('No authentication token')
 
-    if (isAdmin) {
-      fetchPrompts()
+      const promptsRef = collection(db, 'prompts')
+      const q = query(promptsRef, orderBy('createdAt', 'desc'))
+      const querySnapshot = await getDocs(q)
+      
+      const fetchedPrompts = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Prompt[]
+
+      setPrompts(fetchedPrompts)
+    } catch (error) {
+      console.error('Error fetching prompts:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch prompts',
+        variant: 'destructive'
+      })
     }
-  }, [isAdmin])
+  }
+
+  useEffect(() => {
+    fetchPrompts()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const user = auth.currentUser
-      if (!user) throw new Error('Not authenticated')
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) throw new Error('No authentication token')
 
       const response = await fetch('/api/admin/prompts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${await user.getIdToken()}`,
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          ...formData,
-          id: selectedPrompt?.id
-        }),
+          id: selectedPrompt?.id,
+          title: formData.title,
+          description: formData.description,
+          promptText: formData.promptText,
+          category: formData.category,
+          imageUrl: formData.imageUrl,
+          additionalImages: formData.additionalImages
+        })
       })
 
-      if (!response.ok) {
-        throw new Error(isCreating ? 'Failed to create prompt' : 'Failed to update prompt')
-      }
-
-      const result = await response.json()
+      if (!response.ok) throw new Error('Failed to create/update prompt')
 
       toast({
-        title: 'Success',
-        description: result.message,
+        title: isCreating ? 'Prompt Created' : 'Prompt Updated',
+        description: isCreating ? 'New prompt has been created successfully.' : 'Prompt has been updated successfully.'
       })
 
-      // Update prompts list
-      if (selectedPrompt) {
-        setPrompts(prev => prev.map(p => 
-          p.id === selectedPrompt.id 
-            ? { ...p, ...formData, id: p.id, createdAt: p.createdAt }
-            : p
-        ))
-      } else {
-        const newPrompt = {
-          ...formData,
-          id: result.promptId,
-          createdAt: new Date().toISOString(),
-        }
-        setPrompts(prev => [newPrompt, ...prev])
-      }
-
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        promptText: '',
-        price: '0',
-        category: '',
-        imageUrl: '',
-      })
-      setSelectedPrompt(null)
       setIsCreating(false)
+      setSelectedPrompt(null)
+      fetchPrompts()
     } catch (error) {
-      console.error('Error saving prompt:', error)
+      console.error('Error creating/updating prompt:', error)
       toast({
         title: 'Error',
-        description: isCreating ? 'Failed to create prompt' : 'Failed to update prompt',
-        variant: 'destructive',
+        description: 'Failed to create/update prompt. Please try again.',
+        variant: 'destructive'
       })
     } finally {
       setIsLoading(false)
@@ -238,6 +222,7 @@ export default function AdminPromptsPage() {
       price: '0',
       category: prompt.category,
       imageUrl: prompt.imageUrl,
+      additionalImages: prompt.additionalImages || []
     })
     setIsCreating(false)
   }
@@ -319,106 +304,148 @@ export default function AdminPromptsPage() {
             price: '0',
             category: '',
             imageUrl: '',
+            additionalImages: []
           })
         }
       }}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+          <DialogHeader className="sticky top-0 bg-background z-10 pb-6">
             <DialogTitle>{isCreating ? 'Create New Prompt' : 'Edit Prompt'}</DialogTitle>
             <DialogDescription>
               {isCreating ? 'Add a new prompt to the marketplace' : 'Edit an existing prompt'}
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter prompt title"
-                required
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter prompt title"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">
+                  SEO Description
+                  <span className="text-sm text-muted-foreground ml-2">
+                    (This will be shown in search results and listings)
+                  </span>
+                </Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter SEO-friendly description"
+                  required
+                  className="h-20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="promptText">
+                  Prompt Text
+                  <span className="text-sm text-muted-foreground ml-2">
+                    (The actual prompt that users will use)
+                  </span>
+                </Label>
+                <Textarea
+                  id="promptText"
+                  value={formData.promptText}
+                  onChange={(e) => setFormData(prev => ({ ...prev, promptText: e.target.value }))}
+                  placeholder="Enter the actual prompt text"
+                  className="h-32 font-mono"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="Enter price (0 for free)"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                    placeholder="Enter prompt category"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Preview Image</Label>
+                <ImageUpload
+                  value={formData.imageUrl}
+                  onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                  onRemove={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Additional Images</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {formData.additionalImages.map((image, index) => (
+                    <div key={index} className="relative group aspect-square">
+                      <img
+                        src={image}
+                        alt={`Additional image ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          additionalImages: prev.additionalImages.filter((_, i) => i !== index)
+                        }))}
+                        className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="aspect-square border-2 border-dashed rounded-lg">
+                    <MultiImageUpload
+                      onImagesSelected={(urls) => setFormData(prev => ({
+                        ...prev,
+                        additionalImages: [...prev.additionalImages, ...urls]
+                      }))}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">
-                SEO Description
-                <span className="text-sm text-muted-foreground ml-2">
-                  (This will be shown in search results and listings)
-                </span>
-              </Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter SEO-friendly description"
-                required
-              />
+            <div className="sticky bottom-0 bg-background pt-4 pb-2 mt-6">
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    {isCreating ? 'Creating...' : 'Saving...'}
+                  </>
+                ) : (
+                  isCreating ? 'Create Prompt' : 'Save Changes'
+                )}
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="promptText">
-                Prompt Text
-                <span className="text-sm text-muted-foreground ml-2">
-                  (The actual prompt that users will use)
-                </span>
-              </Label>
-              <Textarea
-                id="promptText"
-                value={formData.promptText}
-                onChange={(e) => setFormData(prev => ({ ...prev, promptText: e.target.value }))}
-                placeholder="Enter the actual prompt text"
-                className="min-h-[200px] font-mono"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="price">Price</Label>
-              <Input
-                id="price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                placeholder="Enter price (0 for free)"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                placeholder="Enter prompt category"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Preview Image</Label>
-              <ImageUpload
-                value={formData.imageUrl}
-                onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-                onRemove={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
-              />
-            </div>
-
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  {isCreating ? 'Creating...' : 'Saving...'}
-                </>
-              ) : (
-                isCreating ? 'Create Prompt' : 'Save Changes'
-              )}
-            </Button>
           </form>
         </DialogContent>
       </Dialog>
