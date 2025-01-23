@@ -88,6 +88,7 @@ export default function AdminDashboard() {
     totalUsers: 0,
     recentPrompts: []
   });
+  const [token, setToken] = useState<string>('');
 
   const fetchStats = async () => {
     try {
@@ -165,6 +166,7 @@ export default function AdminDashboard() {
         if (!token) {
           throw new Error('Failed to get auth token');
         }
+        setToken(token);
 
         const userDocRef = doc(db, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
@@ -403,54 +405,39 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-        <Button 
-          onClick={fetchUsers}
-          disabled={isLoading}
-          variant="outline"
-          size="sm"
-        >
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-          ) : null}
-          Refresh
-        </Button>
-      </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Total Prompts</p>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <p className="text-2xl font-semibold mt-2">{stats.totalPrompts}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {stats.freePrompts} free prompts
-          </p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Total Users</p>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <p className="text-2xl font-semibold mt-2">{stats.totalUsers}</p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Paid Prompts</p>
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Prompts</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <p className="text-2xl font-semibold mt-2">{stats.totalPrompts - stats.freePrompts}</p>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalPrompts}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalUsers}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Free Prompts</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.freePrompts}</div>
+          </CardContent>
         </Card>
       </div>
 

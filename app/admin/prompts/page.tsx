@@ -74,6 +74,25 @@ const categories = [
   'Other'
 ]
 
+const initialFormData = {
+  title: '',
+  description: '',
+  promptText: '',
+  category: '',
+  imageUrl: '',
+  price: '',
+  imageMetadata: {
+    url: '',
+    alt: '',
+    title: '',
+    caption: '',
+    description: ''
+  },
+  additionalImages: [],
+  isPublic: false,
+  status: 'draft' as const
+}
+
 export default function AdminPromptsPage() {
   const router = useRouter()
   const [isAdmin, setIsAdmin] = useState(false)
@@ -220,17 +239,15 @@ export default function AdminPromptsPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('Server error response:', errorData)
-        throw new Error(errorData.message || 'Failed to create/update prompt')
+        throw new Error(errorData.details || errorData.error || 'Failed to save prompt')
       }
 
+      const data = await response.json()
       toast({
-        title: isCreating ? 'Prompt Created' : 'Prompt Updated',
-        description: isCreating ? 'New prompt has been created successfully.' : 'Prompt has been updated successfully.'
+        title: 'Success',
+        description: 'Prompt saved successfully!'
       })
-
-      setDialogOpen(false)
-      setIsCreating(false)
+      setFormData(initialFormData)
       setSelectedPrompt(null)
       fetchPrompts()
     } catch (error) {

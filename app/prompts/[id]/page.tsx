@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { db, auth } from '@/lib/firebase'
-import { doc, getDoc, updateDoc, collection, getDocs, where, query } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, collection, getDocs, where, query, limit } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import { Loader2, Heart, Eye, Check, Edit, Copy, ChevronLeft, ChevronRight, Expand, Plus, X } from 'lucide-react'
 import NextImage from 'next/image'
@@ -22,6 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
 interface Prompt {
   id: string
@@ -55,6 +56,7 @@ export default function PromptPage() {
   const [showImageModal, setShowImageModal] = useState(false)
   const [additionalImages, setAdditionalImages] = useState<string[]>([])
   const [isUploadingImages, setIsUploadingImages] = useState(false)
+  const [suggestedPrompts, setSuggestedPrompts] = useState<Prompt[]>([])
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -112,6 +114,33 @@ export default function PromptPage() {
       setAdditionalImages(prompt.additionalImages)
     }
   }, [prompt?.additionalImages])
+
+  useEffect(() => {
+    const fetchSuggestedPrompts = async () => {
+      if (!prompt) return
+      try {
+        // Simple query that only filters by category and limits results
+        const suggestedQuery = query(
+          collection(db, 'prompts'),
+          where('category', '==', prompt.category),
+          limit(10)
+        )
+        const suggestedSnapshot = await getDocs(suggestedQuery)
+        const allSuggestedPrompts = suggestedSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Prompt))
+          .filter(suggestedPrompt => suggestedPrompt.slug !== prompt.slug)
+          .slice(0, 4)
+        
+        setSuggestedPrompts(allSuggestedPrompts)
+      } catch (error) {
+        console.error('Error fetching suggested prompts:', error)
+      }
+    }
+
+    if (prompt) {
+      fetchSuggestedPrompts()
+    }
+  }, [prompt])
 
   const handleSavePrompt = async () => {
     if (!prompt) return
@@ -181,306 +210,326 @@ export default function PromptPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
+        <div className="container max-w-6xl px-4 py-8 mx-auto">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+        </div>
       </div>
     )
   }
 
   if (error || !prompt) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <h1 className="text-2xl font-bold mb-4">Error</h1>
-        <p className="text-muted-foreground">{error || 'Something went wrong'}</p>
+      <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
+        <div className="container max-w-6xl px-4 py-8 mx-auto">
+          <div className="text-center text-red-500">{error || 'Something went wrong'}</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="container max-w-7xl py-10">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column - Image Gallery */}
-        <div className="space-y-6">
-          {/* Main Image Carousel */}
-          <Card className="overflow-hidden bg-gradient-to-br from-pink-100 to-orange-100">
-            <div className="aspect-square relative group">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
+      <div className="container max-w-7xl px-4 py-6 mx-auto">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column - Image and Details */}
+          <div className="lg:col-span-5 space-y-4">
+            {/* Main Image */}
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl border shadow-lg group">
               <NextImage
-                src={allImages[currentImageIndex]}
-                alt={`Image ${currentImageIndex + 1}`}
+                src={prompt.imageUrl}
+                alt={prompt.title}
                 fill
-                style={{ objectFit: "contain" }}
-                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-all duration-300 group-hover:scale-105"
+                onClick={() => setShowImageModal(true)}
                 priority
-                className="transition-transform duration-300 group-hover:scale-105"
               />
-              
-              {/* Image Navigation */}
-              {allImages.length > 1 && (
-                <>
-                  <button
-                    onClick={previousImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <button
+                onClick={() => setShowImageModal(true)}
+                className="absolute bottom-4 right-4 bg-black/70 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
+              >
+                <Expand className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Thumbnails in a row */}
+            {prompt.additionalImages && prompt.additionalImages.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-2 snap-x">
+                {prompt.additionalImages.map((img, index) => (
+                  <div
+                    key={index}
+                    className="relative w-20 flex-none aspect-square overflow-hidden rounded-lg cursor-pointer group ring-1 ring-white/10 snap-start"
+                    onClick={() => {
+                      setCurrentImageIndex(index + 1)
+                      setShowImageModal(true)
+                    }}
                   >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-                  <button
-                    onClick={() => setShowImageModal(true)}
-                    className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Expand className="h-6 w-6" />
-                  </button>
-                </>
-              )}
-            </div>
-          </Card>
-
-          {/* Thumbnail Grid */}
-          {allImages.length > 1 && (
-            <div className="grid grid-cols-4 gap-4">
-              {allImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={cn(
-                    "relative aspect-square overflow-hidden rounded-lg border-2",
-                    currentImageIndex === index
-                      ? "border-primary"
-                      : "border-transparent"
-                  )}
-                >
-                  <NextImage
-                    src={image}
-                    alt={`Thumbnail ${index + 1}`}
-                    fill
-                    style={{ objectFit: "cover" }}
-                    sizes="(max-width: 768px) 25vw, 15vw"
-                    className={cn(
-                      "transition-opacity",
-                      currentImageIndex === index
-                        ? "opacity-100"
-                        : "opacity-60 hover:opacity-100"
-                    )}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right Column - Details */}
-        <div className="space-y-6">
-          {/* Header */}
-          <div>
-            <div className="flex items-center gap-4 mb-4">
-              <Badge variant="secondary" className="px-3 py-1">
-                {prompt.category}
-              </Badge>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Heart className="h-4 w-4" />
-                  <span>{prompt.favorites || 0}</span>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Eye className="h-4 w-4" />
-                  <span>{prompt.views || 0}</span>
-                </div>
-              </div>
-            </div>
-            <h1 className="text-4xl font-bold mb-4">{prompt.title}</h1>
-          </div>
-
-          {/* Author */}
-          {prompt.author && (
-            <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-              {prompt.author.avatar && (
-                <NextImage
-                  src={prompt.author.avatar}
-                  alt={prompt.author.name}
-                  width={48}
-                  height={48}
-                  className="rounded-full"
-                />
-              )}
-              <div>
-                <p className="font-medium">{prompt.author.name}</p>
-                <p className="text-sm text-muted-foreground">Creator</p>
-              </div>
-            </div>
-          )}
-
-          {/* Description */}
-          <div className="prose prose-gray dark:prose-invert">
-            <p className="text-lg text-muted-foreground">{prompt.description}</p>
-          </div>
-
-          {/* Features */}
-          <div className="flex flex-wrap gap-4">
-            <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
-              <Check className="h-4 w-4" /> High Quality
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
-              <Check className="h-4 w-4" /> Tested
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
-              <Check className="h-4 w-4" /> Examples Included
-            </Badge>
-          </div>
-
-          {/* Admin Prompt Editor */}
-          {isAdmin && (
-            <div className="border rounded-lg p-4 space-y-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Prompt Text (Admin Only)</h3>
-                {isEditing ? (
-                  <div className="space-x-2">
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSavePrompt} disabled={isUploadingImages}>
-                      {isUploadingImages ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Saving...
-                        </>
-                      ) : (
-                        'Save'
-                      )}
-                    </Button>
-                  </div>
-                ) : (
-                  <Button variant="outline" onClick={() => setIsEditing(true)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
-              </div>
-
-              {isEditing && (
-                <>
-                  <div className="space-y-4">
-                    <Textarea
-                      value={editedPrompt}
-                      onChange={(e) => setEditedPrompt(e.target.value)}
-                      className="min-h-[200px] font-mono"
-                      placeholder="Enter the prompt text here..."
+                    <NextImage
+                      src={img}
+                      alt={`Additional image ${index + 1}`}
+                      fill
+                      className="object-cover transition-all duration-300 group-hover:scale-110"
                     />
                   </div>
+                ))}
+              </div>
+            )}
 
-                  {/* Image Upload Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Additional Images</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {additionalImages.length} image{additionalImages.length !== 1 ? 's' : ''} added
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {additionalImages.map((image, index) => (
-                        <div key={index} className="relative group aspect-square">
-                          <NextImage
-                            src={image}
-                            alt={`Additional image ${index + 1}`}
-                            fill
-                            className="object-cover rounded-lg"
-                          />
-                          <button
-                            onClick={() => handleRemoveImage(index)}
-                            className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                      <div className="aspect-square border-2 border-dashed rounded-lg">
-                        <MultiImageUpload
-                          onImagesSelected={handleAddImages}
-                          disabled={isUploadingImages}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+            {/* Author Info */}
+            {prompt.author && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+                {prompt.author.avatar && (
+                  <NextImage
+                    src={prompt.author.avatar}
+                    alt={prompt.author.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full ring-2 ring-primary/20"
+                  />
+                )}
+                <div>
+                  <p className="text-sm text-muted-foreground">Created by</p>
+                  <p className="font-semibold">{prompt.author.name}</p>
+                </div>
+              </div>
+            )}
+          </div>
 
-              {!isEditing && (
-                <pre className="bg-muted p-4 rounded-lg whitespace-pre-wrap font-mono">
-                  {prompt.promptText || 'No prompt text added yet.'}
-                </pre>
-              )}
+          {/* Right Column - Content */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* Header */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary" className="px-3 py-1.5 text-sm font-medium">
+                  {prompt.category}
+                </Badge>
+                <div className="flex items-center gap-4 text-muted-foreground text-sm">
+                  <span className="flex items-center gap-1.5">
+                    <Heart className="w-4 h-4" />
+                    {prompt.favorites || 0}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Eye className="w-4 h-4" />
+                    {prompt.views || 0}
+                  </span>
+                </div>
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight">{prompt.title}</h1>
+              <p className="text-muted-foreground">{prompt.description}</p>
             </div>
-          )}
 
-          {/* Action Button */}
-          <div className="pt-6">
-            {prompt.promptText ? (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="w-full">
-                    Get Prompt
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Prompt Text</DialogTitle>
-                    <DialogDescription>
-                      Copy this prompt to use with your favorite AI model
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="relative mt-4">
-                    <pre className="bg-muted p-6 rounded-lg whitespace-pre-wrap font-mono text-sm">
-                      {prompt.promptText}
-                    </pre>
+            {/* Tabs for Different Sections */}
+            <div className="space-y-4">
+              <div className="flex flex-col gap-4">
+                {/* Prompt Text Section */}
+                <Card className="p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-primary/10">
+                        <Edit className="w-4 h-4 text-primary" />
+                      </div>
+                      <h2 className="font-semibold">Prompt Text</h2>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="absolute top-4 right-4"
                       onClick={handleCopyPrompt}
+                      className="gap-1.5"
                     >
-                      <Copy className="h-4 w-4 mr-2" />
+                      <Copy className="w-3.5 h-3.5" />
                       Copy
                     </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
-            ) : (
-              <Button size="lg" className="w-full" disabled>
-                Prompt Coming Soon
-              </Button>
+
+                  {isAdmin ? (
+                    <div className="space-y-3">
+                      {isEditing ? (
+                        <>
+                          <Textarea
+                            value={editedPrompt}
+                            onChange={(e) => setEditedPrompt(e.target.value)}
+                            className="min-h-[120px] font-mono text-sm"
+                            placeholder="Enter your prompt text here..."
+                          />
+                          <div className="flex gap-2">
+                            <Button onClick={() => setIsEditing(false)} variant="ghost" size="sm">
+                              Cancel
+                            </Button>
+                            <Button onClick={handleSavePrompt} size="sm" className="flex-1">
+                              {isUploadingImages ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : (
+                                'Save Changes'
+                              )}
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="relative group">
+                          <pre className="p-3 rounded-md bg-muted font-mono text-sm whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                            {prompt.promptText || 'No prompt text available'}
+                          </pre>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsEditing(true)}
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <pre className="p-3 rounded-md bg-muted font-mono text-sm whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                      {prompt.promptText || 'No prompt text available'}
+                    </pre>
+                  )}
+                </Card>
+
+                {/* Examples Section */}
+                {prompt.examples && prompt.examples.length > 0 && (
+                  <Card className="p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 rounded-md bg-primary/10">
+                        <Check className="w-4 h-4 text-primary" />
+                      </div>
+                      <h2 className="font-semibold">Examples</h2>
+                    </div>
+                    <ul className="space-y-2">
+                      {prompt.examples.map((example, index) => (
+                        <li key={index} className="relative pl-4 text-muted-foreground text-sm">
+                          <div className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-primary/60" />
+                          {example}
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+              </div>
+            </div>
+
+            {/* Admin Image Upload - Collapsed by default */}
+            {isAdmin && (
+              <Card className="p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-md bg-primary/10">
+                      <Plus className="w-4 h-4 text-primary" />
+                    </div>
+                    <h2 className="font-semibold">Additional Images</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {additionalImages.length} image{additionalImages.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {additionalImages.map((image, index) => (
+                    <div key={index} className="relative aspect-square group">
+                      <NextImage
+                        src={image}
+                        alt={`Additional image ${index + 1}`}
+                        fill
+                        className="object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-1 right-1 p-1 bg-black/50 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="aspect-square border-2 border-dashed rounded-lg">
+                    <MultiImageUpload
+                      onImagesSelected={handleAddImages}
+                      disabled={isUploadingImages}
+                    />
+                  </div>
+                </div>
+              </Card>
             )}
           </div>
         </div>
+
+        {/* Suggested Prompts Section */}
+        {suggestedPrompts.length > 0 && (
+          <div className="mt-16">
+            <h3 className="text-xl font-semibold mb-6">Similar Prompts</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {suggestedPrompts.map((suggestedPrompt) => (
+                <Link
+                  key={suggestedPrompt.id}
+                  href={`/prompts/${suggestedPrompt.slug || suggestedPrompt.id}`}
+                  className="group"
+                >
+                  <Card className="overflow-hidden transition-all duration-300 hover:shadow-2xl dark:shadow-primary/5 hover:-translate-y-1 bg-background/60 dark:bg-gray-800/40 backdrop-blur-xl border-primary/10 dark:border-white/5">
+                    <div className="aspect-square relative bg-gradient-to-br from-background/80 to-muted/50 dark:from-gray-900/80 dark:to-gray-800/50 overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                      <NextImage
+                        src={suggestedPrompt.imageUrl}
+                        alt={suggestedPrompt.title}
+                        fill
+                        className="transition-all duration-500 group-hover:scale-110"
+                        style={{ objectFit: "cover" }}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <Badge variant="secondary" className="mb-2 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground hover:bg-primary/20 transition-colors duration-300">
+                        {suggestedPrompt.category}
+                      </Badge>
+                      <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors duration-300 line-clamp-1">
+                        {suggestedPrompt.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground/80 line-clamp-2">
+                        {suggestedPrompt.description}
+                      </p>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Full Screen Image Modal */}
+      {/* Image Modal */}
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-        <DialogContent className="max-w-7xl w-full h-[90vh]">
-          <div className="relative w-full h-full">
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>Image Gallery</DialogTitle>
+          </DialogHeader>
+          <div className="relative aspect-[16/10]">
             <NextImage
-              src={allImages[currentImageIndex]}
-              alt={`Full size image ${currentImageIndex + 1}`}
+              src={currentImageIndex === 0 ? prompt?.imageUrl || '' : prompt?.additionalImages?.[currentImageIndex - 1] || ''}
+              alt={prompt?.title || ''}
               fill
-              style={{ objectFit: "contain" }}
+              className="object-contain"
               priority
             />
-            {allImages.length > 1 && (
+            {(prompt?.additionalImages?.length || 0) > 0 && (
               <>
                 <button
                   onClick={previousImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-3 rounded-full"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 rounded-full text-white transition-transform hover:scale-110 disabled:opacity-50 disabled:hover:scale-100"
+                  disabled={currentImageIndex === 0}
                 >
-                  <ChevronLeft className="h-8 w-8" />
+                  <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-3 rounded-full"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 rounded-full text-white transition-transform hover:scale-110 disabled:opacity-50 disabled:hover:scale-100"
+                  disabled={currentImageIndex === (prompt?.additionalImages?.length || 0)}
                 >
-                  <ChevronRight className="h-8 w-8" />
+                  <ChevronRight className="w-6 h-6" />
                 </button>
               </>
             )}

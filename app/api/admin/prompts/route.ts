@@ -59,10 +59,12 @@ async function generateUniqueSlug(title: string, db: FirebaseFirestore.Firestore
 }
 
 // Validation schemas
-const ImageSchema = z.object({
+const ImageMetadataSchema = z.object({
   url: z.string().url('Invalid image URL'),
   alt: z.string().optional(),
-  caption: z.string().optional()
+  title: z.string().optional(),
+  caption: z.string().optional(),
+  description: z.string().optional()
 });
 
 const PromptSchema = z.object({
@@ -72,13 +74,11 @@ const PromptSchema = z.object({
   promptText: z.string().min(10, 'Prompt text must be at least 10 characters'),
   category: z.string().min(1, 'Category is required'),
   imageUrl: z.string().url('Invalid main image URL'),
-  additionalImages: z.array(ImageSchema).max(5, 'Maximum 5 additional images allowed').optional(),
-  tags: z.array(z.string()).max(10, 'Maximum 10 tags allowed').optional(),
-  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
-  estimatedTime: z.number().min(1).max(180).optional(), // in minutes
-  requirements: z.array(z.string()).optional(),
+  imageMetadata: ImageMetadataSchema.optional(),
+  additionalImages: z.array(ImageMetadataSchema).max(5, 'Maximum 5 additional images allowed').optional(),
   isPublic: z.boolean().default(true),
-  price: z.number().min(0).optional(),
+  price: z.number().min(0),
+  status: z.enum(['active', 'draft', 'archived']).default('active')
 });
 
 export async function POST(request: Request) {
@@ -102,23 +102,23 @@ export async function POST(request: Request) {
 
     // Parse and validate the request body
     const rawData = await request.json();
+    console.log('Received data:', rawData);
     
     try {
       const validatedData = PromptSchema.parse(rawData);
-      const { id, title, description, promptText, category, imageUrl, additionalImages, tags, difficulty, estimatedTime, requirements, isPublic, price } = validatedData;
-
-      // Process images - ensure they're accessible
-      const imageUrls = [imageUrl, ...(additionalImages?.map(img => img.url) || [])];
-      const imagePromises = imageUrls.map(async (url) => {
-        try {
-          const response = await fetch(url, { method: 'HEAD' });
-          if (!response.ok) throw new Error(`Image not accessible: ${url}`);
-        } catch (error) {
-          throw new Error(`Invalid image URL: ${url}`);
-        }
-      });
-      
-      await Promise.all(imagePromises);
+      const { 
+        id, 
+        title, 
+        description, 
+        promptText, 
+        category, 
+        imageUrl,
+        imageMetadata,
+        additionalImages,
+        isPublic,
+        price,
+        status 
+      } = validatedData;
 
       // If id is provided, update existing prompt
       if (id) {
@@ -148,13 +148,11 @@ export async function POST(request: Request) {
               promptText,
               category,
               imageUrl,
-              additionalImages: additionalImages || [],
-              tags: tags || [],
-              difficulty,
-              estimatedTime,
-              requirements: requirements || [],
+              imageMetadata,
+              additionalImages,
               isPublic,
               price,
+              status,
               updatedAt: new Date().toISOString(),
               updatedBy: decodedToken.uid,
               slug: newSlug,
@@ -179,13 +177,11 @@ export async function POST(request: Request) {
           promptText,
           category,
           imageUrl,
-          additionalImages: additionalImages || [],
-          tags: tags || [],
-          difficulty,
-          estimatedTime,
-          requirements: requirements || [],
+          imageMetadata,
+          additionalImages,
           isPublic,
           price,
+          status,
           updatedAt: new Date().toISOString(),
           updatedBy: decodedToken.uid,
           slug: newSlug,
@@ -209,13 +205,11 @@ export async function POST(request: Request) {
         promptText,
         category,
         imageUrl,
-        additionalImages: additionalImages || [],
-        tags: tags || [],
-        difficulty,
-        estimatedTime,
-        requirements: requirements || [],
+        imageMetadata,
+        additionalImages,
         isPublic,
         price,
+        status,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy: decodedToken.uid,
@@ -223,7 +217,6 @@ export async function POST(request: Request) {
         favorites: 0,
         featured: false,
         slug,
-        status: 'active',
         version: 1,
       });
 
@@ -235,20 +228,18 @@ export async function POST(request: Request) {
       });
 
     } catch (validationError) {
-      if (validationError instanceof z.ZodError) {
-        return NextResponse.json({ 
-          error: 'Validation failed', 
-          details: validationError.errors 
-        }, { status: 400 });
-      }
-      throw validationError;
+      console.error('Validation error:', validationError);
+      return NextResponse.json({ 
+        error: 'Validation error', 
+        details: validationError instanceof Error ? validationError.message : 'Invalid data'
+      }, { status: 400 });
     }
 
   } catch (error) {
-    console.error('Error creating/updating prompt:', error);
+    console.error('Server error:', error);
     return NextResponse.json({ 
-      error: 'Internal Server Error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'An unexpected error occurred'
     }, { status: 500 });
   }
 }

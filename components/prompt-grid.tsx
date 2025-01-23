@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { db } from '@/lib/firebase'
 import { collection, query, getDocs, orderBy, limit, where } from 'firebase/firestore'
 import { Card } from '@/components/ui/card'
@@ -9,7 +9,7 @@ import { Search } from 'lucide-react'
 import NextImage from 'next/image'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
-import { useEffect } from 'react'
+import { cn } from '@/lib/utils'
 
 interface Prompt {
   id: string
@@ -21,29 +21,33 @@ interface Prompt {
   slug: string
 }
 
+function PromptCardSkeleton() {
+  return (
+    <Card className="overflow-hidden transition-all duration-300 bg-background/60 dark:bg-gray-800/40 backdrop-blur-xl border-primary/10 dark:border-white/5">
+      <div className="aspect-square relative bg-gradient-to-br from-background/80 to-muted/50 dark:from-gray-900/80 dark:to-gray-800/50 overflow-hidden">
+        <div className="absolute inset-0 animate-pulse bg-muted/50" />
+      </div>
+      <div className="p-6 space-y-3">
+        <div className="w-20 h-6 rounded-full bg-muted/50 animate-pulse" />
+        <div className="space-y-2">
+          <div className="h-6 w-3/4 bg-muted/50 rounded animate-pulse" />
+          <div className="h-4 w-full bg-muted/50 rounded animate-pulse" />
+          <div className="h-4 w-2/3 bg-muted/50 rounded animate-pulse" />
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 export function PromptGrid() {
   const [searchQuery, setSearchQuery] = useState('')
   const [prompts, setPrompts] = useState<Prompt[]>([])
-  const [featuredPrompts, setFeaturedPrompts] = useState<Prompt[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchPrompts = async () => {
       try {
-        // Fetch featured prompts
-        const featuredQuery = query(
-          collection(db, 'prompts'),
-          where('featured', '==', true),
-          limit(3)
-        )
-        const featuredSnapshot = await getDocs(featuredQuery)
-        const featuredData = featuredSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Prompt[]
-        setFeaturedPrompts(featuredData)
-
         // Fetch all prompts
         const promptsQuery = query(
           collection(db, 'prompts'),
@@ -75,103 +79,70 @@ export function PromptGrid() {
   return (
     <>
       {/* Search Bar */}
-      <div className="max-w-2xl mx-auto mb-8 px-4">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+      <div className="max-w-2xl mx-auto mb-12 px-4">
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-300 opacity-50"></div>
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 transition-colors group-hover:text-primary" />
           <Input
             type="text"
             placeholder="Search prompts..."
-            className="pl-12 h-12 bg-background/80 border-primary/20 hover:border-primary/40 text-base rounded-lg"
+            className="pl-12 h-14 bg-background/60 backdrop-blur-xl border-primary/10 hover:border-primary/30 focus:border-primary/50 text-base rounded-xl shadow-lg transition-all duration-300"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Featured Prompts */}
-      {featuredPrompts.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Featured Prompts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredPrompts.map((prompt) => (
+      {/* All Prompts */}
+      <section className="px-4">
+        <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">All Prompts</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+          {isLoading ? (
+            <>
+              {Array.from({ length: 8 }).map((_, index) => (
+                <PromptCardSkeleton key={index} />
+              ))}
+            </>
+          ) : filteredPrompts.length > 0 ? (
+            filteredPrompts.map((prompt) => (
               <Link
                 key={prompt.id}
                 href={`/prompts/${prompt.slug || prompt.id}`}
                 className="group"
               >
-                <Card className="overflow-hidden hover:shadow-lg transition-all duration-200">
-                  <div className="aspect-[16/9] relative bg-gradient-to-br from-pink-100 to-orange-100 p-4">
+                <Card className="overflow-hidden transition-all duration-300 hover:shadow-2xl dark:shadow-primary/5 hover:-translate-y-1 bg-background/60 dark:bg-gray-800/40 backdrop-blur-xl border-primary/10 dark:border-white/5">
+                  <div className="aspect-square relative bg-gradient-to-br from-background/80 to-muted/50 dark:from-gray-900/80 dark:to-gray-800/50 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
                     <NextImage
                       src={prompt.imageUrl}
                       alt={prompt.title}
                       fill
-                      style={{ objectFit: "contain" }}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
-                      priority
+                      className="transition-all duration-500 group-hover:scale-110"
+                      style={{ objectFit: "cover" }}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                       unoptimized={process.env.NODE_ENV === 'development'}
                     />
                   </div>
-                  <div className="p-4">
-                    <Badge variant="secondary" className="mb-2">
+                  <div className="p-6">
+                    <Badge variant="secondary" className="mb-3 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground hover:bg-primary/20 transition-colors duration-300">
                       {prompt.category}
                     </Badge>
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                    <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors duration-300">
                       {prompt.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-muted-foreground/80 line-clamp-2">
                       {prompt.description}
                     </p>
                   </div>
                 </Card>
               </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* All Prompts */}
-      <section>
-        <h2 className="text-2xl font-bold mb-6">All Prompts</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredPrompts.map((prompt) => (
-            <Link
-              key={prompt.id}
-              href={`/prompts/${prompt.slug || prompt.id}`}
-              className="group"
-            >
-              <Card className="overflow-hidden hover:shadow-lg transition-all duration-200">
-                <div className="aspect-square relative bg-gradient-to-br from-pink-100 to-orange-100 p-4">
-                  <NextImage
-                    src={prompt.imageUrl}
-                    alt={prompt.title}
-                    fill
-                    style={{ objectFit: "contain" }}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
-                    unoptimized={process.env.NODE_ENV === 'development'}
-                  />
-                </div>
-                <div className="p-4">
-                  <Badge variant="secondary" className="mb-2">
-                    {prompt.category}
-                  </Badge>
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                    {prompt.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {prompt.description}
-                  </p>
-                </div>
-              </Card>
-            </Link>
-          ))}
+            ))
+          ) : (
+            <div className="col-span-full text-center py-16 bg-background/60 backdrop-blur-xl rounded-xl border border-primary/10">
+              <p className="text-muted-foreground text-lg">No prompts found matching your search.</p>
+            </div>
+          )}
         </div>
-
-        {/* Empty State */}
-        {filteredPrompts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No prompts found matching your search.</p>
-          </div>
-        )}
       </section>
     </>
   )
