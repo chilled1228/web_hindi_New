@@ -95,7 +95,7 @@ export function PromptGrid() {
 
       {/* All Prompts */}
       <section className="px-4">
-        <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">All Prompts</h2>
+        <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">All Prompts</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {isLoading ? (
             <>

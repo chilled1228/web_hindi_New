@@ -30,7 +30,13 @@ interface Prompt {
   description: string
   category: string
   imageUrl: string
-  additionalImages?: string[]
+  additionalImages?: {
+    url: string
+    alt?: string
+    title?: string
+    caption?: string
+    description?: string
+  }[]
   createdAt: string
   favorites?: number
   views?: number
@@ -111,7 +117,7 @@ export default function PromptPage() {
 
   useEffect(() => {
     if (prompt?.additionalImages) {
-      setAdditionalImages(prompt.additionalImages)
+      setAdditionalImages(prompt.additionalImages.map(img => img.url))
     }
   }, [prompt?.additionalImages])
 
@@ -148,10 +154,10 @@ export default function PromptPage() {
       setIsUploadingImages(true)
       await updateDoc(doc(db, 'prompts', prompt.id), {
         promptText: editedPrompt,
-        additionalImages: additionalImages
+        additionalImages: additionalImages.map(url => ({ url }))
       })
       setIsEditing(false)
-      setPrompt(prev => prev ? { ...prev, promptText: editedPrompt, additionalImages } : null)
+      setPrompt(prev => prev ? { ...prev, promptText: editedPrompt, additionalImages: additionalImages.map(url => ({ url })) } : null)
       toast({
         title: "Success",
         description: "Prompt updated successfully",
@@ -196,7 +202,7 @@ export default function PromptPage() {
 
   const allImages = prompt ? [
     prompt.imageUrl,
-    ...(prompt.additionalImages || []),
+    ...(prompt.additionalImages?.map(img => img.url) || []),
     ...(prompt.examples || [])
   ] : []
 
@@ -269,8 +275,8 @@ export default function PromptPage() {
                     }}
                   >
                     <NextImage
-                      src={img}
-                      alt={`Additional image ${index + 1}`}
+                      src={img.url}
+                      alt={img.alt || `Additional image ${index + 1}`}
                       fill
                       className="object-cover transition-all duration-300 group-hover:scale-110"
                     />
@@ -318,7 +324,7 @@ export default function PromptPage() {
                   </span>
                 </div>
               </div>
-              <h1 className="text-3xl font-bold tracking-tight">{prompt.title}</h1>
+              <h2 className="text-3xl font-bold tracking-tight">{prompt.title}</h2>
               <p className="text-muted-foreground">{prompt.description}</p>
             </div>
 
@@ -509,7 +515,7 @@ export default function PromptPage() {
           </DialogHeader>
           <div className="relative aspect-[16/10]">
             <NextImage
-              src={currentImageIndex === 0 ? prompt?.imageUrl || '' : prompt?.additionalImages?.[currentImageIndex - 1] || ''}
+              src={currentImageIndex === 0 ? prompt?.imageUrl || '' : prompt?.additionalImages?.[currentImageIndex - 1]?.url || ''}
               alt={prompt?.title || ''}
               fill
               className="object-contain"
