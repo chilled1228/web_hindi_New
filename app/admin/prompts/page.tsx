@@ -9,8 +9,34 @@ import { Label } from '@/components/ui/label'
 import { ImageUpload } from '@/components/blog/image-upload'
 import { toast } from '@/components/ui/use-toast'
 import { db, auth } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
-import { Loader2 } from 'lucide-react'
+import { doc, getDoc, collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { Loader2, Trash2, Edit, Plus } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+
+interface Prompt {
+  id: string
+  title: string
+  description: string
+  promptText: string
+  category: string
+  imageUrl: string
+  createdAt: string
+}
 
 export default function AdminPromptsPage() {
   const router = useRouter()
@@ -24,6 +50,10 @@ export default function AdminPromptsPage() {
     category: '',
     imageUrl: '',
   })
+  const [prompts, setPrompts] = useState<Prompt[]>([])
+  const [isCreating, setIsCreating] = useState(false)
+  const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -68,6 +98,31 @@ export default function AdminPromptsPage() {
     checkAdminStatus()
   }, [router])
 
+  useEffect(() => {
+    const fetchPrompts = async () => {
+      try {
+        const promptsQuery = query(collection(db, 'prompts'), orderBy('createdAt', 'desc'))
+        const promptsSnapshot = await getDocs(promptsQuery)
+        const promptsData = promptsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Prompt[]
+        setPrompts(promptsData)
+      } catch (error) {
+        console.error('Error fetching prompts:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to load prompts',
+          variant: 'destructive',
+        })
+      }
+    }
+
+    if (isAdmin) {
+      fetchPrompts()
+    }
+  }, [isAdmin])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -82,17 +137,38 @@ export default function AdminPromptsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${await user.getIdToken()}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          id: selectedPrompt?.id
+        }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create prompt')
+        throw new Error(isCreating ? 'Failed to create prompt' : 'Failed to update prompt')
       }
+
+      const result = await response.json()
 
       toast({
         title: 'Success',
-        description: 'Prompt created successfully',
+        description: result.message,
       })
+
+      // Update prompts list
+      if (selectedPrompt) {
+        setPrompts(prev => prev.map(p => 
+          p.id === selectedPrompt.id 
+            ? { ...p, ...formData, id: p.id, createdAt: p.createdAt }
+            : p
+        ))
+      } else {
+        const newPrompt = {
+          ...formData,
+          id: result.promptId,
+          createdAt: new Date().toISOString(),
+        }
+        setPrompts(prev => [newPrompt, ...prev])
+      }
 
       // Reset form
       setFormData({
@@ -103,16 +179,67 @@ export default function AdminPromptsPage() {
         category: '',
         imageUrl: '',
       })
+      setSelectedPrompt(null)
+      setIsCreating(false)
     } catch (error) {
-      console.error('Error creating prompt:', error)
+      console.error('Error saving prompt:', error)
       toast({
         title: 'Error',
-        description: 'Failed to create prompt',
+        description: isCreating ? 'Failed to create prompt' : 'Failed to update prompt',
         variant: 'destructive',
       })
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleDelete = async (promptId: string) => {
+    if (!confirm('Are you sure you want to delete this prompt?')) return
+    
+    setIsDeleting(true)
+    try {
+      const user = auth.currentUser
+      if (!user) throw new Error('Not authenticated')
+
+      const response = await fetch(`/api/admin/prompts?id=${promptId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${await user.getIdToken()}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete prompt')
+      }
+
+      setPrompts(prev => prev.filter(p => p.id !== promptId))
+      toast({
+        title: 'Success',
+        description: 'Prompt deleted successfully',
+      })
+    } catch (error) {
+      console.error('Error deleting prompt:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete prompt',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleEdit = (prompt: Prompt) => {
+    setSelectedPrompt(prompt)
+    setFormData({
+      title: prompt.title,
+      description: prompt.description,
+      promptText: prompt.promptText,
+      price: '0',
+      category: prompt.category,
+      imageUrl: prompt.imageUrl,
+    })
+    setIsCreating(false)
   }
 
   if (!isAdmin) {
@@ -126,101 +253,175 @@ export default function AdminPromptsPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Create New Prompt</h1>
-        <p className="text-muted-foreground">Add a new prompt to the marketplace</p>
+    <div className="container max-w-7xl py-10">
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Manage Prompts</h1>
+          <p className="text-muted-foreground">Create and manage prompts in the marketplace</p>
+        </div>
+        <Button onClick={() => { setIsCreating(true); setSelectedPrompt(null) }}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create New
+        </Button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Enter prompt title"
-            required
-          />
-        </div>
+      {/* Prompts Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {prompts.map((prompt) => (
+              <TableRow key={prompt.id}>
+                <TableCell className="font-medium">{prompt.title}</TableCell>
+                <TableCell>{prompt.category}</TableCell>
+                <TableCell>{new Date(prompt.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(prompt)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(prompt.id)}
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="description">
-            SEO Description
-            <span className="text-sm text-muted-foreground ml-2">
-              (This will be shown in search results and listings)
-            </span>
-          </Label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="Enter SEO-friendly description"
-            required
-          />
-        </div>
+      {/* Create/Edit Form Dialog */}
+      <Dialog open={isCreating || !!selectedPrompt} onOpenChange={(open) => {
+        if (!open) {
+          setIsCreating(false)
+          setSelectedPrompt(null)
+          setFormData({
+            title: '',
+            description: '',
+            promptText: '',
+            price: '0',
+            category: '',
+            imageUrl: '',
+          })
+        }
+      }}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{isCreating ? 'Create New Prompt' : 'Edit Prompt'}</DialogTitle>
+            <DialogDescription>
+              {isCreating ? 'Add a new prompt to the marketplace' : 'Edit an existing prompt'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter prompt title"
+                required
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="promptText">
-            Prompt Text
-            <span className="text-sm text-muted-foreground ml-2">
-              (The actual prompt that users will use)
-            </span>
-          </Label>
-          <Textarea
-            id="promptText"
-            value={formData.promptText}
-            onChange={(e) => setFormData(prev => ({ ...prev, promptText: e.target.value }))}
-            placeholder="Enter the actual prompt text"
-            className="min-h-[200px] font-mono"
-            required
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">
+                SEO Description
+                <span className="text-sm text-muted-foreground ml-2">
+                  (This will be shown in search results and listings)
+                </span>
+              </Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Enter SEO-friendly description"
+                required
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="price">Price</Label>
-          <Input
-            id="price"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.price}
-            onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-            placeholder="Enter price (0 for free)"
-            required
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="promptText">
+                Prompt Text
+                <span className="text-sm text-muted-foreground ml-2">
+                  (The actual prompt that users will use)
+                </span>
+              </Label>
+              <Textarea
+                id="promptText"
+                value={formData.promptText}
+                onChange={(e) => setFormData(prev => ({ ...prev, promptText: e.target.value }))}
+                placeholder="Enter the actual prompt text"
+                className="min-h-[200px] font-mono"
+                required
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <Input
-            id="category"
-            value={formData.category}
-            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-            placeholder="Enter prompt category"
-            required
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="price">Price</Label>
+              <Input
+                id="price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                placeholder="Enter price (0 for free)"
+                required
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label>Preview Image</Label>
-          <ImageUpload
-            onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-            onRemove={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                placeholder="Enter prompt category"
+                required
+              />
+            </div>
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Creating...
-            </>
-          ) : (
-            'Create Prompt'
-          )}
-        </Button>
-      </form>
+            <div className="space-y-2">
+              <Label>Preview Image</Label>
+              <ImageUpload
+                value={formData.imageUrl}
+                onChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                onRemove={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+              />
+            </div>
+
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {isCreating ? 'Creating...' : 'Saving...'}
+                </>
+              ) : (
+                isCreating ? 'Create Prompt' : 'Save Changes'
+              )}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
