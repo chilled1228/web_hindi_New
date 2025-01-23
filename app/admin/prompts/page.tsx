@@ -154,11 +154,31 @@ export default function AdminPromptsPage() {
       const q = query(promptsRef, orderBy('createdAt', 'desc'))
       const querySnapshot = await getDocs(q)
       
-      const fetchedPrompts = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Prompt[]
+      const fetchedPrompts = querySnapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          title: data.title || '',
+          description: data.description || '',
+          promptText: data.promptText || '',
+          category: data.category || '',
+          imageUrl: data.imageUrl || '',
+          imageMetadata: data.imageMetadata || {
+            url: data.imageUrl || '',
+            alt: '',
+            title: '',
+            caption: '',
+            description: ''
+          },
+          additionalImages: data.additionalImages || [],
+          isPublic: data.isPublic ?? true,
+          price: data.price ?? 0,
+          createdAt: data.createdAt || new Date().toISOString(),
+          status: data.status || 'active'
+        } as Prompt
+      })
 
+      console.log('Fetched prompts:', fetchedPrompts)
       setPrompts(fetchedPrompts)
     } catch (error) {
       console.error('Error fetching prompts:', error)
@@ -182,20 +202,27 @@ export default function AdminPromptsPage() {
       const token = await auth.currentUser?.getIdToken()
       if (!token) throw new Error('No authentication token')
 
+      const submitData = {
+        id: selectedPrompt?.id,
+        ...formData,
+        price: Number(formData.price)
+      }
+      console.log('Submitting data:', submitData)
+
       const response = await fetch('/api/admin/prompts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          id: selectedPrompt?.id,
-          ...formData,
-          price: Number(formData.price)
-        })
+        body: JSON.stringify(submitData)
       })
 
-      if (!response.ok) throw new Error('Failed to create/update prompt')
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Server error response:', errorData)
+        throw new Error(errorData.message || 'Failed to create/update prompt')
+      }
 
       toast({
         title: isCreating ? 'Prompt Created' : 'Prompt Updated',
@@ -210,7 +237,7 @@ export default function AdminPromptsPage() {
       console.error('Error creating/updating prompt:', error)
       toast({
         title: 'Error',
-        description: 'Failed to create/update prompt. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to create/update prompt. Please try again.',
         variant: 'destructive'
       })
     } finally {
@@ -255,26 +282,30 @@ export default function AdminPromptsPage() {
   }
 
   const handleEdit = (prompt: Prompt) => {
+    console.log('Editing prompt:', prompt)
     setSelectedPrompt(prompt)
-    setFormData({
-      title: prompt.title,
-      description: prompt.description,
-      promptText: prompt.promptText,
-      price: '0',
-      category: prompt.category,
-      imageUrl: prompt.imageUrl,
+    const newFormData = {
+      title: prompt.title || '',
+      description: prompt.description || '',
+      promptText: prompt.promptText || '',
+      price: (prompt.price ?? 0).toString(),
+      category: prompt.category || '',
+      imageUrl: prompt.imageUrl || '',
       imageMetadata: prompt.imageMetadata || {
-        url: prompt.imageUrl,
+        url: prompt.imageUrl || '',
         alt: '',
         title: '',
         caption: '',
         description: ''
       },
       additionalImages: prompt.additionalImages || [],
-      isPublic: prompt.isPublic || true,
+      isPublic: prompt.isPublic ?? true,
       status: prompt.status || 'active'
-    })
+    }
+    console.log('Setting form data:', newFormData)
+    setFormData(newFormData)
     setIsCreating(false)
+    setDialogOpen(true)
   }
 
   if (!isAdmin) {
