@@ -30,9 +30,25 @@ async function getAllPosts(): Promise<BlogPost[]> {
 
     console.log(`Found ${postsRef.docs.length} blog posts`);
     
-    return postsRef.docs.map(doc => {
+    // Track slugs to detect duplicates
+    const slugs = new Set<string>();
+    const posts = postsRef.docs.map(doc => {
       const data = doc.data();
       console.log('Processing post:', { id: doc.id, slug: data.slug });
+      
+      // If no slug exists, use the document ID
+      const slug = data.slug || doc.id;
+      
+      // Check for duplicate slugs
+      if (slugs.has(slug)) {
+        console.error(`Duplicate slug found: ${slug}, using document ID as fallback`);
+        // Use document ID as fallback
+        data.slug = `${doc.id}-${Date.now()}`;
+      } else {
+        data.slug = slug;
+        slugs.add(slug);
+      }
+
       return {
         ...data,
         publishedAt: data.publishedAt?.toDate?.() 
@@ -43,9 +59,13 @@ async function getAllPosts(): Promise<BlogPost[]> {
         slug: data.slug
       } as BlogPost;
     });
+
+    // Log all slugs for debugging
+    console.log('All post slugs:', posts.map(p => p.slug));
+    
+    return posts;
   } catch (error) {
     console.error('Error fetching blog posts:', error);
-    // Log more details about the error
     if (error instanceof Error) {
       console.error('Error name:', error.name);
       console.error('Error message:', error.message);
@@ -133,7 +153,7 @@ export default async function BlogIndex() {
                   {post.difficulty && (
                     <span className="flex items-center gap-1">
                       {Array.from({ length: post.difficulty }).map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
+                        <Star key={`${post.slug}-star-${i}`} className="w-4 h-4 fill-current text-yellow-500" />
                       ))}
                     </span>
                   )}
