@@ -30,7 +30,7 @@ export function Navbar() {
               <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-6 sm:w-6 text-primary" fill="currentColor">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-              <span className="font-heading text-lg sm:text-xl font-bold">FreePromptBase</span>
+              <span key="navbar-logo" className="font-heading text-lg sm:text-xl font-bold">FreePromptBase</span>
             </Link>
           </div>
 

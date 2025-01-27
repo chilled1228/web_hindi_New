@@ -106,8 +106,8 @@ export function PromptGrid() {
           ) : filteredPrompts.length > 0 ? (
             filteredPrompts.map((prompt) => (
               <Link
-                key={prompt.id}
-                href={`/prompts/${prompt.slug || prompt.id}`}
+                key={prompt.slug}
+                href={`/prompts/${prompt.slug}`}
                 className="group"
               >
                 <Card className="overflow-hidden transition-all duration-300 hover:shadow-2xl dark:shadow-primary/5 hover:-translate-y-1 bg-background/60 dark:bg-gray-800/40 backdrop-blur-xl border-primary/10 dark:border-white/5">
