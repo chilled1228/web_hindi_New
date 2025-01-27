@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc, updateDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Save, Eye, ArrowLeft } from 'lucide-react';
+import { Loader2, Save, Eye, ArrowLeft, Check, AlertTriangle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/app/providers';
 import { slugify } from '@/lib/utils';
@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ReadingTime } from '@/components/blog/reading-time';
+import { useDebounce } from 'use-debounce';
+import { toast } from 'sonner';
 
 // Dynamically import the editor to avoid SSR issues
 const Editor = dynamic(() => import('@/components/editor'), {
@@ -78,6 +80,12 @@ type Props = {
 
 const BASE_URL = 'https://freepromptbase.com/blog/';
 
+interface AutoSaveStatus {
+  status: 'idle' | 'saving' | 'saved' | 'error';
+  lastSaved?: Date;
+  error?: string;
+}
+
 export default function BlogPostEditor({ params }: { params: Promise<PageParams> }) {
   const resolvedParams = use(params) as PageParams;
   const router = useRouter();
@@ -86,6 +94,7 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>({ status: 'idle' });
   const [post, setPost] = useState<BlogPost>({
     title: '',
     slug: '',
@@ -110,6 +119,41 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
     tags: [],
     readingTime: ''
   });
+
+  // Debounce the post state for auto-save
+  const [debouncedPost] = useDebounce(post, 2000);
+
+  // Auto-save function
+  const autoSave = useCallback(async () => {
+    if (!user || !isAdmin || resolvedParams.action !== 'edit') return;
+
+    try {
+      setAutoSaveStatus({ status: 'saving', lastSaved: new Date() });
+      
+      const docRef = doc(db, 'blog_posts', resolvedParams.id);
+      await updateDoc(docRef, {
+        ...debouncedPost,
+        updatedAt: Timestamp.now(),
+        status: 'draft'
+      });
+
+      setAutoSaveStatus({ status: 'saved', lastSaved: new Date() });
+      toast.success('Draft saved automatically');
+    } catch (error) {
+      console.error('Auto-save error:', error);
+      setAutoSaveStatus({ 
+        status: 'error', 
+        error: error instanceof Error ? error.message : 'Failed to auto-save',
+        lastSaved: autoSaveStatus.lastSaved 
+      });
+      toast.error('Failed to auto-save draft');
+    }
+  }, [debouncedPost, user, isAdmin, resolvedParams.action, resolvedParams.id, autoSaveStatus.lastSaved]);
+
+  // Effect for auto-save
+  useEffect(() => {
+    autoSave();
+  }, [debouncedPost, autoSave]);
 
   useEffect(() => {
     if (!user) {
@@ -249,6 +293,40 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
     }
   };
 
+  // Add auto-save status indicator component
+  const AutoSaveIndicator = () => {
+    if (autoSaveStatus.status === 'saving') {
+      return (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Saving...</span>
+        </div>
+      );
+    }
+
+    if (autoSaveStatus.status === 'saved') {
+      return (
+        <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
+          <Check className="h-4 w-4" />
+          <span className="text-sm">
+            Saved {autoSaveStatus.lastSaved && new Date(autoSaveStatus.lastSaved).toLocaleTimeString()}
+          </span>
+        </div>
+      );
+    }
+
+    if (autoSaveStatus.status === 'error') {
+      return (
+        <div className="flex items-center gap-2 text-red-600 dark:text-red-500">
+          <AlertTriangle className="h-4 w-4" />
+          <span className="text-sm">Failed to save</span>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -274,6 +352,7 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
               <h1 className="text-xl font-semibold">
                 {resolvedParams.action === 'edit' ? 'Edit Post' : 'Create New Post'}
               </h1>
+              <AutoSaveIndicator />
             </div>
             <div className="flex items-center gap-2">
               <Button
