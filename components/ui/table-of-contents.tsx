@@ -43,7 +43,7 @@ export function TableOfContents({
       header.appendChild(indicator);
 
       const title = document.createElement('h2');
-      title.className = 'text-lg font-semibold text-gray-900 dark:text-white';
+      title.className = 'text-lg font-semibold text-gray-900 dark:text-gray-100';
       title.textContent = 'Table of Contents';
       header.appendChild(title);
       
@@ -83,12 +83,12 @@ export function TableOfContents({
         const a = document.createElement('a');
         a.href = `#${id}`;
         a.className = level === 1
-          ? 'flex items-center text-[15px] text-gray-600 hover:text-[#6366F1] transition-colors pl-6 py-2 relative block w-full break-words pr-4'
-          : 'flex items-center text-[15px] text-gray-500 hover:text-[#6366F1] transition-colors pl-10 py-2 relative block w-full break-words pr-4';
+          ? 'flex items-center text-[15px] text-gray-600 dark:text-gray-300 hover:text-[#6366F1] dark:hover:text-[#818cf8] transition-colors pl-6 py-2 relative block w-full break-words pr-4'
+          : 'flex items-center text-[15px] text-gray-500 dark:text-gray-400 hover:text-[#6366F1] dark:hover:text-[#818cf8] transition-colors pl-10 py-2 relative block w-full break-words pr-4';
 
         // Create active background element
         const activeBg = document.createElement('div');
-        activeBg.className = 'absolute inset-0 bg-[#6366F1]/5 opacity-0 transition-opacity';
+        activeBg.className = 'absolute inset-0 bg-[#6366F1]/5 dark:bg-[#818cf8]/10 opacity-0 transition-opacity';
         a.appendChild(activeBg);
 
         // Create text container

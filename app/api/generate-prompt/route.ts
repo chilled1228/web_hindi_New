@@ -211,6 +211,12 @@ export async function POST(request: Request) {
           "output": "string" // Act as a character design prompt generator that describes the subject's appearance, pose, expression, clothing, and notable features in detail. Provide a 100-word description suitable for character generation.
         }`,
         instruction: "Analyze this image and provide a detailed character description"
+      },
+      midjourney: {
+        format: `{
+          "output": "string" // Act as a Midjourney prompt generator. Analyze the image and create a detailed prompt that includes: 1) Main subject and scene description 2) Style, mood, and atmosphere 3) Technical aspects (camera angle, lighting, etc) 4) Specific Midjourney parameters including aspect ratio (e.g. --ar 16:9), quality (--q 2), and version (--v 5). Keep the total prompt under 100 words while maintaining rich detail.
+        }`,
+        instruction: "Analyze this image and provide a Midjourney-optimized prompt with parameters"
       }
     }
 

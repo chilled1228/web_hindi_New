@@ -71,6 +71,7 @@ const categories = [
   'Business',
   'Academic',
   'Personal',
+  'Midjourney',
   'Other'
 ]
 

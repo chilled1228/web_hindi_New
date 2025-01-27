@@ -244,16 +244,14 @@ export default function PromptPage() {
           {/* Left Column - Image and Details */}
           <div className="lg:col-span-5 space-y-4">
             {/* Main Image */}
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl border shadow-lg group">
+            <div className="relative h-[300px] rounded-xl border shadow-lg group">
               <NextImage
                 src={prompt.imageUrl}
                 alt={prompt.title}
                 fill
-                className="object-cover transition-all duration-300 group-hover:scale-105"
-                onClick={() => setShowImageModal(true)}
+                className="object-contain transition-all duration-300 group-hover:scale-105"
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <button
                 onClick={() => setShowImageModal(true)}
                 className="absolute bottom-4 right-4 bg-black/70 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
@@ -268,7 +266,7 @@ export default function PromptPage() {
                 {prompt.additionalImages.map((img, index) => (
                   <div
                     key={index}
-                    className="relative w-20 flex-none aspect-square overflow-hidden rounded-lg cursor-pointer group ring-1 ring-white/10 snap-start"
+                    className="relative w-24 h-24 flex-none overflow-hidden rounded-lg cursor-pointer group"
                     onClick={() => {
                       setCurrentImageIndex(index + 1)
                       setShowImageModal(true)
@@ -278,7 +276,7 @@ export default function PromptPage() {
                       src={img.url}
                       alt={img.alt || `Additional image ${index + 1}`}
                       fill
-                      className="object-cover transition-all duration-300 group-hover:scale-110"
+                      className="object-contain transition-all duration-300 group-hover:scale-110"
                     />
                   </div>
                 ))}
@@ -438,12 +436,12 @@ export default function PromptPage() {
                 </div>
                 <div className="grid grid-cols-4 gap-3">
                   {additionalImages.map((image, index) => (
-                    <div key={index} className="relative aspect-square group">
+                    <div key={index} className="relative aspect-square group rounded-lg">
                       <NextImage
                         src={image}
                         alt={`Additional image ${index + 1}`}
                         fill
-                        className="object-cover rounded-lg"
+                        className="object-contain"
                       />
                       <button
                         onClick={() => handleRemoveImage(index)}
@@ -477,14 +475,12 @@ export default function PromptPage() {
                   className="group"
                 >
                   <Card className="overflow-hidden transition-all duration-300 hover:shadow-2xl dark:shadow-primary/5 hover:-translate-y-1 bg-background/60 dark:bg-gray-800/40 backdrop-blur-xl border-primary/10 dark:border-white/5">
-                    <div className="aspect-square relative bg-gradient-to-br from-background/80 to-muted/50 dark:from-gray-900/80 dark:to-gray-800/50 overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                    <div className="relative h-[200px]">
                       <NextImage
                         src={suggestedPrompt.imageUrl}
                         alt={suggestedPrompt.title}
                         fill
-                        className="transition-all duration-500 group-hover:scale-110"
-                        style={{ objectFit: "cover" }}
+                        className="object-contain transition-all duration-500 group-hover:scale-110"
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       />
                     </div>

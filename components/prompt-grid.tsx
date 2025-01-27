@@ -111,14 +111,12 @@ export function PromptGrid() {
                 className="group"
               >
                 <Card className="overflow-hidden transition-all duration-300 hover:shadow-2xl dark:shadow-primary/5 hover:-translate-y-1 bg-background/60 dark:bg-gray-800/40 backdrop-blur-xl border-primary/10 dark:border-white/5">
-                  <div className="aspect-square relative bg-gradient-to-br from-background/80 to-muted/50 dark:from-gray-900/80 dark:to-gray-800/50 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                  <div className="relative h-[200px]">
                     <NextImage
                       src={prompt.imageUrl}
                       alt={prompt.title}
                       fill
-                      className="transition-all duration-500 group-hover:scale-110"
-                      style={{ objectFit: "cover" }}
+                      className="object-contain transition-all duration-500 group-hover:scale-110"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                       unoptimized={process.env.NODE_ENV === 'development'}
                     />
@@ -127,7 +125,7 @@ export function PromptGrid() {
                     <Badge variant="secondary" className="mb-3 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground hover:bg-primary/20 transition-colors duration-300">
                       {prompt.category}
                     </Badge>
-                    <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors duration-300">
+                    <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors duration-300 line-clamp-1">
                       {prompt.title}
                     </h3>
                     <p className="text-sm text-muted-foreground/80 line-clamp-2">

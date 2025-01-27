@@ -7,71 +7,48 @@ import { Badge } from "@/components/ui/badge"
 
 interface BlogPost {
   title: string;
-  description: string;
+  excerpt: string;
   publishedAt: string;
   author: {
     name: string;
   };
-  category?: string;
-  difficulty?: number;
+  categories: string[];
+  tags: string[];
   slug: string;
   coverImage?: string;
+  readingTime?: string;
 }
 
-async function getAllPosts(): Promise<BlogPost[]> {
+async function getAllPosts(searchParams?: { [key: string]: string | string[] | undefined }) {
   try {
-    console.log('Fetching blog posts...');
-    const postsRef = await db.collection('blog_posts')
-      .orderBy('publishedAt', 'desc')
-      .get()
-      .catch(error => {
-        console.error('Error in Firestore query:', error);
-        throw error;
-      });
-
-    console.log(`Found ${postsRef.docs.length} blog posts`);
+    let query = db.collection('blog_posts').orderBy('publishedAt', 'desc');
     
-    // Track slugs to detect duplicates
-    const slugs = new Set<string>();
+    // Add category filter
+    if (searchParams?.category) {
+      query = query.where('categories', 'array-contains', searchParams.category);
+    }
+    
+    // Add tag filter
+    if (searchParams?.tag) {
+      query = query.where('tags', 'array-contains', searchParams.tag);
+    }
+
+    const postsRef = await query.get();
     const posts = postsRef.docs.map(doc => {
       const data = doc.data();
-      console.log('Processing post:', { id: doc.id, slug: data.slug });
-      
-      // If no slug exists, use the document ID
-      const slug = data.slug || doc.id;
-      
-      // Check for duplicate slugs
-      if (slugs.has(slug)) {
-        console.error(`Duplicate slug found: ${slug}, using document ID as fallback`);
-        // Use document ID as fallback
-        data.slug = `${doc.id}-${Date.now()}`;
-      } else {
-        data.slug = slug;
-        slugs.add(slug);
-      }
-
       return {
         ...data,
-        publishedAt: data.publishedAt?.toDate?.() 
-          ? data.publishedAt.toDate().toISOString()
-          : typeof data.publishedAt === 'string' 
-            ? data.publishedAt 
-            : new Date().toISOString(),
-        slug: data.slug
+        categories: data.categories || [],
+        tags: data.tags || [],
+        excerpt: data.excerpt || '',
+        publishedAt: data.publishedAt?.toDate?.().toISOString() || new Date().toISOString(),
+        slug: data.slug || doc.id
       } as BlogPost;
     });
 
-    // Log all slugs for debugging
-    console.log('All post slugs:', posts.map(p => p.slug));
-    
     return posts;
   } catch (error) {
-    console.error('Error fetching blog posts:', error);
-    if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
+    console.error('Error fetching posts:', error);
     return [];
   }
 }
@@ -139,27 +116,15 @@ export default async function BlogIndex() {
                         day: 'numeric'
                       })}
                     </time>
-                    {post.category && (
-                      <Badge variant="secondary" className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground hover:bg-primary/20 transition-colors duration-300">
-                        {post.category}
-                      </Badge>
-                    )}
                   </div>
                   <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors duration-300 line-clamp-2">
                     {post.title}
                   </h3>
                   <p className="text-sm text-muted-foreground/80 line-clamp-2 mb-4">
-                    {post.description}
+                    {post.excerpt}
                   </p>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span className="font-medium">{post.author.name}</span>
-                    {post.difficulty && (
-                      <span className="flex items-center gap-1">
-                        {Array.from({ length: post.difficulty }).map((_, i) => (
-                          <Star key={`${post.slug}-star-${i}`} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </span>
-                    )}
                   </div>
                 </div>
               </Card>

@@ -233,6 +233,7 @@ export function ImageUploadSection() {
                 <SelectItem value="Oil Painting">Oil Painting</SelectItem>
                 <SelectItem value="Watercolor">Watercolor</SelectItem>
                 <SelectItem value="Sketch">Sketch</SelectItem>
+                <SelectItem value="Midjourney">Midjourney</SelectItem>
               </SelectContent>
             </Select>
           </div>
