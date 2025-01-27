@@ -146,7 +146,7 @@ export default async function BlogPost({ params }: Props) {
           
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(250px,280px)_1fr] gap-4 lg:gap-8 mt-4">
             <aside className="hidden lg:block space-y-4 lg:space-y-8">
-              <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+              <Card className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-zinc-200/50 dark:border-zinc-800/50">
                 <CardContent className="p-4 sm:p-6 lg:p-8">
                   <TableOfContents />
                 </CardContent>
@@ -154,7 +154,7 @@ export default async function BlogPost({ params }: Props) {
             </aside>
 
             <article className="prose prose-zinc dark:prose-invert max-w-none">
-              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl px-4 sm:px-8 lg:px-16 py-8 lg:py-16 border border-zinc-200 dark:border-zinc-800">
+              <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl px-4 sm:px-8 lg:px-16 py-8 lg:py-16 border border-zinc-200/50 dark:border-zinc-800/50">
                 {post.coverImage && (
                   <div className="relative w-full h-64 sm:h-80 lg:h-96 mb-8 overflow-hidden rounded-lg">
                     <img
