@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { LoginButton } from './auth/login-button';
 import { Button } from './ui/button';
-import { ChevronDown, Menu, X } from 'lucide-react';
+import { ChevronDown, Menu, Search, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,154 +21,269 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b glass-effect">
-      <div className="container mx-auto px-3 sm:px-4 md:px-6">
-        <div className="flex h-14 sm:h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-1.5 sm:gap-2 transition-opacity hover:opacity-90">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-6 sm:w-6 text-primary" fill="currentColor">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-              <span key="navbar-logo" className="font-heading text-lg sm:text-xl font-bold">FreePromptBase</span>
+    <div className="w-full py-8">
+      {/* Outer rounded container */}
+      <div className="w-[90%] max-w-6xl mx-auto rounded-full bg-[#e9f5d0] overflow-hidden">
+        <div className="flex items-center">
+          {/* Logo Section (Left) - with distinct background */}
+          <div className="bg-[#c9d7f0] py-4 px-6 rounded-l-full">
+            <Link href="/" className="flex items-center transition-opacity hover:opacity-90">
+              <span className="font-heading text-3xl font-bold text-[#5c6bc0]">groovy</span>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
-            <Link 
-              href="/"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              Home
-            </Link>
-            <Link 
-              href="/inspiration"
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Inspiration
-            </Link>
-            <Link 
-              href="/blog"
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Blog
-            </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Tools
-                  <ChevronDown className="ml-1 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48 animate-in fade-in">
-                <DropdownMenuItem className="cursor-pointer">
-                  <Link href="/image-to-prompt" className="flex w-full">Image to Prompt</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  <Link href="/text-humanizer" className="flex w-full">Text Humanizer</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  <Link href="/backstory" className="flex w-full">Backstory Generator</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Link 
-              href="/pricing"
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Pricing
-            </Link>
-          </div>
-
-          {/* Right Side */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <ModeToggle />
-            <div className="hidden md:flex items-center gap-2">
-              <CreditsDisplay />
-              <LoginButton />
+          {/* Navigation Menu (Center) */}
+          <div className="hidden md:flex flex-1 items-center justify-center px-4">
+            <div className="flex items-center space-x-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                    <span>Home</span>
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/">Home 1</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/home-2">Home 2</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                    <span>Header Styles</span>
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/header-style-1">Style 1</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/header-style-2">Style 2</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                    <span>Post Features</span>
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/post-feature-1">Feature 1</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/post-feature-2">Feature 2</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                    <span>#Tag</span>
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/tag-1">Tag 1</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/tag-2">Tag 2</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                    <span>Features</span>
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/feature-1">Feature 1</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/feature-2">Feature 2</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                    <span>Shop</span>
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/shop">All Products</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/shop/category">Categories</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <Link 
+                href="/contact"
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Contact
+              </Link>
             </div>
+          </div>
+
+          {/* Search & Social Icons (Right) */}
+          <div className="flex items-center justify-end px-6 py-4 space-x-4">
+            <Button variant="ghost" size="icon" className="text-gray-700 hover:text-gray-900">
+              <Search className="h-5 w-5" />
+            </Button>
+            
+            <Link href="#" className="text-[#4267B2] hover:text-[#4267B2]/80">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+              </svg>
+            </Link>
+            
+            <Link href="#" className="text-[#1DA1F2] hover:text-[#1DA1F2]/80">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
+              </svg>
+            </Link>
+            
+            <Link href="#" className="text-[#E1306C] hover:text-[#E1306C]/80">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="white"/>
+              </svg>
+            </Link>
+            
+            <Link href="#" className="text-[#ee802f] hover:text-[#ee802f]/80">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <path d="M4 11a9 9 0 0 1 9 9"/>
+                <path d="M4 4a16 16 0 0 1 16 16"/>
+                <circle cx="5" cy="19" r="1"/>
+              </svg>
+            </Link>
+            
+            {/* Mobile Menu Button */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
-                  <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-gray-700">
+                  <Menu className="h-5 w-5" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[350px] p-4 sm:p-6">
-                <div className="flex flex-col gap-3 sm:gap-4 mt-4">
+              <SheetContent side="right" className="w-[280px] sm:w-[350px] p-6">
+                <div className="flex flex-col gap-4 mt-4">
                   <Link 
                     href="/"
-                    className="text-base sm:text-lg font-medium text-foreground/80 hover:text-foreground transition-colors"
+                    className="text-lg font-medium hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Home
                   </Link>
-                  <Link 
-                    href="/inspiration"
-                    className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Inspiration
-                  </Link>
-                  <Link 
-                    href="/blog"
-                    className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Blog
-                  </Link>
-                  <Link 
-                    href="/tools"
-                    className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Tools
-                  </Link>
-                  <div className="pl-4 space-y-2">
-                    <Link
-                      href="/image-to-prompt"
-                      className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  <div className="flex flex-col gap-2 pl-4">
+                    <h3 className="text-lg font-medium">Header Styles</h3>
+                    <Link 
+                      href="/header-style-1"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      Image to Prompt
+                      Style 1
                     </Link>
-                    <Link
-                      href="/text-humanizer"
-                      className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    <Link 
+                      href="/header-style-2"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      Text Humanizer
+                      Style 2
                     </Link>
-                    <Link
-                      href="/backstory"
-                      className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  </div>
+                  <div className="flex flex-col gap-2 pl-4">
+                    <h3 className="text-lg font-medium">Post Features</h3>
+                    <Link 
+                      href="/post-feature-1"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      Backstory Generator
+                      Feature 1
+                    </Link>
+                    <Link 
+                      href="/post-feature-2"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Feature 2
                     </Link>
                   </div>
                   <Link 
-                    href="/pricing"
-                    className="text-base sm:text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    href="/tag"
+                    className="text-lg font-medium hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
-                    Pricing
+                    #Tag
                   </Link>
-                  <div className="pt-4 flex flex-col gap-2">
-                    <CreditsDisplay />
-                    <LoginButton />
+                  <div className="flex flex-col gap-2 pl-4">
+                    <h3 className="text-lg font-medium">Features</h3>
+                    <Link 
+                      href="/feature-1"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Feature 1
+                    </Link>
+                    <Link 
+                      href="/feature-2"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Feature 2
+                    </Link>
                   </div>
+                  <div className="flex flex-col gap-2 pl-4">
+                    <h3 className="text-lg font-medium">Shop</h3>
+                    <Link 
+                      href="/shop"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      All Products
+                    </Link>
+                    <Link 
+                      href="/shop/category"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Categories
+                    </Link>
+                  </div>
+                  <Link 
+                    href="/contact"
+                    className="text-lg font-medium hover:text-primary transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Contact
+                  </Link>
                 </div>
               </SheetContent>
             </Sheet>
           </div>
         </div>
       </div>
-    </nav>
+    </div>
   );
 } 

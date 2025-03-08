@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
-  ListPlus,
   Users,
   Settings,
   Menu,
@@ -23,11 +22,6 @@ const navigation = [
     name: 'Dashboard',
     href: '/admin',
     icon: LayoutDashboard
-  },
-  {
-    name: 'Prompts',
-    href: '/admin/prompts',
-    icon: ListPlus
   },
   {
     name: 'Blog',

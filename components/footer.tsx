@@ -29,7 +29,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-base text-muted-foreground/80 leading-relaxed max-w-sm">
-              Revolutionizing AI prompt creation and management. Join our community of creators and innovators.
+              Insightful articles and resources on AI, prompt engineering, and language models. Stay informed with our latest blog posts.
             </p>
             <div className="flex items-center gap-4">
               <a
@@ -80,14 +80,14 @@ export function Footer() {
                   href="/" 
                   className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
-                  Home
+                  Latest Posts
                   <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                 </Link>
               </li>
               <li>
                 <Link 
                   href="/blog" 
-                  className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                  className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors font-medium"
                 >
                   Blog
                   <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
@@ -99,39 +99,6 @@ export function Footer() {
                   className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                   Pricing
-                  <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="lg:col-span-1">
-            <h3 className="text-base font-semibold mb-6">Tools</h3>
-            <ul className="space-y-4">
-              <li>
-                <Link 
-                  href="/image-to-prompt" 
-                  className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                >
-                  Image to Prompt
-                  <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/text-humanizer" 
-                  className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                >
-                  Text Humanizer
-                  <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/backstory" 
-                  className="group flex items-center text-base text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                >
-                  Backstory Generator
                   <ArrowUpRight className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                 </Link>
               </li>
@@ -175,7 +142,7 @@ export function Footer() {
           <div className="lg:col-span-1">
             <h3 className="text-base font-semibold mb-6">Stay Updated</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-              Subscribe to our newsletter for the latest updates and AI prompt tips.
+              Subscribe to our newsletter for the latest blog posts and AI insights.
             </p>
             <form className="space-y-2" onSubmit={(e) => e.preventDefault()}>
               <input

@@ -4,7 +4,8 @@ import {
   GoogleAuthProvider, 
   signInWithPopup,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  AuthError
 } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,10 +38,47 @@ export function AuthButtons() {
     router.push(redirectUrl);
   };
 
+  const getErrorMessage = (error: AuthError) => {
+    console.error('Authentication error:', error);
+    
+    switch (error.code) {
+      case 'auth/invalid-credential':
+        return 'Invalid email or password';
+      case 'auth/user-not-found':
+        return 'No account found with this email';
+      case 'auth/wrong-password':
+        return 'Incorrect password';
+      case 'auth/email-already-in-use':
+        return 'Email already in use';
+      case 'auth/weak-password':
+        return 'Password is too weak';
+      case 'auth/invalid-email':
+        return 'Invalid email address';
+      case 'auth/popup-closed-by-user':
+        return 'Sign in was cancelled';
+      case 'auth/popup-blocked':
+        return 'Sign in popup was blocked by your browser';
+      case 'auth/cancelled-popup-request':
+        return 'Sign in was cancelled';
+      case 'auth/operation-not-allowed':
+        return 'This sign-in method is not enabled';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your connection';
+      default:
+        return error.message || 'An error occurred during authentication';
+    }
+  };
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    
+    if (!auth) {
+      setError('Authentication service is not initialized');
+      setIsLoading(false);
+      return;
+    }
     
     try {
       let userCredential;
@@ -51,11 +89,7 @@ export function AuthButtons() {
       }
       await handleSuccess(userCredential.user);
     } catch (error: any) {
-      const errorMessage = error.code === 'auth/invalid-credential' 
-        ? 'Invalid email or password'
-        : error.message;
-      setError(errorMessage);
-      console.error('Error with email auth:', error);
+      setError(getErrorMessage(error));
       setIsLoading(false);
     }
   };
@@ -63,6 +97,13 @@ export function AuthButtons() {
   const signInWithGoogle = async () => {
     setIsLoading(true);
     setError('');
+    
+    if (!auth) {
+      setError('Authentication service is not initialized');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       const provider = new GoogleAuthProvider();
       provider.addScope('https://www.googleapis.com/auth/userinfo.email');
@@ -73,11 +114,7 @@ export function AuthButtons() {
       const result = await signInWithPopup(auth, provider);
       await handleSuccess(result.user);
     } catch (error: any) {
-      const errorMessage = error.code === 'auth/popup-closed-by-user'
-        ? 'Sign in was cancelled'
-        : error.message;
-      setError(errorMessage);
-      console.error('Error signing in with Google:', error);
+      setError(getErrorMessage(error));
       setIsLoading(false);
     }
   };

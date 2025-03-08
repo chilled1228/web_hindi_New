@@ -125,20 +125,57 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
 
   // Auto-save function
   const autoSave = useCallback(async () => {
-    if (!user || !isAdmin || resolvedParams.action !== 'edit') return;
+    // Skip auto-save if any required data is missing
+    if (!user || !isAdmin || resolvedParams.action !== 'edit' || !resolvedParams.id || !db) {
+      console.warn('Auto-save skipped: missing required data');
+      return;
+    }
+
+    // Skip auto-save if there's no content to save
+    if (!debouncedPost.content.trim()) {
+      return;
+    }
 
     try {
       setAutoSaveStatus({ status: 'saving', lastSaved: new Date() });
       
       const docRef = doc(db, 'blog_posts', resolvedParams.id);
-      await updateDoc(docRef, {
-        ...debouncedPost,
-        updatedAt: Timestamp.now(),
-        status: 'draft'
-      });
-
-      setAutoSaveStatus({ status: 'saved', lastSaved: new Date() });
-      toast.success('Draft saved automatically');
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        // Only save fields that have changed
+        const currentData = docSnap.data() as BlogPost;
+        const updatedFields: Partial<BlogPost> = {};
+        
+        // Check which fields have changed
+        if (debouncedPost.title !== currentData.title) updatedFields.title = debouncedPost.title;
+        if (debouncedPost.content !== currentData.content) updatedFields.content = debouncedPost.content;
+        if (debouncedPost.excerpt !== currentData.excerpt) updatedFields.excerpt = debouncedPost.excerpt;
+        if (debouncedPost.slug !== currentData.slug) updatedFields.slug = debouncedPost.slug;
+        if (debouncedPost.permalink !== currentData.permalink) updatedFields.permalink = debouncedPost.permalink;
+        
+        // Only update if there are changes
+        if (Object.keys(updatedFields).length > 0) {
+          await updateDoc(docRef, {
+            ...updatedFields,
+            updatedAt: Timestamp.now(),
+            status: 'draft'
+          });
+          
+          setAutoSaveStatus({ status: 'saved', lastSaved: new Date() });
+          toast.success('Draft saved automatically');
+        } else {
+          // No changes to save
+          setAutoSaveStatus({ status: 'saved', lastSaved: new Date() });
+        }
+      } else {
+        console.warn('Document does not exist for auto-save');
+        setAutoSaveStatus({ 
+          status: 'error', 
+          error: 'Document does not exist',
+          lastSaved: autoSaveStatus.lastSaved 
+        });
+      }
     } catch (error) {
       console.error('Auto-save error:', error);
       setAutoSaveStatus({ 
@@ -148,12 +185,15 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
       });
       toast.error('Failed to auto-save draft');
     }
-  }, [debouncedPost, user, isAdmin, resolvedParams.action, resolvedParams.id, autoSaveStatus.lastSaved]);
+  }, [debouncedPost, user, isAdmin, resolvedParams.action, resolvedParams.id, autoSaveStatus.lastSaved, db]);
 
-  // Effect for auto-save
+  // Effect for auto-save - only trigger when content actually changes
   useEffect(() => {
-    autoSave();
-  }, [debouncedPost, autoSave]);
+    // Only auto-save if we have content and we're in edit mode
+    if (debouncedPost.content && resolvedParams.action === 'edit' && resolvedParams.id && db) {
+      autoSave();
+    }
+  }, [debouncedPost, autoSave, resolvedParams.action, resolvedParams.id, db]);
 
   useEffect(() => {
     if (!user) {
@@ -164,6 +204,12 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
     async function checkAdminAndFetchPost() {
       setLoading(true);
       try {
+        if (!db) {
+          console.error('Firestore not initialized');
+          router.push('/');
+          return;
+        }
+
         const userDocRef = doc(db, 'users', user!.uid);
         const userDocSnap = await getDoc(userDocRef);
         
@@ -194,7 +240,7 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
     }
 
     checkAdminAndFetchPost();
-  }, [user, resolvedParams.action, resolvedParams.id, router]);
+  }, [user, resolvedParams.action, resolvedParams.id, router, db]);
 
   useEffect(() => {
     if (post.title && !post.permalink) {
@@ -239,7 +285,10 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
   };
 
   const handleSave = async (status: 'draft' | 'published' = 'draft') => {
-    if (!user || !isAdmin) return;
+    if (!user || !isAdmin || !db) {
+      console.error('Cannot save: user, admin status, or database not available');
+      return;
+    }
 
     setSaving(true);
     setSaveSuccess(false);

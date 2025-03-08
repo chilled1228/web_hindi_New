@@ -27,6 +27,8 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env*.backup
+.env.backup*
 
 # vercel
 .vercel
@@ -36,3 +38,7 @@ yarn-error.log*
 next-env.d.ts
 
 certificates
+
+# Firebase credentials
+hinidiblog-firebase-adminsdk-fbsvc-7fd32477e8.json
+*-firebase-adminsdk-*.json

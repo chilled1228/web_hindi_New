@@ -1,29 +1,29 @@
 import { Metadata } from 'next'
 
 export const defaultMetadata: Metadata = {
-  title: 'Free AI Prompts - High Quality Prompts for Your Projects',
-  description: 'Discover and use high-quality AI prompts for your projects. Free collection of prompts for various AI models and use cases.',
-  keywords: ['AI prompts', 'free prompts', 'prompt engineering', 'AI tools', 'prompt templates'],
+  title: 'AI Blog - Insights on Prompt Engineering and AI Tools',
+  description: 'Discover insights, tips, and best practices for prompt engineering and working with AI language models through our collection of blog posts.',
+  keywords: ['AI blog', 'prompt engineering', 'AI tools', 'language models', 'AI tutorials'],
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://freepromptbase.com',
-    siteName: 'Free AI Prompts',
-    title: 'Free AI Prompts - High Quality Prompts for Your Projects',
-    description: 'Discover and use high-quality AI prompts for your projects. Free collection of prompts for various AI models and use cases.',
+    siteName: 'AI Blog',
+    title: 'AI Blog - Insights on Prompt Engineering and AI Tools',
+    description: 'Discover insights, tips, and best practices for prompt engineering and working with AI language models through our collection of blog posts.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Free AI Prompts',
+        alt: 'AI Blog',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Free AI Prompts - High Quality Prompts for Your Projects',
-    description: 'Discover and use high-quality AI prompts for your projects. Free collection of prompts for various AI models and use cases.',
+    title: 'AI Blog - Insights on Prompt Engineering and AI Tools',
+    description: 'Discover insights, tips, and best practices for prompt engineering and working with AI language models through our collection of blog posts.',
     images: ['/og-image.png'],
   },
   robots: {

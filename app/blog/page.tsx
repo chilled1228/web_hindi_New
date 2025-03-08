@@ -2,8 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Star } from 'lucide-react'
 import { db } from '@/lib/firebase-admin'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { BlogCard } from '@/components/blog/blog-card'
 
 interface BlogPost {
   title: string;
@@ -11,6 +10,7 @@ interface BlogPost {
   publishedAt: string;
   author: {
     name: string;
+    image?: string;
   };
   categories: string[];
   tags: string[];
@@ -93,43 +93,23 @@ export default async function BlogIndex() {
           </Link>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-          {posts.map((post) => (
-            <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
-              <Card className="overflow-hidden transition-all duration-300 hover:shadow-2xl dark:shadow-primary/5 hover:-translate-y-1 bg-background/60 dark:bg-gray-800/40 backdrop-blur-xl border-primary/10 dark:border-white/5">
-                {post.coverImage && (
-                  <div className="aspect-square relative bg-gradient-to-br from-background/80 to-muted/50 dark:from-gray-900/80 dark:to-gray-800/50 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
-                    <img
-                      src={post.coverImage}
-                      alt={post.title}
-                      className="object-cover w-full h-full transition-all duration-500 group-hover:scale-110"
-                    />
-                  </div>
-                )}
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <time dateTime={post.publishedAt} className="text-sm text-muted-foreground">
-                      {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </time>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors duration-300 line-clamp-2">
-                    {post.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground/80 line-clamp-2 mb-4">
-                    {post.excerpt}
-                  </p>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span className="font-medium">{post.author.name}</span>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {posts.map((post) => (
+              <div key={post.slug} className="flex justify-center p-4 bg-[#F1F1FF] backdrop-blur-sm rounded-3xl">
+                <BlogCard
+                  title={post.title}
+                  excerpt={post.excerpt}
+                  publishedAt={post.publishedAt}
+                  author={post.author}
+                  slug={post.slug}
+                  coverImage={post.coverImage}
+                  readingTime={post.readingTime}
+                  category={post.categories?.[0]}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {posts.length === 0 && (

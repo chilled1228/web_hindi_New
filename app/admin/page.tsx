@@ -15,7 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Users, ShoppingCart, TrendingUp } from 'lucide-react';
+import { Loader2, Plus, Users } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -50,21 +50,8 @@ interface BlogPost {
   } | string | null;
 }
 
-interface Prompt {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  price: number;
-  createdAt: string;
-  imageUrl: string;
-}
-
 interface DashboardStats {
-  totalPrompts: number;
-  freePrompts: number;
   totalUsers: number;
-  recentPrompts: Prompt[];
 }
 
 export default function AdminDashboard() {
@@ -83,239 +70,155 @@ export default function AdminDashboard() {
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
-    totalPrompts: 0,
-    freePrompts: 0,
-    totalUsers: 0,
-    recentPrompts: []
+    totalUsers: 0
   });
   const [token, setToken] = useState<string>('');
 
   const fetchStats = async () => {
     try {
-      const promptsSnapshot = await getDocs(collection(db, 'prompts'));
-      const totalPrompts = promptsSnapshot.size;
-
-      const freePromptsQuery = query(collection(db, 'prompts'), where('price', '==', 0));
-      const freePromptsSnapshot = await getDocs(freePromptsQuery);
-      const freePrompts = freePromptsSnapshot.size;
-
+      // Fetch total users
       const usersSnapshot = await getDocs(collection(db, 'users'));
       const totalUsers = usersSnapshot.size;
 
-      const recentPromptsQuery = query(
-        collection(db, 'prompts'),
-        orderBy('createdAt', 'desc'),
-        limit(5)
-      );
-      const recentPromptsSnapshot = await getDocs(recentPromptsQuery);
-      const recentPrompts = recentPromptsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        title: doc.data().title,
-        description: doc.data().description,
-        category: doc.data().category,
-        price: doc.data().price,
-        createdAt: doc.data().createdAt,
-        imageUrl: doc.data().imageUrl
-      }));
-
       setStats({
-        totalPrompts,
-        freePrompts,
-        totalUsers,
-        recentPrompts
+        totalUsers
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const fetchUsers = async () => {
-    console.log('Fetching users...');
     try {
-      const usersRef = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersRef);
-      
+      const usersSnapshot = await getDocs(collection(db, 'users'));
       const usersData = usersSnapshot.docs.map(doc => ({
         id: doc.id,
-        email: doc.data().email || '',
-        credits: doc.data().credits || 0,
-        isAdmin: doc.data().isAdmin || false,
-        createdAt: doc.data().createdAt || new Date().toISOString()
-      }));
-      
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.().toISOString() || new Date().toISOString()
+      })) as User[];
       setUsers(usersData);
-      setError(null);
     } catch (error) {
       console.error('Error fetching users:', error);
-      setError('Failed to fetch users');
+      setError('Failed to load users');
     }
   };
 
   useEffect(() => {
     const checkAdminStatus = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        if (!user) {
-          console.log('No user found, redirecting to auth...');
-          router.push('/auth?redirect=/admin');
-          return;
-        }
-
-        const token = await auth.currentUser?.getIdToken(true);
-        if (!token) {
-          throw new Error('Failed to get auth token');
-        }
-        setToken(token);
-
         const userDocRef = doc(db, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
         
         if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
-          console.log('User is not admin, redirecting to home...');
-          router.push('/');
+          setIsAdmin(false);
+          setIsLoading(false);
           return;
         }
 
         setIsAdmin(true);
+        
+        // Fetch data
         await Promise.all([
+          fetchStats(),
           fetchUsers(),
           fetchMetadata(),
-          fetchBlogPosts(),
-          fetchStats()
-        ]).catch(error => {
-          console.error('Error fetching initial data:', error);
-        });
+          fetchBlogPosts()
+        ]);
+        
+        setIsLoading(false);
       } catch (error) {
         console.error('Error checking admin status:', error);
-        setError('Failed to verify admin status. Please try logging out and back in.');
-        router.push('/');
+        setError('Failed to verify admin status');
+        setIsLoading(false);
       }
     };
 
-    if (!authLoading) {
-      checkAdminStatus();
-    }
-  }, [user, authLoading, router]);
+    checkAdminStatus();
+  }, [user]);
 
   const fetchMetadata = async () => {
     try {
-      const metadataRef = doc(db, 'metadata', 'website');
-      const metadataSnap = await getDoc(metadataRef);
-      
-      if (metadataSnap.exists()) {
-        setMetadata(metadataSnap.data() as WebsiteMetadata);
-      } else {
-        const defaultMetadata = {
-          title: 'PromptBase',
-          description: 'Your AI Prompt Management Tool',
-          keywords: '',
-          lastUpdated: new Date().toISOString()
-        };
-        await setDoc(metadataRef, defaultMetadata);
-        setMetadata(defaultMetadata);
+      const metadataDoc = await getDoc(doc(db, 'settings', 'metadata'));
+      if (metadataDoc.exists()) {
+        setMetadata(metadataDoc.data() as WebsiteMetadata);
       }
     } catch (error) {
       console.error('Error fetching metadata:', error);
-      setError('Failed to fetch website metadata');
     }
   };
 
   const updateMetadata = async () => {
-    setIsMetadataLoading(true);
     try {
-      const metadataRef = doc(db, 'metadata', 'website');
-      const metadataSnap = await getDoc(metadataRef);
-      
-      const updatedMetadata = {
-        ...metadata,
-        lastUpdated: new Date().toISOString()
-      };
-
-      if (metadataSnap.exists()) {
-        await updateDoc(metadataRef, updatedMetadata);
-      } else {
-        await setDoc(metadataRef, updatedMetadata);
-      }
-      setError(null);
-    } catch (error: any) {
+      setIsMetadataLoading(true);
+      await setDoc(doc(db, 'settings', 'metadata'), metadata);
+      setIsMetadataLoading(false);
+    } catch (error) {
       console.error('Error updating metadata:', error);
-      setError(error.message || 'Failed to update metadata');
-    } finally {
       setIsMetadataLoading(false);
     }
   };
 
   const updateUserCredits = async (userId: string, newCredits: number) => {
-    console.log('Updating credits for user:', userId, 'New credits:', newCredits);
-    
-    if (isNaN(newCredits) || newCredits < 0) {
-      setError('Credits must be a valid positive number');
-      return;
-    }
-
-    setUpdateLoading(userId);
     try {
-      const userRef = doc(db, 'users', userId);
-      const userSnap = await getDoc(userRef);
+      setUpdateLoading(userId);
       
-      if (!userSnap.exists()) {
-        throw new Error('User not found');
-      }
-
+      // Update in Firestore
+      const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, {
-        credits: Number(newCredits),
-        lastUpdated: new Date().toISOString()
+        credits: newCredits
       });
       
-      console.log('Credits updated successfully');
-      await fetchUsers();
-      setError(null);
-    } catch (error: any) {
-      console.error('Error updating credits:', error);
-      setError(error.message || 'Failed to update credits');
-    } finally {
+      // Update local state
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId 
+            ? { ...user, credits: newCredits } 
+            : user
+        )
+      );
+      
+      setUpdateLoading(null);
+    } catch (error) {
+      console.error('Error updating user credits:', error);
       setUpdateLoading(null);
     }
   };
 
   const handleCreditUpdate = (userId: string, input: HTMLInputElement) => {
     const newCredits = parseInt(input.value);
-    if (isNaN(newCredits)) {
-      setError('Please enter a valid number');
-      return;
+    if (!isNaN(newCredits)) {
+      updateUserCredits(userId, newCredits);
     }
-    updateUserCredits(userId, newCredits);
   };
 
   const fetchBlogPosts = async () => {
     try {
-      const blogPostsRef = collection(db, 'blog_posts');
-      const blogPostsSnapshot = await getDocs(blogPostsRef);
-      const blogPostsData = blogPostsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title,
-          status: data.status,
-          author: {
-            name: data.author?.name || ''
-          },
-          publishedAt: data.publishedAt
-        } as BlogPost;
-      });
-      setBlogPosts(blogPostsData);
+      const postsQuery = query(
+        collection(db, 'blog_posts'),
+        orderBy('publishedAt', 'desc'),
+        limit(10)
+      );
+      const postsSnapshot = await getDocs(postsQuery);
+      const postsData = postsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as BlogPost[];
+      setBlogPosts(postsData);
     } catch (error) {
       console.error('Error fetching blog posts:', error);
-      setError('Failed to fetch blog posts');
     }
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
+    if (confirm('Are you sure you want to delete this post?')) {
       try {
         await deleteDoc(doc(db, 'blog_posts', postId));
-        fetchBlogPosts();
+        setBlogPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       } catch (error) {
         console.error('Error deleting post:', error);
       }
@@ -325,22 +228,22 @@ export default function AdminDashboard() {
   const handleDuplicatePost = async (postId: string) => {
     try {
       const postDoc = await getDoc(doc(db, 'blog_posts', postId));
-      if (!postDoc.exists()) return;
-
-      const originalPost = postDoc.data();
-      
-      const newPostData = {
-        ...originalPost,
-        title: `${originalPost.title} (Copy)`,
-        updatedAt: Timestamp.now(),
-        status: originalPost.status,
-        publishedAt: originalPost.status === 'published' ? Timestamp.now() : null
-      };
-
-      const newDocRef = doc(collection(db, 'blog_posts'));
-      await setDoc(newDocRef, newPostData);
-      
-      fetchBlogPosts();
+      if (postDoc.exists()) {
+        const postData = postDoc.data();
+        const newPostRef = doc(collection(db, 'blog_posts'));
+        
+        await setDoc(newPostRef, {
+          ...postData,
+          title: `${postData.title} (Copy)`,
+          status: 'draft',
+          publishedAt: null,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        });
+        
+        // Refresh posts
+        fetchBlogPosts();
+      }
     } catch (error) {
       console.error('Error duplicating post:', error);
     }
@@ -412,16 +315,6 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Prompts</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPrompts}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -429,45 +322,6 @@ export default function AdminDashboard() {
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Free Prompts</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.freePrompts}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">Recent Prompts</h2>
-        </div>
-        <div className="space-y-2">
-          {stats.recentPrompts.map((prompt) => (
-            <div
-              key={prompt.id}
-              className="flex items-center justify-between p-3 rounded-lg border bg-card"
-            >
-              <div>
-                <h3 className="font-medium text-sm">{prompt.title}</h3>
-                <p className="text-xs text-muted-foreground">{prompt.category}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm">
-                  {prompt.price === 0 ? 'Free' : prompt.price ? `$${prompt.price.toFixed(2)}` : '$0.00'}
-                </span>
-                <Link href={`/admin/prompts/${prompt.id}`}>
-                  <Button variant="ghost" size="sm" className="h-8">
-                    View
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Blog Posts Section */}
