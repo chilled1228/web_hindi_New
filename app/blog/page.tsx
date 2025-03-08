@@ -5,6 +5,9 @@ import { serverDb, BlogPost } from '@/lib/firebase-server'
 import { BlogCard } from '@/components/blog/blog-card'
 import { AnimatedBackground } from '@/components/ui/animated-background'
 
+// Enable ISR with a 1-hour revalidation period
+export const revalidate = 3600; // 1 hour
+
 async function getAllPosts(searchParams?: { [key: string]: string | string[] | undefined }) {
   try {
     const category = typeof searchParams?.category === 'string' ? searchParams.category : undefined;

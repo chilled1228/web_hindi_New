@@ -121,6 +121,8 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export const revalidate = 3600; // 1 hour
+
 export default async function BlogPostPage({ params }: Props) {
   const resolvedParams = await params;
   const post = await getPost(resolvedParams.slug);
