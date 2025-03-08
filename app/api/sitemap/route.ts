@@ -15,7 +15,7 @@ export async function GET() {
     }));
 
     // Base URL
-    const baseUrl = 'https://freepromptbase.com';
+    const baseUrl = 'https://nayabharatyojana.in';
 
     // Create XML sitemap
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     types: {
-      'application/rss+xml': 'https://freepromptbase.com/api/feed',
+      'application/rss+xml': 'https://nayabharatyojana.in/api/feed',
     }
   }
 };

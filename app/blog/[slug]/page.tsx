@@ -114,11 +114,11 @@ export async function generateMetadata(
     };
   }
 
-  const baseUrl = 'https://freepromptbase.com';
+  const baseUrl = 'https://nayabharatyojana.in';
   const postUrl = `${baseUrl}/blog/${post.slug}`;
 
   return {
-    title: `${post.title} | FreePromptBase Blog`,
+    title: `${post.title} | NayaBharatYojana.in Blog`,
     description: post.description,
     openGraph: {
       title: post.title,
@@ -166,7 +166,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   const safeContent = post.content || '';
 
-  const baseUrl = 'https://freepromptbase.com';
+  const baseUrl = 'https://nayabharatyojana.in';
   const postUrl = `${baseUrl}/blog/${post.slug}`;
 
   const schema = {

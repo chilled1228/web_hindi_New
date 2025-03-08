@@ -242,10 +242,10 @@ export default function ContactUs() {
             <p className="text-muted-foreground">
               Prefer email? Reach us directly at{' '}
               <a
-                href="mailto:support@freepromptbase.com"
+                href="mailto:support@nayabharatyojana.in"
                 className="text-gray-900 dark:text-gray-100 hover:underline"
               >
-                support@freepromptbase.com
+                support@nayabharatyojana.in
               </a>
             </p>
           </div>

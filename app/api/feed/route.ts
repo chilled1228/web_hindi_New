@@ -28,13 +28,13 @@ export async function GET() {
       } as BlogPost;
     });
 
-    const baseUrl = 'https://freepromptbase.com';
+    const baseUrl = 'https://nayabharatyojana.in';
     const feedUrl = `${baseUrl}/api/feed`;
 
     const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Prompt Engineering Blog</title>
+    <title>NayaBharatYojana.in Blog</title>
     <link>${baseUrl}</link>
     <description>Discover insights, tips, and best practices for prompt engineering and working with AI language models.</description>
     <language>en</language>

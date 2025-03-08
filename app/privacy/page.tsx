@@ -28,7 +28,7 @@ export default function PrivacyPolicy() {
         {/* Introduction Section */}
         <div className="max-w-3xl mx-auto mb-16 text-center">
           <p className="text-lg text-muted-foreground/90 leading-relaxed mb-6">
-            At FreePromptBase, we prioritize the protection of your privacy and personal information. This Privacy Policy outlines our practices for collecting, using, and safeguarding your data when you use our AI prompt management services.
+            At NayaBharatYojana.in, we prioritize the protection of your privacy and personal information. This Privacy Policy outlines our practices for collecting, using, and safeguarding your data when you use our AI prompt management services.
           </p>
           <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground/80">
             <span className="flex items-center gap-1.5">
@@ -164,9 +164,9 @@ export default function PrivacyPolicy() {
                     If you have any questions about this Privacy Policy, please contact us:
                   </p>
                   <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                    <a href="mailto:support@freepromptbase.com" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
+                    <a href="mailto:support@nayabharatyojana.in" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
                       <Mail className="w-4 h-4" />
-                      support@freepromptbase.com
+                      support@nayabharatyojana.in
                     </a>
                     <a href="/contact" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
                       <UserCheck className="w-4 h-4" />

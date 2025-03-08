@@ -8,7 +8,7 @@ interface WebsiteMetadata {
 }
 
 const defaultMetadata: WebsiteMetadata = {
-  title: 'FreePromptBase',
+  title: 'NayaBharatYojana.in',
   description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
   keywords: 'AI prompts, prompt generator, image to prompt, text to prompt, free AI tools'
 };

@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const [metadata, setMetadata] = useState<WebsiteMetadata>({
-    title: 'FreePromptBase',
+    title: 'NayaBharatYojana.in',
     description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
     keywords: 'AI prompts, prompt generator, image to prompt, text to prompt, free AI tools'
   });
@@ -58,7 +58,7 @@ export default function RootLayout({
     fetchMetadata();
   }, []);
 
-  const websiteUrl = 'https://freepromptbase.com';
+  const websiteUrl = 'https://nayabharatyojana.in';
 
   return (
     <html lang="en" className="light" suppressHydrationWarning>
@@ -86,15 +86,15 @@ export default function RootLayout({
           <SchemaMarkup
             type="Organization"
             data={generateOrganizationSchema({
-              name: 'FreePromptBase',
+              name: 'NayaBharatYojana.in',
               url: websiteUrl,
               logo: `${websiteUrl}/logo.png`,
               description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
               sameAs: [
-                'https://twitter.com/freepromptbase',
-                'https://github.com/freepromptbase',
-                'https://instagram.com/freepromptbase',
-                'https://linkedin.com/company/freepromptbase'
+                'https://twitter.com/nayabharatyojana',
+                'https://github.com/nayabharatyojana',
+                'https://instagram.com/nayabharatyojana',
+                'https://linkedin.com/company/nayabharatyojana'
               ]
             })}
           />
