@@ -176,10 +176,18 @@ export default function AdminLayout({
     try {
       if (auth) {
         await signOut(auth)
-        router.push('/auth')
+        
+        // Clear authentication cookies
+        document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        
+        // Force reload to clear any cached authentication state
+        window.location.href = '/auth';
       }
     } catch (error) {
       console.error('Error signing out:', error)
+      // Even if there's an error, try to redirect to auth page
+      window.location.href = '/auth';
     }
   }
 

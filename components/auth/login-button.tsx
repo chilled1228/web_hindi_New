@@ -37,12 +37,19 @@ export function LoginButton() {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
-      // Clear the cookie
+      if (auth) {
+        await signOut(auth);
+      }
+      // Clear all authentication cookies
       document.cookie = 'firebaseToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-      router.push('/');
+      document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      
+      // Force reload to clear any cached authentication state
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
+      // Even if there's an error, try to redirect to home page
+      window.location.href = '/';
     }
   };
 
