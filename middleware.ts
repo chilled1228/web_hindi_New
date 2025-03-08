@@ -18,6 +18,13 @@ export function middleware(request: NextRequest) {
     Object.entries(corsHeaders(request)).forEach(([key, value]) => {
       response.headers.set(key, value)
     })
+    
+    // Add cache control headers to prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+    
     return response
   }
   
@@ -57,6 +64,12 @@ export function middleware(request: NextRequest) {
 
   // Allow the request to proceed
   const response = NextResponse.next()
+  
+  // Add cache control headers to prevent caching for all responses
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  response.headers.set('Surrogate-Control', 'no-store')
   
   // Ensure we're using http for localhost
   if (process.env.NODE_ENV === 'development') {
