@@ -14,7 +14,5 @@
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
       ]
     }
-  ],
-  "// This comment is to trigger a new deployment": "true",
-  "// Timestamp to force new deployment": "2025-03-08T23:45:00Z"
+  ]
 } 
