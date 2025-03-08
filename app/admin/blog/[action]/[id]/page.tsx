@@ -45,6 +45,7 @@ import {
   HoverCardTrigger,
   HoverCardContent
 } from '@/components/ui/hover-card';
+import { revalidateBlogPost, revalidateAllBlogPosts } from '@/lib/revalidation';
 
 // Dynamically import the editor to avoid SSR issues
 const Editor = dynamic(() => import('@/components/editor'), {
@@ -362,23 +363,12 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
       // Call the revalidation API to clear the cache
       if (status === 'published') {
         try {
-          const revalidationToken = process.env.NEXT_PUBLIC_REVALIDATION_TOKEN;
-          const revalidateResponse = await fetch('/api/revalidate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              token: revalidationToken,
-              slug: postData.slug
-            }),
-          });
+          // Revalidate the specific blog post
+          const success = await revalidateBlogPost(postData.slug);
           
-          if (revalidateResponse.ok) {
-            console.log('Successfully revalidated blog pages');
+          if (success) {
             toast.success('Blog post published and site updated');
           } else {
-            console.error('Failed to revalidate blog pages:', await revalidateResponse.text());
             toast.warning('Blog post published but site update may be delayed');
           }
         } catch (revalidateError) {
