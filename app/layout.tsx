@@ -101,7 +101,7 @@ export default function RootLayout({
           <SchemaMarkup
             type="WebSite"
             data={generateWebsiteSchema({
-              name: 'FreePromptBase',
+              name: 'NayaBharatYojana.in',
               url: websiteUrl,
               description: metadata.description,
               potentialAction: [{

@@ -105,7 +105,7 @@ type Props = {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
-const BASE_URL = 'https://freepromptbase.com/blog/';
+const BASE_URL = 'https://nayabharatyojana.in/blog/';
 
 interface AutoSaveStatus {
   status: 'idle' | 'saving' | 'saved' | 'error';

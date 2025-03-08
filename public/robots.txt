@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://freepromptbase.com/sitemap.xml
+Sitemap: https://nayabharatyojana.in/sitemap.xml
 
 # Allow RSS feed
 Allow: /api/feed
