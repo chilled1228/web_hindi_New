@@ -7,9 +7,6 @@ import { serverDb, BlogPost } from '@/lib/firebase-server'
 import { AnimatedBackground } from '@/components/ui/animated-background'
 import { BlogCard } from '@/components/blog/blog-card'
 
-// Add ISR revalidation to the top of the file
-export const revalidate = 3600; // 1 hour
-
 // Generate metadata for SEO
 export const metadata: Metadata = defaultMetadata
 

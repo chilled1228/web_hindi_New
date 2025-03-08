@@ -4,26 +4,36 @@ import { Star } from 'lucide-react'
 import { serverDb, BlogPost } from '@/lib/firebase-server'
 import { BlogCard } from '@/components/blog/blog-card'
 import { AnimatedBackground } from '@/components/ui/animated-background'
+import { unstable_cache } from 'next/cache'
 
-// Enable ISR with a 1-hour revalidation period
-export const revalidate = 3600; // 1 hour
+// Set static generation with ISR
+export const revalidate = 3600; // Revalidate at most once per hour if not manually revalidated
+
+// Cache the blog posts with a tag for revalidation
+const getCachedPosts = unstable_cache(
+  async (searchParams?: { [key: string]: string | string[] | undefined }) => {
+    try {
+      const category = typeof searchParams?.category === 'string' ? searchParams.category : undefined;
+      const tag = typeof searchParams?.tag === 'string' ? searchParams.tag : undefined;
+      
+      const posts = await serverDb.getBlogPosts({
+        category,
+        tag,
+        status: 'published'
+      });
+      
+      return posts;
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      return [];
+    }
+  },
+  ['blog-posts'],
+  { tags: ['blogs'] } // Use tags for targeted revalidation
+);
 
 async function getAllPosts(searchParams?: { [key: string]: string | string[] | undefined }) {
-  try {
-    const category = typeof searchParams?.category === 'string' ? searchParams.category : undefined;
-    const tag = typeof searchParams?.tag === 'string' ? searchParams.tag : undefined;
-    
-    const posts = await serverDb.getBlogPosts({
-      category,
-      tag,
-      status: 'published'
-    });
-    
-    return posts;
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-    return [];
-  }
+  return getCachedPosts(searchParams);
 }
 
 export const metadata: Metadata = {

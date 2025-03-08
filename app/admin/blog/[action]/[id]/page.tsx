@@ -89,6 +89,7 @@ interface BlogPost {
   readingTime?: string;
   categories: string[];
   tags: string[];
+  id?: string;
 }
 
 interface PageParams {
@@ -358,7 +359,7 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
         ...postData
       }));
       
-      // Call the revalidation API to immediately update the pages
+      // Call the revalidation API to clear the cache
       if (status === 'published') {
         try {
           const revalidationToken = process.env.NEXT_PUBLIC_REVALIDATION_TOKEN;
@@ -369,20 +370,20 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
             },
             body: JSON.stringify({
               token: revalidationToken,
-              path: `/blog/${postData.slug}`
+              slug: postData.slug
             }),
           });
           
           if (revalidateResponse.ok) {
-            toast.success('Blog post published and site updated!');
             console.log('Successfully revalidated blog pages');
+            toast.success('Blog post published and site updated');
           } else {
             console.error('Failed to revalidate blog pages:', await revalidateResponse.text());
-            toast.error('Blog post published but site update delayed - will be visible within an hour');
+            toast.warning('Blog post published but site update may be delayed');
           }
         } catch (revalidateError) {
           console.error('Error revalidating blog pages:', revalidateError);
-          toast.warning('Blog post published but may take up to an hour to appear on the site');
+          toast.warning('Blog post published but site update may be delayed');
         }
       }
       
@@ -390,7 +391,6 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving post:', error);
-      toast.error('Failed to save blog post');
     } finally {
       setSaving(false);
     }
