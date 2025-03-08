@@ -1,7 +1,26 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { corsHeaders } from './lib/cors'
 
 export function middleware(request: NextRequest) {
+  // Check if this is an API route
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api')
+  
+  // Handle CORS for API routes
+  if (isApiRoute) {
+    // For OPTIONS requests, return a response with CORS headers
+    if (request.method === 'OPTIONS') {
+      return NextResponse.json({}, { headers: corsHeaders(request) })
+    }
+    
+    // For other requests, add CORS headers to the response
+    const response = NextResponse.next()
+    Object.entries(corsHeaders(request)).forEach(([key, value]) => {
+      response.headers.set(key, value)
+    })
+    return response
+  }
+  
   // Check for Firebase ID token in cookies
   const authCookie = request.cookies.get('__session')
   const firebaseToken = request.cookies.get('firebaseToken')
@@ -51,12 +70,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except:
-     * 1. /api/ (API routes)
-     * 2. /_next/ (Next.js internals)
-     * 3. /_static (inside /public)
-     * 4. /_vercel (Vercel internals)
-     * 5. /favicon.ico, /sitemap.xml (static files)
+     * 1. /_next/ (Next.js internals)
+     * 2. /_static (inside /public)
+     * 3. /_vercel (Vercel internals)
+     * 4. /favicon.ico, /sitemap.xml (static files)
      */
-    '/((?!api|_next|_static|_vercel|favicon.ico|sitemap.xml).*)',
+    '/((?!_next|_static|_vercel|favicon.ico|sitemap.xml).*)',
   ],
 } 
