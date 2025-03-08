@@ -37,15 +37,23 @@ export function LoginButton() {
 
   const handleSignOut = async () => {
     try {
+      // First clear all cookies
+      document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=' + window.location.hostname;
+      document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=' + window.location.hostname;
+      
+      // Clear any local storage items related to Firebase auth
+      localStorage.removeItem('firebase:authUser:' + process.env.NEXT_PUBLIC_FIREBASE_API_KEY + ':[DEFAULT]');
+      
+      // Then sign out from Firebase
       if (auth) {
         await signOut(auth);
       }
-      // Clear all authentication cookies
-      document.cookie = 'firebaseToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-      document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       
-      // Force reload to clear any cached authentication state
-      window.location.href = '/';
+      // Use a small delay to ensure everything is cleared before redirecting
+      setTimeout(() => {
+        // Force reload to clear any cached authentication state
+        window.location.href = '/';
+      }, 100);
     } catch (error) {
       console.error('Error signing out:', error);
       // Even if there's an error, try to redirect to home page

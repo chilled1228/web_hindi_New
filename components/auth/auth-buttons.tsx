@@ -28,19 +28,22 @@ export function AuthButtons() {
     setError('');
     
     try {
-      // Get the token and set it in cookies
+      // Get the token and set it in a cookie
       const token = await user.getIdToken(true);
-      document.cookie = `firebaseToken=${token}; path=/`;
-      document.cookie = `__session=${token}; path=/`;
+      
+      // Set the cookie with proper attributes
+      document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Strict`;
       
       // Get the redirect URL from query parameters
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect') || '/';
       
-      // Force a page reload to ensure all auth state is properly recognized
-      window.location.href = redirectUrl;
+      // Use a small delay to ensure cookies are set before redirecting
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 100);
     } catch (error) {
-      console.error('Error setting auth cookies:', error);
+      console.error('Error setting authentication token:', error);
       setError('Failed to complete authentication. Please try again.');
     }
   };
@@ -88,6 +91,10 @@ export function AuthButtons() {
     }
     
     try {
+      // Clear any existing auth state first
+      document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      
       let userCredential;
       if (isSignUp) {
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -112,12 +119,19 @@ export function AuthButtons() {
     }
     
     try {
+      // Clear any existing auth state first
+      document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      
       const provider = new GoogleAuthProvider();
       provider.addScope('https://www.googleapis.com/auth/userinfo.email');
       provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+      
+      // Always force account selection to avoid cached credentials
       provider.setCustomParameters({
         prompt: 'select_account'
       });
+      
       const result = await signInWithPopup(auth, provider);
       await handleSuccess(result.user);
     } catch (error: any) {

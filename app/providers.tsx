@@ -29,18 +29,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        await setPersistence(auth, browserLocalPersistence);
+        // Set persistence to LOCAL - this ensures the user stays logged in
+        if (auth) {
+          await setPersistence(auth, browserLocalPersistence);
+        } else {
+          console.error('Auth is not initialized');
+          setLoading(false);
+          setInitialized(true);
+          return;
+        }
         
+        // Listen for auth state changes
         unsubscribe = onAuthStateChanged(auth, async (user) => {
           if (user) {
             try {
+              // Force token refresh to ensure we have a valid token
               await user.getIdToken(true);
               setUser(user);
+              console.log('User authenticated:', user.email);
             } catch (error) {
               console.error('Error refreshing token:', error);
               setUser(null);
             }
           } else {
+            console.log('No user authenticated');
             setUser(null);
           }
           setLoading(false);
@@ -55,10 +67,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
+    // Add event listener for storage changes to handle auth state across tabs
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'firebase:authUser:' + process.env.NEXT_PUBLIC_FIREBASE_API_KEY + ':[DEFAULT]') {
+        // Auth state changed in another tab, reload the page to sync
+        window.location.reload();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

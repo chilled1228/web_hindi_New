@@ -109,10 +109,7 @@ export default function AdminLayout({
         if (!auth) {
           console.error('Auth not initialized')
           setIsLoading(false)
-          // Clear any stale cookies before redirecting
-          document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-          document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-          window.location.href = '/auth?redirect=/admin'
+          router.push('/auth?redirect=/admin')
           return
         }
         
@@ -120,24 +117,17 @@ export default function AdminLayout({
         if (!user) {
           console.log('No user logged in, redirecting to auth page')
           setIsLoading(false)
-          // Clear any stale cookies before redirecting
-          document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-          document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-          window.location.href = '/auth?redirect=/admin'
+          router.push('/auth?redirect=/admin')
           return
         }
 
         try {
-          // Force token refresh to ensure we have the latest authentication state
-          const token = await user.getIdToken(true)
-          // Update cookies with fresh token
-          document.cookie = `firebaseToken=${token}; path=/`;
-          document.cookie = `__session=${token}; path=/`;
+          await user.getIdToken(true)
           
           if (!db) {
             console.error('Firestore not initialized')
             setIsLoading(false)
-            window.location.href = '/'
+            router.push('/')
             return
           }
           
@@ -146,7 +136,7 @@ export default function AdminLayout({
           
           if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
             setIsLoading(false)
-            window.location.href = '/'
+            router.push('/')
             return
           }
 
@@ -156,18 +146,12 @@ export default function AdminLayout({
         } catch (error) {
           console.error('Error checking admin status:', error)
           setIsLoading(false)
-          // Clear any stale cookies before redirecting
-          document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-          document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-          window.location.href = '/auth?redirect=/admin'
+          router.push('/')
         }
       } catch (error) {
         console.error('Error in checkAdminStatus:', error)
         setIsLoading(false)
-        // Clear any stale cookies before redirecting
-        document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        window.location.href = '/auth?redirect=/admin'
+        router.push('/auth?redirect=/admin')
       } finally {
         // Ensure loading state is always updated
         setIsLoading(false)
@@ -181,10 +165,7 @@ export default function AdminLayout({
       if (isLoading) {
         console.log('Loading timeout reached, redirecting to auth page')
         setIsLoading(false)
-        // Clear any stale cookies before redirecting
-        document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        window.location.href = '/auth?redirect=/admin'
+        router.push('/auth?redirect=/admin')
       }
     }, 5000) // 5 seconds timeout
     
@@ -193,18 +174,25 @@ export default function AdminLayout({
 
   const handleSignOut = async () => {
     try {
+      // First clear all cookies
+      document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=' + window.location.hostname;
+      document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=' + window.location.hostname;
+      
+      // Clear any local storage items related to Firebase auth
+      localStorage.removeItem('firebase:authUser:' + process.env.NEXT_PUBLIC_FIREBASE_API_KEY + ':[DEFAULT]');
+      
+      // Then sign out from Firebase
       if (auth) {
-        await signOut(auth)
-        
-        // Clear authentication cookies
-        document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        
+        await signOut(auth);
+      }
+      
+      // Use a small delay to ensure everything is cleared before redirecting
+      setTimeout(() => {
         // Force reload to clear any cached authentication state
         window.location.href = '/auth';
-      }
+      }, 100);
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('Error signing out:', error);
       // Even if there's an error, try to redirect to auth page
       window.location.href = '/auth';
     }
