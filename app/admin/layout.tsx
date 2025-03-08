@@ -109,7 +109,10 @@ export default function AdminLayout({
         if (!auth) {
           console.error('Auth not initialized')
           setIsLoading(false)
-          router.push('/auth?redirect=/admin')
+          // Clear any stale cookies before redirecting
+          document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          window.location.href = '/auth?redirect=/admin'
           return
         }
         
@@ -117,17 +120,24 @@ export default function AdminLayout({
         if (!user) {
           console.log('No user logged in, redirecting to auth page')
           setIsLoading(false)
-          router.push('/auth?redirect=/admin')
+          // Clear any stale cookies before redirecting
+          document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          window.location.href = '/auth?redirect=/admin'
           return
         }
 
         try {
-          await user.getIdToken(true)
+          // Force token refresh to ensure we have the latest authentication state
+          const token = await user.getIdToken(true)
+          // Update cookies with fresh token
+          document.cookie = `firebaseToken=${token}; path=/`;
+          document.cookie = `__session=${token}; path=/`;
           
           if (!db) {
             console.error('Firestore not initialized')
             setIsLoading(false)
-            router.push('/')
+            window.location.href = '/'
             return
           }
           
@@ -136,7 +146,7 @@ export default function AdminLayout({
           
           if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
             setIsLoading(false)
-            router.push('/')
+            window.location.href = '/'
             return
           }
 
@@ -146,12 +156,18 @@ export default function AdminLayout({
         } catch (error) {
           console.error('Error checking admin status:', error)
           setIsLoading(false)
-          router.push('/')
+          // Clear any stale cookies before redirecting
+          document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          window.location.href = '/auth?redirect=/admin'
         }
       } catch (error) {
         console.error('Error in checkAdminStatus:', error)
         setIsLoading(false)
-        router.push('/auth?redirect=/admin')
+        // Clear any stale cookies before redirecting
+        document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        window.location.href = '/auth?redirect=/admin'
       } finally {
         // Ensure loading state is always updated
         setIsLoading(false)
@@ -165,7 +181,10 @@ export default function AdminLayout({
       if (isLoading) {
         console.log('Loading timeout reached, redirecting to auth page')
         setIsLoading(false)
-        router.push('/auth?redirect=/admin')
+        // Clear any stale cookies before redirecting
+        document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        window.location.href = '/auth?redirect=/admin'
       }
     }, 5000) // 5 seconds timeout
     

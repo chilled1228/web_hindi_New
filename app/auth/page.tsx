@@ -11,9 +11,25 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (user && !loading) {
+      // Get the redirect URL from query parameters
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect') || '/';
-      router.push(redirectUrl);
+      
+      // Force token refresh to ensure we have the latest authentication state
+      user.getIdToken(true)
+        .then(token => {
+          // Update cookies with fresh token
+          document.cookie = `firebaseToken=${token}; path=/`;
+          document.cookie = `__session=${token}; path=/`;
+          
+          // Use window.location for a full page reload
+          window.location.href = redirectUrl;
+        })
+        .catch(error => {
+          console.error('Error refreshing token:', error);
+          // Still try to redirect even if token refresh fails
+          window.location.href = redirectUrl;
+        });
     }
   }, [user, loading, router]);
 

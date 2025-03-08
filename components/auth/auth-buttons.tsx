@@ -27,15 +27,22 @@ export function AuthButtons() {
     setIsLoading(false);
     setError('');
     
-    // Get the token and set it in a cookie
-    const token = await user.getIdToken();
-    document.cookie = `firebaseToken=${token}; path=/`;
-    
-    // Get the redirect URL from query parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const redirectUrl = urlParams.get('redirect') || '/';
-    
-    router.push(redirectUrl);
+    try {
+      // Get the token and set it in cookies
+      const token = await user.getIdToken(true);
+      document.cookie = `firebaseToken=${token}; path=/`;
+      document.cookie = `__session=${token}; path=/`;
+      
+      // Get the redirect URL from query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectUrl = urlParams.get('redirect') || '/';
+      
+      // Force a page reload to ensure all auth state is properly recognized
+      window.location.href = redirectUrl;
+    } catch (error) {
+      console.error('Error setting auth cookies:', error);
+      setError('Failed to complete authentication. Please try again.');
+    }
   };
 
   const getErrorMessage = (error: AuthError) => {
