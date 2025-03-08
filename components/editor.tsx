@@ -34,6 +34,21 @@ import {
   Code2,
   Quote as QuoteIcon,
   Loader2,
+  PanelTop,
+  PanelTopClose,
+  ChevronUp,
+  ChevronDown,
+  Layout,
+  LayoutGrid,
+  MenuSquare,
+  Monitor,
+  Tablet,
+  Settings2,
+  ImageDown,
+  ImageUp,
+  Maximize2,
+  Minimize2,
+  Move,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useCallback, useEffect } from 'react';
@@ -65,13 +80,62 @@ interface ExtendedImageOptions {
   width?: number;
   height?: number;
   loading?: 'lazy' | 'eager';
+  class?: string;
 }
+
+type ToolbarPosition = 'top' | 'side';
+
+// Define image size options
+type ImageSize = 'small' | 'medium' | 'large' | 'original';
 
 export default function Editor({ value, onChange, onCoverImageChange, coverImage }: EditorProps) {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [showCoverImageUpload, setShowCoverImageUpload] = useState(false);
   const [pasting, setPasting] = useState(false);
   const [editorInstance, setEditorInstance] = useState<TipTapEditor | null>(null);
+  const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
+  const [imageSize, setImageSize] = useState<ImageSize>('medium');
+  const [imageAlignment, setImageAlignment] = useState<'left' | 'center' | 'right'>('center');
+  
+  // Initialize toolbar settings from localStorage or use defaults
+  const [showToolbar, setShowToolbar] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('editorShowToolbar');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
+  
+  const [toolbarPosition, setToolbarPosition] = useState<ToolbarPosition>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('editorToolbarPosition');
+      return (saved === 'top' || saved === 'side') ? saved as ToolbarPosition : 'top';
+    }
+    return 'top';
+  });
+
+  // Save preferences when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('editorShowToolbar', showToolbar.toString());
+    }
+  }, [showToolbar]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('editorToolbarPosition', toolbarPosition);
+    }
+  }, [toolbarPosition]);
+
+  // Toggle toolbar visibility
+  const toggleToolbar = useCallback(() => {
+    setShowToolbar(prev => !prev);
+  }, []);
+
+  // Toggle toolbar position
+  const toggleToolbarPosition = useCallback(() => {
+    setToolbarPosition(prev => prev === 'top' ? 'side' : 'top');
+  }, []);
 
   const handlePaste = useCallback(async (e: ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -157,6 +221,34 @@ export default function Editor({ value, onChange, onCoverImageChange, coverImage
     },
     onDestroy: () => {
       setEditorInstance(null);
+    },
+    onSelectionUpdate: ({ editor }) => {
+      // Check if an image is selected
+      const node = editor.view.state.selection.$anchor.nodeAfter;
+      if (node && node.type.name === 'image') {
+        // Find the DOM element for the selected image
+        const domNode = editor.view.nodeDOM(editor.view.state.selection.$anchor.pos) as HTMLElement;
+        if (domNode) {
+          const img = domNode.querySelector('img');
+          if (img) {
+            setSelectedImage(img);
+            
+            // Determine current size and alignment
+            const classList = img.className.split(' ');
+            if (classList.includes('w-1/4')) setImageSize('small');
+            else if (classList.includes('w-1/2')) setImageSize('medium');
+            else if (classList.includes('w-full')) setImageSize('large');
+            else setImageSize('original');
+            
+            if (classList.includes('mx-auto')) setImageAlignment('center');
+            else if (classList.includes('ml-auto')) setImageAlignment('right');
+            else setImageAlignment('left');
+            
+            return;
+          }
+        }
+      }
+      setSelectedImage(null);
     },
     editorProps: {
       attributes: {
@@ -311,6 +403,73 @@ export default function Editor({ value, onChange, onCoverImageChange, coverImage
     }
   };
 
+  // Function to apply image size
+  const applyImageSize = (size: ImageSize) => {
+    if (!editor || !selectedImage) return;
+    
+    // Get the current node position
+    const { state } = editor.view;
+    const pos = state.selection.$anchor.pos;
+    
+    // Remove existing size classes
+    let classes = selectedImage.className
+      .replace(/\bw-1\/4\b|\bw-1\/2\b|\bw-full\b|\bw-auto\b/g, '')
+      .trim();
+    
+    // Add new size class
+    switch (size) {
+      case 'small':
+        classes += ' w-1/4';
+        break;
+      case 'medium':
+        classes += ' w-1/2';
+        break;
+      case 'large':
+        classes += ' w-full';
+        break;
+      case 'original':
+        classes += ' w-auto';
+        break;
+    }
+    
+    // Update the image attributes
+    editor.chain().focus().setNodeSelection(pos).run();
+    editor.chain().focus().updateAttributes('image', { class: classes }).run();
+    setImageSize(size);
+  };
+
+  // Function to apply image alignment
+  const applyImageAlignment = (alignment: 'left' | 'center' | 'right') => {
+    if (!editor || !selectedImage) return;
+    
+    // Get the current node position
+    const { state } = editor.view;
+    const pos = state.selection.$anchor.pos;
+    
+    // Remove existing alignment classes
+    let classes = selectedImage.className
+      .replace(/\bmx-auto\b|\bml-auto\b|\bfloat-left\b|\bfloat-right\b|\bblock\b/g, '')
+      .trim();
+    
+    // Add new alignment class
+    switch (alignment) {
+      case 'left':
+        classes += ' float-left mr-4';
+        break;
+      case 'center':
+        classes += ' mx-auto block';
+        break;
+      case 'right':
+        classes += ' float-right ml-4';
+        break;
+    }
+    
+    // Update the image attributes
+    editor.chain().focus().setNodeSelection(pos).run();
+    editor.chain().focus().updateAttributes('image', { class: classes }).run();
+    setImageAlignment(alignment);
+  };
+
   const addImage = (imageData: ImageData) => {
     editor?.chain().focus().setImage({
       src: imageData.url,
@@ -319,6 +478,7 @@ export default function Editor({ value, onChange, onCoverImageChange, coverImage
       width: imageData.width,
       height: imageData.height,
       loading: imageData.loading,
+      class: 'w-1/2 mx-auto rounded-lg', // Default to medium size and centered
     } as ExtendedImageOptions).run();
 
     if (imageData.description) {
@@ -377,307 +537,533 @@ export default function Editor({ value, onChange, onCoverImageChange, coverImage
         </div>
       )}
       
-      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 bg-background/90 backdrop-blur-sm supports-[backdrop-filter]:bg-background/70 border border-border/40 rounded-full shadow-lg px-3 py-1.5 flex flex-wrap gap-0.5 max-w-[calc(100%-1rem)] w-fit">
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            data-active={editor.isActive('heading', { level: 1 })}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Heading1 className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            data-active={editor.isActive('heading', { level: 2 })}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Heading2 className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            data-active={editor.isActive('heading', { level: 3 })}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Heading3 className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().setParagraph().run()}
-            data-active={editor.isActive('paragraph')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Pilcrow className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-
-        <div className="w-px h-5 bg-border/50 mx-1" />
-
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            data-active={editor.isActive('bold')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Bold className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            data-active={editor.isActive('italic')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Italic className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            data-active={editor.isActive('strike')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Strikethrough className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            data-active={editor.isActive('code')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Code className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-
-        <div className="w-px h-5 bg-border/50 mx-1" />
-
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            data-active={editor.isActive('bulletList')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <List className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            data-active={editor.isActive('orderedList')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <ListOrdered className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            data-active={editor.isActive('blockquote')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Quote className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-
-        <div className="w-px h-5 bg-border/50 mx-1" />
-
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-            data-active={editor.isActive({ textAlign: 'left' })}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <AlignLeft className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-            data-active={editor.isActive({ textAlign: 'center' })}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <AlignCenter className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().setTextAlign('right').run()}
-            data-active={editor.isActive({ textAlign: 'right' })}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <AlignRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-
-        <div className="w-px h-5 bg-border/50 mx-1" />
-
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={setLink}
-            data-active={editor.isActive('link')}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <LinkIcon className="h-3.5 w-3.5" />
-          </Button>
-          {editor.isActive('link') && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().unsetLink().run()}
-              className="h-7 w-7 p-0 rounded-full"
-            >
-              <LinkIcon className="h-3.5 w-3.5 line-through" />
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowImageUpload(true)}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <ImageIcon className="h-3.5 w-3.5" />
-          </Button>
-          {editor.isActive('image') && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().deleteSelection().run()}
-              className="h-7 w-7 p-0 rounded-full"
-            >
-              <ImageIcon className="h-3.5 w-3.5 line-through" />
-            </Button>
-          )}
-        </div>
-
-        <div className="w-px h-5 bg-border/50 mx-1" />
-
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Undo className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-            className="h-7 w-7 p-0 data-[active=true]:bg-muted rounded-full"
-          >
-            <Redo className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+      {/* Toolbar settings */}
+      <div className="absolute top-0 right-0 z-40 p-2 flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleToolbarPosition}
+          className="h-8 w-8 p-0 rounded-full bg-background/80 backdrop-blur-sm shadow-sm"
+          title={`Switch to ${toolbarPosition === 'top' ? 'side' : 'top'} toolbar`}
+        >
+          {toolbarPosition === 'top' ? <Layout className="h-4 w-4" /> : <MenuSquare className="h-4 w-4" />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleToolbar}
+          className="h-8 w-8 p-0 rounded-full bg-background/80 backdrop-blur-sm shadow-sm"
+          title={showToolbar ? "Hide toolbar" : "Show toolbar"}
+        >
+          {showToolbar ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
       </div>
+      
+      <div className={cn("flex", toolbarPosition === 'side' ? 'flex-row' : 'flex-col')}>
+        {/* Side toolbar */}
+        {showToolbar && toolbarPosition === 'side' && (
+          <div className="sticky top-0 left-0 z-30 w-14 bg-background border-r h-[calc(100vh-250px)] flex flex-col items-center py-3 gap-3 overflow-y-auto">
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                data-active={editor.isActive('heading', { level: 1 })}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Heading 1"
+              >
+                <Heading1 className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                data-active={editor.isActive('heading', { level: 2 })}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Heading 2"
+              >
+                <Heading2 className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                data-active={editor.isActive('heading', { level: 3 })}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Heading 3"
+              >
+                <Heading3 className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().setParagraph().run()}
+                data-active={editor.isActive('paragraph')}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Paragraph"
+              >
+                <Pilcrow className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            <div className="w-8 h-px bg-border/50 my-1" />
+            
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                data-active={editor.isActive('bold')}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Bold"
+              >
+                <Bold className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                data-active={editor.isActive('italic')}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Italic"
+              >
+                <Italic className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleStrike().run()}
+                data-active={editor.isActive('strike')}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Strikethrough"
+              >
+                <Strikethrough className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            <div className="w-8 h-px bg-border/50 my-1" />
+            
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                data-active={editor.isActive('bulletList')}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Bullet List"
+              >
+                <List className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                data-active={editor.isActive('orderedList')}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Numbered List"
+              >
+                <ListOrdered className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                data-active={editor.isActive('blockquote')}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Quote"
+              >
+                <Quote className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            <div className="w-8 h-px bg-border/50 my-1" />
+            
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={setLink}
+                data-active={editor.isActive('link')}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Add Link"
+              >
+                <LinkIcon className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowImageUpload(true)}
+                className="h-10 w-10 p-0 data-[active=true]:bg-muted rounded-full"
+                title="Add Image"
+              >
+                <ImageIcon className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            <div className="w-8 h-px bg-border/50 my-1" />
+            
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                className="h-10 w-10 p-0 rounded-full"
+                title="Undo"
+              >
+                <Undo className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                className="h-10 w-10 p-0 rounded-full"
+                title="Redo"
+              >
+                <Redo className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex-1">
+          {/* Top toolbar */}
+          {showToolbar && toolbarPosition === 'top' && (
+            <div className="sticky top-0 z-30 bg-background border-b flex justify-center px-4 py-2">
+              <div className="flex items-center gap-1 overflow-x-auto max-w-full py-1 px-2 rounded-lg bg-background/90 backdrop-blur-sm supports-[backdrop-filter]:bg-background/70 shadow-sm">
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                    data-active={editor.isActive('heading', { level: 1 })}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Heading1 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                    data-active={editor.isActive('heading', { level: 2 })}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Heading2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                    data-active={editor.isActive('heading', { level: 3 })}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Heading3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().setParagraph().run()}
+                    data-active={editor.isActive('paragraph')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Pilcrow className="h-4 w-4" />
+                  </Button>
+                </div>
 
-      <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }}>
-        <div className="flex items-center gap-1 rounded-lg border bg-background shadow-lg p-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          >
-            <Heading1 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          >
-            <Heading2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowImageUpload(true)}
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          >
-            <Quote className="h-4 w-4" />
-          </Button>
-        </div>
-      </FloatingMenu>
+                <div className="w-px h-5 bg-border/50 mx-1" />
 
-      <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
-        <div className="flex items-center gap-1 rounded-lg border bg-background shadow-lg p-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            data-active={editor.isActive('bold')}
-            className="data-[active=true]:bg-muted"
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            data-active={editor.isActive('italic')}
-            className="data-[active=true]:bg-muted"
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={setLink}
-            data-active={editor.isActive('link')}
-            className="data-[active=true]:bg-muted"
-          >
-            <LinkIcon className="h-4 w-4" />
-          </Button>
-          {editor.isActive('link') && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.chain().focus().unsetLink().run()}
-              className="data-[active=true]:bg-muted"
-            >
-              <LinkIcon className="h-4 w-4 line-through" />
-            </Button>
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleBold().run()}
+                    data-active={editor.isActive('bold')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Bold className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                    data-active={editor.isActive('italic')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Italic className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleStrike().run()}
+                    data-active={editor.isActive('strike')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Strikethrough className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleCode().run()}
+                    data-active={editor.isActive('code')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Code className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="w-px h-5 bg-border/50 mx-1" />
+
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleBulletList().run()}
+                    data-active={editor.isActive('bulletList')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                    data-active={editor.isActive('orderedList')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <ListOrdered className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                    data-active={editor.isActive('blockquote')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <Quote className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="w-px h-5 bg-border/50 mx-1" />
+
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                    data-active={editor.isActive({ textAlign: 'left' })}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <AlignLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                    data-active={editor.isActive({ textAlign: 'center' })}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <AlignCenter className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                    data-active={editor.isActive({ textAlign: 'right' })}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <AlignRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="w-px h-5 bg-border/50 mx-1" />
+
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={setLink}
+                    data-active={editor.isActive('link')}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowImageUpload(true)}
+                    className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="w-px h-5 bg-border/50 mx-1" />
+
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().undo().run()}
+                    disabled={!editor.can().undo()}
+                    className="h-8 w-8 p-0 rounded-full"
+                  >
+                    <Undo className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => editor.chain().focus().redo().run()}
+                    disabled={!editor.can().redo()}
+                    className="h-8 w-8 p-0 rounded-full"
+                  >
+                    <Redo className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
+
+          <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
+            <div className="flex items-center gap-1 rounded-lg border bg-background shadow-lg p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                data-active={editor.isActive('bold')}
+                className="data-[active=true]:bg-muted"
+              >
+                <Bold className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                data-active={editor.isActive('italic')}
+                className="data-[active=true]:bg-muted"
+              >
+                <Italic className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={setLink}
+                data-active={editor.isActive('link')}
+                className="data-[active=true]:bg-muted"
+              >
+                <LinkIcon className="h-4 w-4" />
+              </Button>
+              {editor.isActive('link') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().unsetLink().run()}
+                  className="data-[active=true]:bg-muted"
+                >
+                  <LinkIcon className="h-4 w-4 line-through" />
+                </Button>
+              )}
+            </div>
+          </BubbleMenu>
+
+          <ImageUpload
+            open={showImageUpload}
+            onOpenChange={setShowImageUpload}
+            onImageUploaded={addImage}
+          />
+
+          <ImageUpload
+            open={showCoverImageUpload}
+            onOpenChange={setShowCoverImageUpload}
+            onImageUploaded={(imageData) => onCoverImageChange?.(imageData)}
+            isCoverImage
+          />
+
+          {/* Image Toolbar - Show when an image is selected */}
+          {selectedImage && (
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-background/90 backdrop-blur-sm border border-border/40 rounded-lg shadow-lg px-3 py-2 flex items-center gap-2">
+              <div className="flex items-center gap-1 border-r pr-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyImageSize('small')}
+                  data-active={imageSize === 'small'}
+                  className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  title="Small image"
+                >
+                  <Minimize2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyImageSize('medium')}
+                  data-active={imageSize === 'medium'}
+                  className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  title="Medium image"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyImageSize('large')}
+                  data-active={imageSize === 'large'}
+                  className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  title="Large image"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyImageSize('original')}
+                  data-active={imageSize === 'original'}
+                  className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  title="Original size"
+                >
+                  <Move className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyImageAlignment('left')}
+                  data-active={imageAlignment === 'left'}
+                  className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  title="Align left"
+                >
+                  <AlignLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyImageAlignment('center')}
+                  data-active={imageAlignment === 'center'}
+                  className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  title="Align center"
+                >
+                  <AlignCenter className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyImageAlignment('right')}
+                  data-active={imageAlignment === 'right'}
+                  className="h-8 w-8 p-0 data-[active=true]:bg-muted rounded-full"
+                  title="Align right"
+                >
+                  <AlignRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="p-4 prose prose-sm max-w-none">
+            <EditorContent editor={editor} />
+          </div>
         </div>
-      </BubbleMenu>
-
-      <ImageUpload
-        open={showImageUpload}
-        onOpenChange={setShowImageUpload}
-        onImageUploaded={addImage}
-      />
-
-      <ImageUpload
-        open={showCoverImageUpload}
-        onOpenChange={setShowCoverImageUpload}
-        onImageUploaded={(imageData) => onCoverImageChange?.(imageData)}
-        isCoverImage
-      />
-
-      <div className="p-4 prose prose-sm max-w-none">
-        <EditorContent editor={editor} />
       </div>
     </div>
   );
