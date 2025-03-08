@@ -70,7 +70,13 @@ export default function AdminLayout({
   const { theme, setTheme } = useTheme()
   
   // Generate breadcrumbs from pathname
-  const generateBreadcrumbs = () => {
+  interface Breadcrumb {
+    name: string;
+    href: string;
+    current?: boolean;
+  }
+  
+  const generateBreadcrumbs = (): Breadcrumb[] => {
     if (pathname === '/admin') return [{ name: 'Dashboard', href: '/admin' }];
     
     const paths = pathname.split('/').filter(Boolean);
@@ -99,42 +105,72 @@ export default function AdminLayout({
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (!auth) return;
-      
-      const user = auth.currentUser
-      if (!user) {
-        router.push('/auth?redirect=/admin')
-        return
-      }
-
       try {
-        await user.getIdToken(true)
-        
-        if (!db) {
-          console.error('Firestore not initialized')
-          router.push('/')
+        if (!auth) {
+          console.error('Auth not initialized')
+          setIsLoading(false)
+          router.push('/auth?redirect=/admin')
           return
         }
         
-        const userDocRef = doc(db, 'users', user.uid)
-        const userDocSnap = await getDoc(userDocRef)
-        
-        if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
-          router.push('/')
+        const user = auth.currentUser
+        if (!user) {
+          console.log('No user logged in, redirecting to auth page')
+          setIsLoading(false)
+          router.push('/auth?redirect=/admin')
           return
         }
 
-        setIsAdmin(true)
-        setIsLoading(false)
-        setUserName(user.displayName || '')
-        setUserEmail(user.email || '')
+        try {
+          await user.getIdToken(true)
+          
+          if (!db) {
+            console.error('Firestore not initialized')
+            setIsLoading(false)
+            router.push('/')
+            return
+          }
+          
+          const userDocRef = doc(db, 'users', user.uid)
+          const userDocSnap = await getDoc(userDocRef)
+          
+          if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
+            setIsLoading(false)
+            router.push('/')
+            return
+          }
+
+          setIsAdmin(true)
+          setUserName(user.displayName || '')
+          setUserEmail(user.email || '')
+        } catch (error) {
+          console.error('Error checking admin status:', error)
+          setIsLoading(false)
+          router.push('/')
+        }
       } catch (error) {
-        router.push('/')
+        console.error('Error in checkAdminStatus:', error)
+        setIsLoading(false)
+        router.push('/auth?redirect=/admin')
+      } finally {
+        // Ensure loading state is always updated
+        setIsLoading(false)
       }
     }
 
     checkAdminStatus()
-  }, [router])
+    
+    // Add a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.log('Loading timeout reached, redirecting to auth page')
+        setIsLoading(false)
+        router.push('/auth?redirect=/admin')
+      }
+    }, 5000) // 5 seconds timeout
+    
+    return () => clearTimeout(timeoutId)
+  }, [router, isLoading])
 
   const handleSignOut = async () => {
     try {
