@@ -15,7 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Users, FileText, Pencil, Copy, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Users, FileText, Pencil, Copy, Trash2, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
+import { revalidateEntireSite, revalidateAllBlogPosts, revalidateBlogPost } from '@/lib/revalidation';
 
 interface User {
   id: string;
@@ -329,6 +330,47 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRevalidatePost = async (post: BlogPost) => {
+    if (post.status !== 'published') {
+      toast({
+        title: 'Info',
+        description: 'Only published posts can be revalidated.',
+        variant: 'default',
+      });
+      return;
+    }
+    
+    toast({
+      title: 'Revalidating...',
+      description: `Refreshing "${post.title}" on the live site...`,
+    });
+    
+    try {
+      const success = await revalidateBlogPost(post.id);
+      
+      if (success) {
+        toast({
+          title: 'Success',
+          description: 'Post refreshed on the live site!',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to refresh post. Try again later.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error revalidating post:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh post. Try again later.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (typeof window === 'undefined') {
     return null;
   }
@@ -369,6 +411,36 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <div className="flex items-center gap-2">
+          <Button
+            onClick={async () => {
+              toast({
+                title: 'Revalidating...',
+                description: 'Refreshing site content...',
+              });
+              
+              const success = await revalidateEntireSite();
+              
+              if (success) {
+                toast({
+                  title: 'Success',
+                  description: 'Site content refreshed successfully!',
+                  variant: 'default',
+                });
+              } else {
+                toast({
+                  title: 'Error',
+                  description: 'Failed to refresh site content. Try again later.',
+                  variant: 'destructive',
+                });
+              }
+            }}
+            size="sm"
+            variant="outline"
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh Site
+          </Button>
           <Button
             onClick={() => router.push('/admin/blog/new')}
             size="sm"
@@ -412,15 +484,47 @@ export default function AdminDashboard() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Blog Posts</h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchBlogPosts()}
-            className="gap-2"
-          >
-            <Loader2 className={cn("h-4 w-4", updateLoading ? "animate-spin" : "")} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                toast({
+                  title: 'Revalidating...',
+                  description: 'Refreshing blog posts...',
+                });
+                
+                const success = await revalidateAllBlogPosts();
+                
+                if (success) {
+                  toast({
+                    title: 'Success',
+                    description: 'Blog posts refreshed on the live site!',
+                    variant: 'default',
+                  });
+                } else {
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to refresh blog posts. Try again later.',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh Site
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchBlogPosts()}
+              className="gap-2"
+            >
+              <Loader2 className={cn("h-4 w-4", updateLoading ? "animate-spin" : "")} />
+              Refresh List
+            </Button>
+          </div>
         </div>
         
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
@@ -472,11 +576,22 @@ export default function AdminDashboard() {
                           <Copy className="h-3.5 w-3.5" />
                           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Duplicate</span>
                         </Button>
+                        {post.status === 'published' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRevalidatePost(post)}
+                            className="h-8 gap-1"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Refresh</span>
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-destructive h-8 gap-1"
                           onClick={() => handleDeletePost(post.id)}
+                          className="h-8 gap-1 text-destructive hover:text-destructive/90"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Delete</span>
