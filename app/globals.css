@@ -391,59 +391,55 @@
 
 /* Content Formatting */
 .prose {
-  @apply max-w-none text-foreground;
+  @apply max-w-none text-black;
 }
 
 .prose a {
-  @apply text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 underline underline-offset-2;
+  @apply text-black hover:text-black/80 transition-colors duration-200 underline underline-offset-2;
 }
 
 .prose h1 {
-  @apply text-3xl sm:text-4xl font-bold mb-8 text-foreground dark:text-zinc-50;
-  background: linear-gradient(to right, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  @apply text-3xl sm:text-4xl font-bold mb-8 text-black;
+  background: none;
+  -webkit-text-fill-color: black;
 }
 
 .prose h2 {
-  @apply text-2xl sm:text-3xl font-semibold mb-6 text-foreground dark:text-zinc-50;
-  background: linear-gradient(to right, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  @apply text-2xl sm:text-3xl font-semibold mb-6 text-black;
+  background: none;
+  -webkit-text-fill-color: black;
 }
 
 .prose h3 {
-  @apply text-xl sm:text-2xl font-semibold mb-4 text-foreground dark:text-zinc-100;
+  @apply text-xl sm:text-2xl font-semibold mb-4 text-black;
 }
 
 .prose p {
-  @apply leading-relaxed mb-6 text-muted-foreground dark:text-zinc-300;
+  @apply leading-relaxed mb-6 text-black;
 }
 
 .prose ul {
-  @apply pl-6 mb-6 text-muted-foreground dark:text-zinc-300 list-disc;
+  @apply pl-6 mb-6 text-black list-disc;
 }
 
 .prose ol {
-  @apply pl-6 mb-6 text-muted-foreground dark:text-zinc-300 list-decimal;
+  @apply pl-6 mb-6 text-black list-decimal;
 }
 
 .prose li {
-  @apply mb-2 leading-relaxed text-muted-foreground dark:text-zinc-300;
+  @apply mb-2 leading-relaxed text-black;
 }
 
 .prose li::marker {
-  @apply text-muted-foreground/60 dark:text-zinc-500;
+  @apply text-black;
 }
 
 .prose ul > li::marker {
-  color: hsl(var(--primary));
+  color: black;
 }
 
 .dark .prose ul > li::marker {
-  color: hsl(var(--primary));
+  color: black;
 }
 
 .prose h1::after,
@@ -452,26 +448,24 @@
   display: block;
   margin-top: 0.5em;
   height: 1px;
-  background: linear-gradient(to right, hsl(var(--border)) 0%, transparent 100%);
+  background: linear-gradient(to right, black 0%, transparent 100%);
 }
 
 .dark .prose h1,
 .dark .prose h2 {
-  background: linear-gradient(to right, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  background: none;
+  -webkit-text-fill-color: black;
 }
 
 .dark .prose h3 {
-  @apply text-zinc-100;
+  @apply text-black;
 }
 
 .dark .prose p,
 .dark .prose ul,
 .dark .prose ol,
 .dark .prose li {
-  @apply text-zinc-300;
+  @apply text-black;
 }
 
 @media (max-width: 768px) {

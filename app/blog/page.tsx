@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Star } from 'lucide-react'
 import { db } from '@/lib/firebase-admin'
 import { BlogCard } from '@/components/blog/blog-card'
+import { AnimatedBackground } from '@/components/ui/animated-background'
 
 interface BlogPost {
   title: string;
@@ -77,8 +78,9 @@ export default async function BlogIndex() {
   const posts = await getAllPosts();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+    <>
+      <AnimatedBackground />
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <header className="text-center mb-16">
           <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Blog Posts</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
@@ -113,11 +115,11 @@ export default async function BlogIndex() {
         </div>
 
         {posts.length === 0 && (
-          <div className="text-center py-12 bg-background/60 backdrop-blur-xl rounded-xl border border-primary/10">
+          <div className="text-center py-12 bg-white/90 backdrop-blur-xl rounded-xl border border-primary/10">
             <p className="text-lg text-muted-foreground">No blog posts found.</p>
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 } 

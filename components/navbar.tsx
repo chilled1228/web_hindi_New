@@ -21,121 +21,70 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="w-full py-8">
+    <div className="w-full py-8 bg-[#4ECDC4]">
       {/* Outer rounded container */}
-      <div className="w-[90%] max-w-6xl mx-auto rounded-full bg-[#e9f5d0] overflow-hidden">
+      <div className="w-[90%] max-w-6xl mx-auto rounded-full bg-white overflow-hidden border border-black">
         <div className="flex items-center">
-          {/* Logo Section (Left) - with distinct background */}
-          <div className="bg-[#c9d7f0] py-4 px-6 rounded-l-full">
+          {/* Logo Section (Left) - distinct section */}
+          <div className="py-4 px-6 bg-[#fff] rounded-l-full flex items-center">
             <Link href="/" className="flex items-center transition-opacity hover:opacity-90">
-              <span className="font-heading text-3xl font-bold text-[#5c6bc0]">groovy</span>
+              <span className="font-heading text-3xl font-bold text-[#5c6bc0]">Hindi</span>
             </Link>
           </div>
 
           {/* Navigation Menu (Center) */}
           <div className="hidden md:flex flex-1 items-center justify-center px-4">
             <div className="flex items-center space-x-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                    <span>Home</span>
-                    <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link href="/">Home 1</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/home-2">Home 2</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Link 
+                href="/"
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Home
+              </Link>
+              
+              <Link 
+                href="/about"
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                About
+              </Link>
+              
+              <Link 
+                href="/blog"
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Blog
+              </Link>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                    <span>Header Styles</span>
+                    <span>Categories</span>
                     <ChevronDown className="ml-1 h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-48">
                   <DropdownMenuItem asChild>
-                    <Link href="/header-style-1">Style 1</Link>
+                    <Link href="/categories/lifestyle">Lifestyle</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/header-style-2">Style 2</Link>
+                    <Link href="/categories/technology">Technology</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/categories/travel">Travel</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/categories/food">Food</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                    <span>Post Features</span>
-                    <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link href="/post-feature-1">Feature 1</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/post-feature-2">Feature 2</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                    <span>#Tag</span>
-                    <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link href="/tag-1">Tag 1</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/tag-2">Tag 2</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                    <span>Features</span>
-                    <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link href="/feature-1">Feature 1</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/feature-2">Feature 2</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                    <span>Shop</span>
-                    <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link href="/shop">All Products</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/shop/category">Categories</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Link 
+                href="/featured"
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Featured Posts
+              </Link>
               
               <Link 
                 href="/contact"
@@ -158,24 +107,10 @@ export function Navbar() {
               </svg>
             </Link>
             
-            <Link href="#" className="text-[#1DA1F2] hover:text-[#1DA1F2]/80">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
-              </svg>
-            </Link>
-            
             <Link href="#" className="text-[#E1306C] hover:text-[#E1306C]/80">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                 <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="white"/>
-              </svg>
-            </Link>
-            
-            <Link href="#" className="text-[#ee802f] hover:text-[#ee802f]/80">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                <path d="M4 11a9 9 0 0 1 9 9"/>
-                <path d="M4 4a16 16 0 0 1 16 16"/>
-                <circle cx="5" cy="19" r="1"/>
               </svg>
             </Link>
             
@@ -187,7 +122,7 @@ export function Navbar() {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[350px] p-6">
+              <SheetContent side="right" className="w-[280px] sm:w-[350px] p-6 bg-white">
                 <div className="flex flex-col gap-4 mt-4">
                   <Link 
                     href="/"
@@ -196,81 +131,58 @@ export function Navbar() {
                   >
                     Home
                   </Link>
-                  <div className="flex flex-col gap-2 pl-4">
-                    <h3 className="text-lg font-medium">Header Styles</h3>
-                    <Link 
-                      href="/header-style-1"
-                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Style 1
-                    </Link>
-                    <Link 
-                      href="/header-style-2"
-                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Style 2
-                    </Link>
-                  </div>
-                  <div className="flex flex-col gap-2 pl-4">
-                    <h3 className="text-lg font-medium">Post Features</h3>
-                    <Link 
-                      href="/post-feature-1"
-                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Feature 1
-                    </Link>
-                    <Link 
-                      href="/post-feature-2"
-                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Feature 2
-                    </Link>
-                  </div>
                   <Link 
-                    href="/tag"
+                    href="/about"
                     className="text-lg font-medium hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
-                    #Tag
+                    About
+                  </Link>
+                  <Link 
+                    href="/blog"
+                    className="text-lg font-medium hover:text-primary transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Blog
                   </Link>
                   <div className="flex flex-col gap-2 pl-4">
-                    <h3 className="text-lg font-medium">Features</h3>
+                    <h3 className="text-lg font-medium">Categories</h3>
                     <Link 
-                      href="/feature-1"
+                      href="/categories/lifestyle"
                       className="text-base text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      Feature 1
+                      Lifestyle
                     </Link>
                     <Link 
-                      href="/feature-2"
+                      href="/categories/technology"
                       className="text-base text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      Feature 2
-                    </Link>
-                  </div>
-                  <div className="flex flex-col gap-2 pl-4">
-                    <h3 className="text-lg font-medium">Shop</h3>
-                    <Link 
-                      href="/shop"
-                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      All Products
+                      Technology
                     </Link>
                     <Link 
-                      href="/shop/category"
+                      href="/categories/travel"
                       className="text-base text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      Categories
+                      Travel
+                    </Link>
+                    <Link 
+                      href="/categories/food"
+                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Food
                     </Link>
                   </div>
+                  <Link 
+                    href="/featured"
+                    className="text-lg font-medium hover:text-primary transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Featured Posts
+                  </Link>
                   <Link 
                     href="/contact"
                     className="text-lg font-medium hover:text-primary transition-colors"

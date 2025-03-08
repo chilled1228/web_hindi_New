@@ -56,14 +56,6 @@ export default async function HomePage() {
     <>
       <AnimatedBackground />
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Latest Blog Posts</h1>
-          <p className="text-xl text-foreground max-w-2xl mx-auto">
-            Discover insights, tips, and best practices for prompt engineering and working with AI language models.
-          </p>
-        </div>
-
         {/* Blog Posts Grid */}
         <Suspense fallback={
           <div className="flex items-center justify-center h-[300px]">
