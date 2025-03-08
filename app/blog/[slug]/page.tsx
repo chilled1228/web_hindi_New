@@ -203,7 +203,7 @@ export default async function BlogPostPage({ params }: Props) {
           items={[
             { name: 'Home', url: '/' },
             { name: 'Blog', url: '/blog' },
-            { name: post.title, url: `/blog/${post.slug}`, active: true },
+            { name: post.title, url: `/blog/${post.slug}` },
           ]}
         />
 

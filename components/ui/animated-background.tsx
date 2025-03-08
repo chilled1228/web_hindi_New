@@ -176,7 +176,7 @@ export function AnimatedBackground({ className = '' }: AnimatedBackgroundProps) 
 
   return (
     <div className={`fixed inset-0 -z-10 overflow-hidden ${className}`}>
-      <div className="absolute inset-0 bg-[#5ECCC5]" />
+      <div className="absolute inset-0 bg-[#4ECDC4]" />
       <canvas 
         ref={canvasRef} 
         className="absolute inset-0 w-full h-full"
