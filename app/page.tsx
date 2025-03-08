@@ -3,45 +3,22 @@ import { defaultMetadata } from './metadata'
 import { Suspense } from "react"
 import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { db } from '@/lib/firebase-admin'
+import { serverDb, BlogPost } from '@/lib/firebase-server'
 import { AnimatedBackground } from '@/components/ui/animated-background'
 import { BlogCard } from '@/components/blog/blog-card'
 
 // Generate metadata for SEO
 export const metadata: Metadata = defaultMetadata
 
-interface BlogPost {
-  title: string;
-  excerpt: string;
-  publishedAt: string;
-  author: {
-    name: string;
-    image?: string;
-  };
-  categories: string[];
-  tags: string[];
-  slug: string;
-  coverImage?: string;
-  readingTime?: string;
-}
-
 async function getRecentPosts(limit: number = 8) {
   try {
-    const query = db.collection('blog_posts').orderBy('publishedAt', 'desc').limit(limit);
-    
-    const postsRef = await query.get();
-    const posts = postsRef.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        categories: data.categories || [],
-        tags: data.tags || [],
-        excerpt: data.excerpt || '',
-        publishedAt: data.publishedAt?.toDate?.().toISOString() || new Date().toISOString(),
-        slug: data.slug || doc.id
-      } as BlogPost;
+    const posts = await serverDb.getBlogPosts({
+      limit: limit,
+      orderByField: 'publishedAt',
+      orderDirection: 'desc',
+      status: 'published'
     });
-
+    
     return posts;
   } catch (error) {
     console.error('Error fetching posts:', error);

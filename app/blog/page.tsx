@@ -1,52 +1,21 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { Star } from 'lucide-react'
-import { db } from '@/lib/firebase-admin'
+import { serverDb, BlogPost } from '@/lib/firebase-server'
 import { BlogCard } from '@/components/blog/blog-card'
 import { AnimatedBackground } from '@/components/ui/animated-background'
 
-interface BlogPost {
-  title: string;
-  excerpt: string;
-  publishedAt: string;
-  author: {
-    name: string;
-    image?: string;
-  };
-  categories: string[];
-  tags: string[];
-  slug: string;
-  coverImage?: string;
-  readingTime?: string;
-}
-
 async function getAllPosts(searchParams?: { [key: string]: string | string[] | undefined }) {
   try {
-    let query = db.collection('blog_posts').orderBy('publishedAt', 'desc');
+    const category = typeof searchParams?.category === 'string' ? searchParams.category : undefined;
+    const tag = typeof searchParams?.tag === 'string' ? searchParams.tag : undefined;
     
-    // Add category filter
-    if (searchParams?.category) {
-      query = query.where('categories', 'array-contains', searchParams.category);
-    }
-    
-    // Add tag filter
-    if (searchParams?.tag) {
-      query = query.where('tags', 'array-contains', searchParams.tag);
-    }
-
-    const postsRef = await query.get();
-    const posts = postsRef.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        categories: data.categories || [],
-        tags: data.tags || [],
-        excerpt: data.excerpt || '',
-        publishedAt: data.publishedAt?.toDate?.().toISOString() || new Date().toISOString(),
-        slug: data.slug || doc.id
-      } as BlogPost;
+    const posts = await serverDb.getBlogPosts({
+      category,
+      tag,
+      status: 'published'
     });
-
+    
     return posts;
   } catch (error) {
     console.error('Error fetching posts:', error);
