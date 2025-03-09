@@ -10,9 +10,17 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['firebase-admin'],
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     // This is needed for module resolution
     config.resolve.fallback = { fs: false, path: false };
+    
+    // Add additional module resolution paths
+    config.resolve.modules = [
+      ...config.resolve.modules,
+      './node_modules/.next-build-modules',
+      '.',
+    ];
+    
     return config;
   },
 };
