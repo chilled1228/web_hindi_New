@@ -1,7 +1,7 @@
 'use client'
 
 import { ThemeProvider as NextThemeProvider } from 'next-themes'
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Toaster } from '@/components/ui/toaster';
@@ -23,6 +23,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [tabId] = useState(() => Math.random().toString(36).substring(2, 10));
+
+  // Memoize the auth context value to prevent unnecessary re-renders
+  const authContextValue = useMemo(() => ({ user, loading }), [user, loading]);
+
+  // Use useCallback for event handlers to prevent unnecessary re-creation
+  const handleStorageChange = useCallback((event: StorageEvent) => {
+    if (event.key === 'firebase:authUser:' + process.env.NEXT_PUBLIC_FIREBASE_API_KEY + ':[DEFAULT]') {
+      // Only reload if the auth state actually changed
+      const newAuthState = event.newValue;
+      const currentAuthState = user ? JSON.stringify(user) : null;
+      
+      // Check if we need to refresh by comparing auth states
+      const needsRefresh = (newAuthState && !user) || (!newAuthState && user);
+      
+      if (needsRefresh) {
+        // Auth state changed in another tab, reload the page to sync
+        window.location.reload();
+      }
+    }
+    
+    // Handle tab coordination
+    if (event.key === 'activeTab' && event.newValue !== tabId) {
+      // Another tab became active, no need to refresh this one
+      console.log('Another tab is now active');
+    }
+  }, [tabId, user]);
+  
+  const handleFocus = useCallback(() => {
+    localStorage.setItem('activeTab', tabId);
+  }, [tabId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -97,33 +127,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     // Add event listener for storage changes to handle auth state across tabs
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'firebase:authUser:' + process.env.NEXT_PUBLIC_FIREBASE_API_KEY + ':[DEFAULT]') {
-        // Only reload if the auth state actually changed
-        const newAuthState = event.newValue;
-        const currentAuthState = user ? JSON.stringify(user) : null;
-        
-        // Check if we need to refresh by comparing auth states
-        const needsRefresh = (newAuthState && !user) || (!newAuthState && user);
-        
-        if (needsRefresh) {
-          // Auth state changed in another tab, reload the page to sync
-          window.location.reload();
-        }
-      }
-      
-      // Handle tab coordination
-      if (event.key === 'activeTab' && event.newValue !== tabId) {
-        // Another tab became active, no need to refresh this one
-        console.log('Another tab is now active');
-      }
-    };
-    
-    // Set this tab as active when focused
-    const handleFocus = () => {
-      localStorage.setItem('activeTab', tabId);
-    };
-    
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('focus', handleFocus);
     
@@ -139,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [tabId, user]);
+  }, [tabId, handleStorageChange, handleFocus]);
 
   // Don't render anything until we've initialized
   if (!initialized && typeof window !== 'undefined') {
@@ -147,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );
@@ -156,39 +159,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
+  // Use useCallback for event handlers
+  const handleVisibilityChange = useCallback(() => {
+    if (document.visibilityState === 'visible') {
+      // This tab is now visible, mark it as active
+      localStorage.setItem('activeTab', sessionStorage.getItem('tabId') || '');
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     
     // Optimize page visibility handling
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // This tab is now visible, mark it as active
-        localStorage.setItem('activeTab', sessionStorage.getItem('tabId') || '');
-      }
-    };
-    
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [handleVisibilityChange]);
 
-  if (!mounted) {
-    return null;
-  }
+  // Use useMemo to prevent unnecessary re-renders of children
+  const content = useMemo(() => {
+    if (!mounted) return null;
+    
+    return (
+      <NextThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
+      </NextThemeProvider>
+    );
+  }, [mounted, children]);
 
-  return (
-    <NextThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <AuthProvider>
-        {children}
-        <Toaster />
-      </AuthProvider>
-    </NextThemeProvider>
-  )
+  return content;
 } 

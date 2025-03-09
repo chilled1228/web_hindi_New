@@ -27,7 +27,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; hover: string }> = {
   'Technology': { bg: 'bg-blue-400', hover: 'hover:bg-blue-500' },
   'Food': { bg: 'bg-amber-400', hover: 'hover:bg-amber-500' },
   'Fashion': { bg: 'bg-pink-400', hover: 'hover:bg-pink-500' },
-  'Default': { bg: 'bg-purple-400', hover: 'hover:bg-purple-500' },
+  'Default': { bg: 'bg-gray-400', hover: 'hover:bg-gray-500' },
 };
 
 export function BlogCard({
@@ -38,7 +38,7 @@ export function BlogCard({
   slug,
   coverImage,
   readingTime = "1 min read",
-  category = "Travel"
+  category
 }: BlogCardProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -53,7 +53,9 @@ export function BlogCard({
     day: 'numeric'
   });
 
-  const { bg: bgColor } = CATEGORY_COLORS[category] || CATEGORY_COLORS['Default'];
+  // Use the provided category or 'Default' if it's undefined or empty
+  const categoryKey = category && category.trim() !== '' ? category : 'Default';
+  const { bg: bgColor } = CATEGORY_COLORS[categoryKey] || CATEGORY_COLORS['Default'];
 
   return (
     <div className="w-full">
@@ -65,7 +67,7 @@ export function BlogCard({
           <div className="absolute left-5 top-5 z-10">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 shadow-sm">
               <span className="text-sm font-medium text-gray-800">
-                {category}
+                {categoryKey === 'Default' ? 'General' : categoryKey}
               </span>
             </div>
           </div>

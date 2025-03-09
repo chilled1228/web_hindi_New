@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
       response.headers.set(key, value)
     })
     
-    // Add cache control headers to prevent caching
+    // Add cache control headers to prevent caching for API routes
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
     response.headers.set('Pragma', 'no-cache')
     response.headers.set('Expires', '0')
@@ -36,6 +36,16 @@ export function middleware(request: NextRequest) {
   const protectedPaths = ['/profile', '/dashboard']
   const adminPaths = ['/admin']
   
+  // List of static paths that can be cached aggressively
+  const staticPaths = [
+    '/blog',
+    '/terms',
+    '/privacy',
+    '/disclaimer',
+    '/contact',
+    '/prompts'
+  ]
+  
   // Check if the requested path is protected or admin
   const isProtectedPath = protectedPaths.some(path => 
     request.nextUrl.pathname.startsWith(path)
@@ -43,6 +53,14 @@ export function middleware(request: NextRequest) {
   const isAdminPath = adminPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)
   )
+  
+  // Check if the path is a static page that can be cached
+  const isStaticPath = staticPaths.some(path =>
+    request.nextUrl.pathname.startsWith(path)
+  )
+  
+  // Check if this is a static asset
+  const isStaticAsset = /\.(jpe?g|png|gif|svg|webp|js|css|woff2?|ttf|eot)$/i.test(request.nextUrl.pathname)
 
   // If it's a protected path and user is not authenticated
   if ((isProtectedPath || isAdminPath) && (!authCookie && !firebaseToken)) {
@@ -65,11 +83,23 @@ export function middleware(request: NextRequest) {
   // Allow the request to proceed
   const response = NextResponse.next()
   
-  // Add cache control headers to prevent caching for all responses
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
-  response.headers.set('Pragma', 'no-cache')
-  response.headers.set('Expires', '0')
-  response.headers.set('Surrogate-Control', 'no-store')
+  // Set appropriate cache headers based on the path type
+  if (isStaticAsset) {
+    // Cache static assets for a long time (1 year)
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+  } else if (isStaticPath) {
+    // Cache static pages for a moderate time (1 hour) with revalidation
+    response.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400')
+  } else if (isProtectedPath || isAdminPath) {
+    // No caching for protected routes
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+  } else {
+    // Default caching for other routes (10 minutes with revalidation)
+    response.headers.set('Cache-Control', 'public, max-age=600, s-maxage=600, stale-while-revalidate=3600')
+  }
   
   // Ensure we're using http for localhost
   if (process.env.NODE_ENV === 'development') {

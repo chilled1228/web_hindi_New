@@ -8,15 +8,21 @@ import { PrivacyConsent } from '@/components/privacy-consent'
 import { ClientSchemas } from '@/components/client-schema'
 import { db } from '@/lib/firebase-admin'
 import { Firestore } from 'firebase-admin/firestore'
+import { WebVitalsMonitor } from '@/components/web-vitals'
+import NextTopLoader from 'nextjs-toploader'
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
+  preload: true,
 })
 
 const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-outfit',
+  display: 'swap',
+  preload: true,
 })
 
 interface WebsiteMetadata {
@@ -31,7 +37,17 @@ const defaultMetadata: WebsiteMetadata = {
   keywords: 'government schemes, yojana, india, government programs, welfare schemes'
 };
 
+const METADATA_CACHE_TIME = 60 * 60 * 1000;
+let cachedMetadata: WebsiteMetadata | null = null;
+let lastFetchTime = 0;
+
 async function getMetadata(): Promise<WebsiteMetadata> {
+  const now = Date.now();
+  
+  if (cachedMetadata && now - lastFetchTime < METADATA_CACHE_TIME) {
+    return cachedMetadata;
+  }
+  
   try {
     const metadataRef = await (db as Firestore)
       .collection('metadata')
@@ -39,10 +55,13 @@ async function getMetadata(): Promise<WebsiteMetadata> {
       .get();
     
     if (!metadataRef.exists) {
-      return defaultMetadata;
+      cachedMetadata = defaultMetadata;
+    } else {
+      cachedMetadata = metadataRef.data() as WebsiteMetadata;
     }
-
-    return metadataRef.data() as WebsiteMetadata;
+    
+    lastFetchTime = now;
+    return cachedMetadata;
   } catch (error) {
     console.error('Error fetching metadata:', error);
     return defaultMetadata;
@@ -77,15 +96,29 @@ export default async function RootLayout({
         <link rel="canonical" href={websiteUrl} />
         <link rel="icon" href="/favicon.ico" />
         <link rel="manifest" href="/manifest.json" />
+        
+        <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" />
+        <link rel="preconnect" href="https://storage.googleapis.com" />
+        
+        <link rel="preload" href="/og-image.jpg" as="image" />
       </head>
       <body className={`${inter.variable} ${outfit.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
         <Providers>
+          <NextTopLoader 
+            color="#2563eb"
+            initialPosition={0.08}
+            height={6}
+            showSpinner={false}
+            shadow="0 0 10px #2563eb,0 0 5px #2563eb"
+          />
           <ClientSchemas 
             key="site-schemas"
             websiteUrl={websiteUrl}
             title={metadata.title}
             description={metadata.description}
           />
+          <WebVitalsMonitor />
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-1">

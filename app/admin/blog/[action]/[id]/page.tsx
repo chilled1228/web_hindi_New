@@ -166,6 +166,20 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
     try {
       setAutoSaveStatus({ status: 'saving', lastSaved: new Date() });
       
+      // Verify admin status again before saving
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
+        console.warn('Auto-save skipped: user is not an admin');
+        setAutoSaveStatus(prev => ({ 
+          status: 'error', 
+          error: 'Permission denied',
+          lastSaved: prev.lastSaved 
+        }));
+        return;
+      }
+      
       const docRef = doc(db, 'blog_posts', resolvedParams.id);
       const docSnap = await getDoc(docRef);
       
@@ -180,6 +194,15 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
         if (debouncedPost.excerpt !== currentData.excerpt) updatedFields.excerpt = debouncedPost.excerpt;
         if (debouncedPost.slug !== currentData.slug) updatedFields.slug = debouncedPost.slug;
         if (debouncedPost.permalink !== currentData.permalink) updatedFields.permalink = debouncedPost.permalink;
+        
+        // Handle arrays properly
+        if (JSON.stringify(debouncedPost.categories) !== JSON.stringify(currentData.categories)) {
+          updatedFields.categories = Array.isArray(debouncedPost.categories) ? debouncedPost.categories : [];
+        }
+        
+        if (JSON.stringify(debouncedPost.tags) !== JSON.stringify(currentData.tags)) {
+          updatedFields.tags = Array.isArray(debouncedPost.tags) ? debouncedPost.tags : [];
+        }
         
         // Only update if there are changes
         if (Object.keys(updatedFields).length > 0) {
@@ -201,7 +224,10 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
           ...debouncedPost,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
-          status: 'draft'
+          status: 'draft',
+          // Ensure categories and tags are arrays
+          categories: Array.isArray(debouncedPost.categories) ? debouncedPost.categories : [],
+          tags: Array.isArray(debouncedPost.tags) ? debouncedPost.tags : []
         });
         
         setAutoSaveStatus({ status: 'saved', lastSaved: new Date() });
@@ -222,7 +248,12 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
         error: error instanceof Error ? error.message : 'Failed to auto-save',
         lastSaved: prev.lastSaved 
       }));
-      toast.error('Failed to auto-save draft');
+      
+      if (error instanceof Error && error.message.includes('permission')) {
+        toast.error('Permission denied: Auto-save failed');
+      } else {
+        toast.error('Failed to auto-save draft');
+      }
     }
   }, [debouncedPost, user, isAdmin, resolvedParams.action, resolvedParams.id, db]);
 
@@ -326,12 +357,23 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
   const handleSave = async (status: 'draft' | 'published' = 'draft') => {
     if (!user || !isAdmin || !db) {
       console.error('Cannot save: user, admin status, or database not available');
+      toast.error('You do not have permission to save this post');
       return;
     }
 
     setSaving(true);
     setSaveSuccess(false);
     try {
+      // Verify admin status again before saving
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
+        toast.error('You do not have admin permissions');
+        setSaving(false);
+        return;
+      }
+
       const postData = {
         ...post,
         status,
@@ -346,7 +388,11 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
         author: {
           name: user.displayName || 'Anonymous',
           avatar: user.photoURL || '/default-avatar.png'
-        }
+        },
+        // Ensure categories is always an array
+        categories: Array.isArray(post.categories) ? post.categories : [],
+        // Ensure tags is always an array
+        tags: Array.isArray(post.tags) ? post.tags : []
       };
 
       if (status === 'published' && !post.publishedAt) {
@@ -359,12 +405,15 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
         
         if (docSnap.exists()) {
           await updateDoc(docRef, postData);
+          toast.success('Post updated successfully');
         } else {
           await setDoc(docRef, postData);
+          toast.success('New post created successfully');
         }
       } else {
         const newDocRef = doc(collection(db, 'blog_posts'));
         await setDoc(newDocRef, postData);
+        toast.success('New post created successfully');
       }
       
       setPost(prev => ({
@@ -393,6 +442,11 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving post:', error);
+      if (error instanceof Error && error.message.includes('permission')) {
+        toast.error('Permission denied: You do not have access to save this post');
+      } else {
+        toast.error('Failed to save post. Please try again.');
+      }
     } finally {
       setSaving(false);
     }
@@ -924,16 +978,37 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="categories">Categories</Label>
-                      <Select>
+                      <Select 
+                        value={post.categories?.[0] || ''}
+                        onValueChange={(value) => {
+                          try {
+                            setPost(prev => ({ 
+                              ...prev, 
+                              categories: value ? [value] : [] 
+                            }));
+                            // Don't auto-save here, let the user explicitly save changes
+                            toast.success(`Category updated to: ${value || 'None'}`);
+                          } catch (error) {
+                            console.error('Error updating category:', error);
+                            toast.error('Failed to update category. Please try saving the post.');
+                          }
+                        }}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="tutorials">Tutorials</SelectItem>
-                          <SelectItem value="news">News</SelectItem>
-                          <SelectItem value="reviews">Reviews</SelectItem>
+                          <SelectItem value="Travel">Travel</SelectItem>
+                          <SelectItem value="Lifestyle">Lifestyle</SelectItem>
+                          <SelectItem value="Health">Health</SelectItem>
+                          <SelectItem value="Technology">Technology</SelectItem>
+                          <SelectItem value="Food">Food</SelectItem>
+                          <SelectItem value="Fashion">Fashion</SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Current category: {post.categories?.[0] || 'None'} (Save post to apply changes)
+                      </p>
                     </div>
                     
                     <div className="space-y-2">
