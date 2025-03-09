@@ -4,7 +4,7 @@
 const https = require('https');
 
 // Replace with your actual deployment URL and token
-const deploymentUrl = 'https://web-hindi-new.vercel.app';
+const deploymentUrl = process.env.DEPLOYMENT_URL || 'https://nayabharatyojana.in'; // Update this to your actual deployed URL
 const token = process.env.REVALIDATION_TOKEN || 'your-revalidation-token'; // Set this in your environment or replace with actual token
 
 // Get the slug from command line arguments if provided
