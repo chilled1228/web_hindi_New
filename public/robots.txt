@@ -8,3 +8,6 @@ Sitemap: https://nayabharatyojana.in/sitemap.xml
 # Allow RSS feed
 Allow: /api/feed
 
+# Disallow admin directory
+Disallow: /admin/
+

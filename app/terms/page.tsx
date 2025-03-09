@@ -28,7 +28,7 @@ export default function TermsAndConditions() {
         {/* Introduction Section */}
         <div className="max-w-3xl mx-auto mb-16 text-center">
           <p className="text-lg text-muted-foreground/90 leading-relaxed mb-6">
-            Welcome to NayaBharatYojana.in. By accessing or using our services, you agree to be bound by these Terms & Conditions. Please read them carefully before using our platform.
+            Welcome to FreePromptBase. By accessing or using our services, you agree to be bound by these Terms & Conditions. Please read them carefully before using our platform.
           </p>
           <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground/80">
             <span className="flex items-center gap-1.5">
@@ -62,7 +62,7 @@ export default function TermsAndConditions() {
                 </h2>
                 <div className="prose prose-gray dark:prose-invert">
                   <p className="text-muted-foreground/90">
-                    By accessing or using NayaBharatYojana.in, you agree to:
+                    By accessing or using FreePromptBase, you agree to:
                   </p>
                   <ul className="mt-4 space-y-3 text-muted-foreground/90">
                     <li className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export default function TermsAndConditions() {
                 </h2>
                 <div className="prose prose-gray dark:prose-invert">
                   <p className="text-muted-foreground/90">
-                    As a user of NayaBharatYojana.in, you are responsible for:
+                    As a user of FreePromptBase, you are responsible for:
                   </p>
                   <ul className="mt-4 space-y-3 text-muted-foreground/90">
                     <li className="flex items-center gap-2">

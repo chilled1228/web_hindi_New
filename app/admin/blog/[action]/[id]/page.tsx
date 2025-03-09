@@ -195,11 +195,23 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
           // No changes to save
           setAutoSaveStatus({ status: 'saved', lastSaved: new Date() });
         }
+      } else if (resolvedParams.action !== 'edit') {
+        // For new posts, we'll create the document if it doesn't exist
+        await setDoc(docRef, {
+          ...debouncedPost,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          status: 'draft'
+        });
+        
+        setAutoSaveStatus({ status: 'saved', lastSaved: new Date() });
+        toast.success('New draft created automatically');
       } else {
+        // Document doesn't exist but we're in edit mode - this is expected for new posts
         console.warn('Document does not exist for auto-save');
+        // Don't show an error to the user, just update the status silently
         setAutoSaveStatus(prev => ({ 
-          status: 'error', 
-          error: 'Document does not exist',
+          status: 'idle', 
           lastSaved: prev.lastSaved 
         }));
       }

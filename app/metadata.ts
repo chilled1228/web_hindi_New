@@ -1,28 +1,28 @@
 import { Metadata } from 'next'
 
 export const defaultMetadata: Metadata = {
-  title: 'NayaBharatYojana.in - Insights on Prompt Engineering and AI Tools',
+  title: 'AI Blog - Insights on Prompt Engineering and AI Tools',
   description: 'Discover insights, tips, and best practices for prompt engineering and working with AI language models through our collection of blog posts.',
   keywords: ['AI blog', 'prompt engineering', 'AI tools', 'language models', 'AI tutorials'],
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://nayabharatyojana.in',
-    siteName: 'NayaBharatYojana.in',
-    title: 'NayaBharatYojana.in - Insights on Prompt Engineering and AI Tools',
+    url: process.env.NEXT_PUBLIC_BASE_URL || 'https://nayabharatyojana.in',
+    siteName: 'AI Blog',
+    title: 'AI Blog - Insights on Prompt Engineering and AI Tools',
     description: 'Discover insights, tips, and best practices for prompt engineering and working with AI language models through our collection of blog posts.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'NayaBharatYojana.in',
+        alt: 'AI Blog',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NayaBharatYojana.in - Insights on Prompt Engineering and AI Tools',
+    title: 'AI Blog - Insights on Prompt Engineering and AI Tools',
     description: 'Discover insights, tips, and best practices for prompt engineering and working with AI language models through our collection of blog posts.',
     images: ['/og-image.png'],
   },

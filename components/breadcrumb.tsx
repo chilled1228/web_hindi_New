@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { SchemaMarkup, generateBreadcrumbSchema } from './schema-markup';
+import { BreadcrumbSchema } from './client-schema';
 
 interface BreadcrumbProps {
   items: {
@@ -12,10 +12,7 @@ interface BreadcrumbProps {
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
     <>
-      <SchemaMarkup
-        type="BreadcrumbList"
-        data={generateBreadcrumbSchema(items)}
-      />
+      <BreadcrumbSchema items={items} />
       <nav aria-label="Breadcrumb" className="mb-4 flex items-center text-sm text-black">
         <ol className="flex items-center space-x-2">
           {items.map((item, index) => (

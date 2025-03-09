@@ -1,6 +1,6 @@
 {
-  "name": "NayaBharatYojana.in",
-  "short_name": "NBY",
+  "name": "FreePromptBase",
+  "short_name": "PromptBase",
   "description": "Revolutionizing AI prompt creation and management",
   "start_url": "/",
   "display": "standalone",

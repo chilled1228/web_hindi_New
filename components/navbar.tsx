@@ -28,7 +28,7 @@ export function Navbar() {
           {/* Logo Section (Left) - distinct section */}
           <div className="py-4 px-6 bg-[#fff] rounded-l-full flex items-center">
             <Link href="/" className="flex items-center transition-opacity hover:opacity-90">
-              <span className="font-heading text-3xl font-bold text-[#5c6bc0]">NBY</span>
+              <span className="font-heading text-3xl font-bold text-[#5c6bc0]">Hindi</span>
             </Link>
           </div>
 

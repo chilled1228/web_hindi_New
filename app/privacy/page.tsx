@@ -28,7 +28,7 @@ export default function PrivacyPolicy() {
         {/* Introduction Section */}
         <div className="max-w-3xl mx-auto mb-16 text-center">
           <p className="text-lg text-muted-foreground/90 leading-relaxed mb-6">
-            At NayaBharatYojana.in, we prioritize the protection of your privacy and personal information. This Privacy Policy outlines our practices for collecting, using, and safeguarding your data when you use our AI prompt management services.
+            At FreePromptBase, we prioritize the protection of your privacy and personal information. This Privacy Policy outlines our practices for collecting, using, and safeguarding your data when you use our AI prompt management services.
           </p>
           <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground/80">
             <span className="flex items-center gap-1.5">

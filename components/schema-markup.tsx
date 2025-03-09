@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+'use client';
+
+import { useEffect, useState } from 'react';
 
 interface SchemaMarkupProps {
   type: 'Organization' | 'WebSite' | 'BlogPosting' | 'BreadcrumbList';
@@ -98,4 +100,53 @@ export function generateWebsiteSchema(site: {
     description: site.description,
     potentialAction: site.potentialAction,
   };
+}
+
+// Client component that can be used in server components
+export function SiteSchemas({ 
+  websiteUrl, 
+  title, 
+  description 
+}: { 
+  websiteUrl: string; 
+  title: string; 
+  description: string;
+}) {
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  if (!isMounted) {
+    return null;
+  }
+  
+  return (
+    <>
+      <SchemaMarkup
+        type="Organization"
+        data={generateOrganizationSchema({
+          name: 'FreePromptBase',
+          url: websiteUrl,
+          logo: `${websiteUrl}/logo.png`,
+          description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
+          sameAs: [
+            'https://twitter.com/freepromptbase',
+            'https://github.com/freepromptbase',
+            'https://instagram.com/freepromptbase',
+            'https://linkedin.com/company/freepromptbase'
+          ]
+        })}
+      />
+      <SchemaMarkup
+        type="WebSite"
+        data={generateWebsiteSchema({
+          name: title,
+          description: description,
+          url: websiteUrl
+        })}
+      />
+    </>
+  );
 } 

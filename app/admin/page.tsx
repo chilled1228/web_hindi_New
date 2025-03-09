@@ -156,7 +156,12 @@ export default function AdminDashboard() {
 
   const fetchMetadata = async () => {
     try {
-      const metadataDoc = await getDoc(doc(db, 'settings', 'metadata'));
+      if (!db) {
+        console.error('Firestore not initialized');
+        return;
+      }
+      
+      const metadataDoc = await getDoc(doc(db as any, 'metadata', 'website'));
       if (metadataDoc.exists()) {
         setMetadata(metadataDoc.data() as WebsiteMetadata);
       }
@@ -174,14 +179,32 @@ export default function AdminDashboard() {
         return;
       }
       
-      const metadataDoc = doc(db, 'settings', 'metadata');
+      const metadataDoc = doc(db as any, 'metadata', 'website');
       await setDoc(metadataDoc, metadata);
       toast({
         title: 'Settings updated',
         description: 'Website metadata has been updated.',
       });
+      
+      // Trigger revalidation to update the site
+      try {
+        const success = await revalidateEntireSite();
+        if (success) {
+          toast({
+            title: 'Site refreshed',
+            description: 'Changes are now live on the site.',
+          });
+        }
+      } catch (revalidateError) {
+        console.error('Error revalidating site:', revalidateError);
+      }
     } catch (error) {
       console.error('Error updating metadata:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save metadata. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsMetadataLoading(false);
     }

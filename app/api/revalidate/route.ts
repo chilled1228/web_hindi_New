@@ -8,7 +8,18 @@ export async function POST(request: NextRequest) {
     const { path, token, slug } = requestData;
 
     // Check if the token is valid
-    if (token !== process.env.REVALIDATION_TOKEN) {
+    const validToken = process.env.REVALIDATION_TOKEN;
+    
+    if (!validToken) {
+      console.error('REVALIDATION_TOKEN is not set in environment variables');
+      return NextResponse.json(
+        { message: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+    
+    if (token !== validToken) {
+      console.error('Invalid revalidation token provided');
       return NextResponse.json(
         { message: 'Invalid token' },
         { status: 401 }
@@ -56,7 +67,18 @@ export async function GET(request: NextRequest) {
     const slug = searchParams.get('slug');
 
     // Check if the token is valid
-    if (token !== process.env.REVALIDATION_TOKEN) {
+    const validToken = process.env.REVALIDATION_TOKEN;
+    
+    if (!validToken) {
+      console.error('REVALIDATION_TOKEN is not set in environment variables');
+      return NextResponse.json(
+        { message: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+    
+    if (token !== validToken) {
+      console.error('Invalid revalidation token provided');
       return NextResponse.json(
         { message: 'Invalid token' },
         { status: 401 }

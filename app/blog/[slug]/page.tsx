@@ -2,9 +2,8 @@ import { Metadata } from 'next'
 import { Star } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { serverDb, BlogPost } from '@/lib/firebase-server'
-import { SchemaMarkup } from '@/components/schema-markup'
+import { BlogPostSchema } from '@/components/client-schema'
 import { Breadcrumb } from '@/components/breadcrumb'
-import { TableOfContents } from '@/components/table-of-contents/index'
 import { CalendarDays, Clock } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -114,11 +113,11 @@ export async function generateMetadata(
     };
   }
 
-  const baseUrl = 'https://nayabharatyojana.in';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nayabharatyojana.in';
   const postUrl = `${baseUrl}/blog/${post.slug}`;
 
   return {
-    title: `${post.title} | NayaBharatYojana.in Blog`,
+    title: `${post.title} | FreePromptBase Blog`,
     description: post.description,
     openGraph: {
       title: post.title,
@@ -166,26 +165,8 @@ export default async function BlogPostPage({ params }: Props) {
 
   const safeContent = post.content || '';
 
-  const baseUrl = 'https://nayabharatyojana.in';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nayabharatyojana.in';
   const postUrl = `${baseUrl}/blog/${post.slug}`;
-
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: post.title,
-    description: post.description,
-    author: {
-      '@type': 'Person',
-      name: post.author.name,
-    },
-    datePublished: post.publishedAt,
-    dateModified: post.updatedAt || post.publishedAt,
-    url: postUrl,
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': postUrl
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -258,7 +239,7 @@ export default async function BlogPostPage({ params }: Props) {
             )}
           </header>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_250px] gap-8">
+          <div className={`grid grid-cols-1 ${recentPosts.length > 0 ? 'lg:grid-cols-[1fr_250px]' : ''} gap-8`}>
             <div>
               <div 
                 className={`prose prose-lg max-w-none ${sourceSans3.className}`}
@@ -266,13 +247,8 @@ export default async function BlogPostPage({ params }: Props) {
               />
             </div>
             
-            <aside className="space-y-8">
-              <TableOfContents 
-                // @ts-ignore - Component expects content prop
-                content={safeContent} 
-              />
-              
-              {recentPosts.length > 0 && (
+            {recentPosts.length > 0 && (
+              <aside className="space-y-8">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Recent Posts</CardTitle>
@@ -305,21 +281,20 @@ export default async function BlogPostPage({ params }: Props) {
                     ))}
                   </CardContent>
                 </Card>
-              )}
-            </aside>
+              </aside>
+            )}
           </div>
         </article>
       </div>
       
-      <SchemaMarkup
-        // @ts-ignore - Component expects these props
+      <BlogPostSchema
         title={post.title}
         description={post.description || post.excerpt || ''}
         datePublished={post.publishedAt}
         dateModified={post.updatedAt || post.publishedAt}
         authorName={post.author.name}
         imageUrl={post.coverImage}
-        url={`${process.env.NEXT_PUBLIC_BASE_URL}/blog/${post.slug}`}
+        url={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://nayabharatyojana.in'}/blog/${post.slug}`}
       />
     </div>
   );

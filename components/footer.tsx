@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link'
 import { Github, Twitter, Instagram, Linkedin, ArrowUpRight } from 'lucide-react'
 
@@ -25,7 +27,7 @@ export function Footer() {
                 </svg>
               </div>
               <span key="footer-logo" className="font-heading text-xl font-bold text-gray-900 dark:text-gray-100">
-                NayaBharatYojana.in
+                FreePromptBase
               </span>
             </div>
             <p className="text-base text-muted-foreground/80 leading-relaxed max-w-sm">
@@ -33,7 +35,7 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-4">
               <a
-                href="https://twitter.com/nayabharatyojana"
+                href="https://twitter.com/promptbase"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors duration-200"
@@ -42,7 +44,7 @@ export function Footer() {
                 <span className="sr-only">Twitter</span>
               </a>
               <a
-                href="https://github.com/nayabharatyojana"
+                href="https://github.com/promptbase"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors duration-200"
@@ -51,7 +53,7 @@ export function Footer() {
                 <span className="sr-only">GitHub</span>
               </a>
               <a
-                href="https://instagram.com/nayabharatyojana"
+                href="https://instagram.com/promptbase"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors duration-200"
@@ -60,7 +62,7 @@ export function Footer() {
                 <span className="sr-only">Instagram</span>
               </a>
               <a
-                href="https://linkedin.com/company/nayabharatyojana"
+                href="https://linkedin.com/company/promptbase"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors duration-200"
@@ -163,10 +165,10 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              © {currentYear} NayaBharatYojana.in. All rights reserved.
+            <p className="text-sm text-gray-600 dark:text-gray-300 order-2 md:order-1">
+              © {currentYear} FreePromptBase. All rights reserved.
             </p>
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-8 order-1 md:order-2">
               <Link 
                 href="/disclaimer" 
                 className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"

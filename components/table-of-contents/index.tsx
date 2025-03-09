@@ -2,19 +2,47 @@
 
 import { useEffect, useRef } from 'react';
 
-export function TableOfContents() {
+interface TableOfContentsProps {
+  content?: string;
+}
+
+export function TableOfContents({ content }: TableOfContentsProps) {
   const tocRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const contentArea = document.querySelector('article');
     const tocContainer = tocRef.current;
     
-    if (!contentArea || !tocContainer) return;
+    if (!tocContainer) return;
 
     const generateTOC = () => {
-      const headings = Array.from(contentArea.querySelectorAll('h2, h3'));
-      if (headings.length === 0) return;
+      // Create a temporary div to parse the HTML content
+      const tempDiv = document.createElement('div');
+      if (content) {
+        tempDiv.innerHTML = content;
+      }
+      
+      // Find all headings in the content
+      const headings = Array.from(tempDiv.querySelectorAll('h2, h3'));
+      if (headings.length === 0) {
+        // If no headings in content, try to find headings in the article element
+        const contentArea = document.querySelector('article');
+        if (contentArea) {
+          const articleHeadings = Array.from(contentArea.querySelectorAll('h2, h3'));
+          if (articleHeadings.length > 0) {
+            generateTOCFromHeadings(articleHeadings, tocContainer);
+            return;
+          }
+        }
+        
+        // If still no headings, hide the TOC
+        tocContainer.innerHTML = '<p class="text-sm text-gray-500">No sections found in this article.</p>';
+        return;
+      }
+      
+      generateTOCFromHeadings(headings, tocContainer);
+    };
 
+    const generateTOCFromHeadings = (headings: Element[], tocContainer: HTMLDivElement) => {
       const mainList = document.createElement('ul');
       mainList.className = 'flex flex-col w-full';
 
@@ -49,6 +77,7 @@ export function TableOfContents() {
       tocContainer.innerHTML = '';
       tocContainer.appendChild(mainList);
 
+      // Add click event listener for smooth scrolling
       mainList.addEventListener('click', (event) => {
         const target = event.target as HTMLElement;
         const link = target.closest('a');
@@ -77,6 +106,7 @@ export function TableOfContents() {
         }
       });
 
+      // Set up intersection observer for scroll spy
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
@@ -100,20 +130,26 @@ export function TableOfContents() {
         threshold: 0
       });
 
-      headings.forEach(heading => observer.observe(heading));
+      // Observe all headings in the actual DOM
+      const articleHeadings = Array.from(document.querySelectorAll('h2, h3'));
+      articleHeadings.forEach(heading => observer.observe(heading));
     };
 
     generateTOC();
 
-    const observer = new MutationObserver(generateTOC);
-    observer.observe(contentArea, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
-
-    return () => observer.disconnect();
-  }, []);
+    // Set up mutation observer to regenerate TOC if content changes
+    const contentArea = document.querySelector('article');
+    if (contentArea) {
+      const observer = new MutationObserver(generateTOC);
+      observer.observe(contentArea, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+      
+      return () => observer.disconnect();
+    }
+  }, [content]);
 
   return (
     <div>

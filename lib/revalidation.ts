@@ -13,6 +13,12 @@ export async function triggerRevalidation(options?: {
 }): Promise<boolean> {
   try {
     const revalidationToken = process.env.NEXT_PUBLIC_REVALIDATION_TOKEN;
+    
+    if (!revalidationToken) {
+      console.error('Revalidation token is missing in environment variables');
+      return false;
+    }
+    
     const revalidateResponse = await fetch('/api/revalidate', {
       method: 'POST',
       headers: {

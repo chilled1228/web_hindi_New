@@ -377,6 +377,8 @@ export default function Editor({ value, onChange, onCoverImageChange, coverImage
         return false;
       }
     },
+    // Fix for SSR hydration mismatch
+    immediatelyRender: false,
   });
 
   useEffect(() => {

@@ -1,5 +1,3 @@
-'use client';
-
 import type { Metadata } from 'next'
 import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
@@ -7,9 +5,9 @@ import { Providers } from './providers'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { PrivacyConsent } from '@/components/privacy-consent'
-import { useEffect, useState } from 'react'
-import Head from 'next/head'
-import { SchemaMarkup, generateOrganizationSchema, generateWebsiteSchema } from '@/components/schema-markup'
+import { ClientSchemas } from '@/components/client-schema'
+import { db } from '@/lib/firebase-admin'
+import { Firestore } from 'firebase-admin/firestore'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -27,37 +25,36 @@ interface WebsiteMetadata {
   keywords: string;
 }
 
-export default function RootLayout({
+const defaultMetadata: WebsiteMetadata = {
+  title: 'Naya Bharat Yojana',
+  description: 'Latest information about government schemes and programs in India.',
+  keywords: 'government schemes, yojana, india, government programs, welfare schemes'
+};
+
+async function getMetadata(): Promise<WebsiteMetadata> {
+  try {
+    const metadataRef = await (db as Firestore)
+      .collection('metadata')
+      .doc('website')
+      .get();
+    
+    if (!metadataRef.exists) {
+      return defaultMetadata;
+    }
+
+    return metadataRef.data() as WebsiteMetadata;
+  } catch (error) {
+    console.error('Error fetching metadata:', error);
+    return defaultMetadata;
+  }
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [metadata, setMetadata] = useState<WebsiteMetadata>({
-    title: 'NayaBharatYojana.in',
-    description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
-    keywords: 'AI prompts, prompt generator, image to prompt, text to prompt, free AI tools'
-  });
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchMetadata = async () => {
-      try {
-        const response = await fetch('/api/metadata');
-        if (!response.ok) {
-          throw new Error('Failed to fetch metadata');
-        }
-        const data = await response.json();
-        setMetadata(data);
-      } catch (error) {
-        console.error('Error fetching metadata:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMetadata();
-  }, []);
-
+  const metadata = await getMetadata();
   const websiteUrl = 'https://nayabharatyojana.in';
 
   return (
@@ -83,40 +80,15 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${outfit.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
         <Providers>
-          <SchemaMarkup
-            type="Organization"
-            data={generateOrganizationSchema({
-              name: 'NayaBharatYojana.in',
-              url: websiteUrl,
-              logo: `${websiteUrl}/logo.png`,
-              description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
-              sameAs: [
-                'https://twitter.com/nayabharatyojana',
-                'https://github.com/nayabharatyojana',
-                'https://instagram.com/nayabharatyojana',
-                'https://linkedin.com/company/nayabharatyojana'
-              ]
-            })}
+          <ClientSchemas 
+            key="site-schemas"
+            websiteUrl={websiteUrl}
+            title={metadata.title}
+            description={metadata.description}
           />
-          <SchemaMarkup
-            type="WebSite"
-            data={generateWebsiteSchema({
-              name: 'NayaBharatYojana.in',
-              url: websiteUrl,
-              description: metadata.description,
-              potentialAction: [{
-                '@type': 'SearchAction',
-                target: {
-                  '@type': 'EntryPoint',
-                  urlTemplate: `${websiteUrl}/search?q={search_term_string}`
-                },
-                'query-input': 'required name=search_term_string'
-              }]
-            })}
-          />
-          <div className="relative flex min-h-screen flex-col">
+          <div className="flex flex-col min-h-screen">
             <Navbar />
-            <main className="flex-1 container mx-auto px-4 py-2 md:px-6 md:py-4">
+            <main className="flex-1">
               {children}
             </main>
             <Footer />
