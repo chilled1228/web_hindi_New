@@ -127,15 +127,15 @@ export function SiteSchemas({
       <SchemaMarkup
         type="Organization"
         data={generateOrganizationSchema({
-          name: 'FreePromptBase',
+          name: 'NayaBharatYojana',
           url: websiteUrl,
           logo: `${websiteUrl}/logo.png`,
           description: 'Revolutionizing AI prompt creation and management. Join our community of creators and innovators.',
           sameAs: [
-            'https://twitter.com/freepromptbase',
-            'https://github.com/freepromptbase',
-            'https://instagram.com/freepromptbase',
-            'https://linkedin.com/company/freepromptbase'
+            'https://twitter.com/nayabharatyojana',
+            'https://github.com/nayabharatyojana',
+            'https://instagram.com/nayabharatyojana',
+            'https://linkedin.com/company/nayabharatyojana'
           ]
         })}
       />

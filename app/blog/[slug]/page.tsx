@@ -117,7 +117,7 @@ export async function generateMetadata(
   const postUrl = `${baseUrl}/blog/${post.slug}`;
 
   return {
-    title: `${post.title} | FreePromptBase Blog`,
+    title: `${post.title} | NayaBharatYojana Blog`,
     description: post.description,
     openGraph: {
       title: post.title,

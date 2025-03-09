@@ -27,7 +27,7 @@ export function Footer() {
                 </svg>
               </div>
               <span key="footer-logo" className="font-heading text-xl font-bold text-gray-900 dark:text-gray-100">
-                FreePromptBase
+                NayaBharatYojana
               </span>
             </div>
             <p className="text-base text-muted-foreground/80 leading-relaxed max-w-sm">
@@ -166,7 +166,7 @@ export function Footer() {
         <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-600 dark:text-gray-300 order-2 md:order-1">
-              © {currentYear} FreePromptBase. All rights reserved.
+              © {currentYear} NayaBharatYojana. All rights reserved.
             </p>
             <div className="flex items-center gap-8 order-1 md:order-2">
               <Link 

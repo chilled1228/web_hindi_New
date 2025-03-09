@@ -28,7 +28,7 @@ export default function Disclaimer() {
         {/* Introduction Section */}
         <div className="max-w-3xl mx-auto mb-16 text-center">
           <p className="text-lg text-muted-foreground/90 leading-relaxed mb-6">
-            Please read this disclaimer carefully before using FreePromptBase. By accessing and using our platform, you acknowledge and agree to the terms outlined in this disclaimer.
+            Please read this disclaimer carefully before using NayaBharatYojana. By accessing and using our platform, you acknowledge and agree to the terms outlined in this disclaimer.
           </p>
           <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground/80">
             <span className="flex items-center gap-1.5">
@@ -62,7 +62,7 @@ export default function Disclaimer() {
                 </h2>
                 <div className="prose prose-gray dark:prose-invert">
                   <p className="text-muted-foreground/90">
-                    The information provided on FreePromptBase is for general informational and educational purposes only. We make no representations or warranties of any kind, express or implied, about the completeness, accuracy, reliability, suitability, or availability of the information, products, services, or related graphics contained on the platform.
+                    The information provided on NayaBharatYojana is for general informational and educational purposes only. We make no representations or warranties of any kind, express or implied, about the completeness, accuracy, reliability, suitability, or availability of the information, products, services, or related graphics contained on the platform.
                   </p>
                 </div>
               </div>
@@ -81,7 +81,7 @@ export default function Disclaimer() {
                 </h2>
                 <div className="prose prose-gray dark:prose-invert">
                   <p className="text-muted-foreground/90">
-                    By using FreePromptBase, you acknowledge and agree that:
+                    By using NayaBharatYojana, you acknowledge and agree that:
                   </p>
                   <ul className="mt-4 space-y-3 text-muted-foreground/90">
                     <li className="flex items-center gap-2">
