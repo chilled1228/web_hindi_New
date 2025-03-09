@@ -2,6 +2,9 @@
  * Utility functions for revalidating content on the website
  */
 
+// Keep track of ongoing revalidation requests
+let revalidationInProgress = false;
+
 /**
  * Triggers revalidation for the entire site or specific pages
  * @param options Optional parameters for revalidation
@@ -11,7 +14,14 @@ export async function triggerRevalidation(options?: {
   path?: string;
   slug?: string;
 }): Promise<boolean> {
+  // Prevent multiple simultaneous revalidation requests
+  if (revalidationInProgress) {
+    console.log('Revalidation already in progress, skipping...');
+    return false;
+  }
+
   try {
+    revalidationInProgress = true;
     const revalidationToken = process.env.NEXT_PUBLIC_REVALIDATION_TOKEN;
     
     if (!revalidationToken) {
@@ -23,24 +33,32 @@ export async function triggerRevalidation(options?: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store'
       },
       body: JSON.stringify({
         token: revalidationToken,
         ...(options?.path ? { path: options.path } : {}),
         ...(options?.slug ? { slug: options.slug } : {})
       }),
+      credentials: 'same-origin'
     });
     
-    if (revalidateResponse.ok) {
-      console.log('Successfully revalidated site content');
-      return true;
-    } else {
-      console.error('Failed to revalidate site content:', await revalidateResponse.text());
+    if (!revalidateResponse.ok) {
+      const errorText = await revalidateResponse.text();
+      console.error('Failed to revalidate site content:', errorText);
       return false;
     }
+
+    const result = await revalidateResponse.json();
+    return result.revalidated === true;
   } catch (error) {
-    console.error('Error revalidating site content:', error);
+    console.error('Error during revalidation:', error);
     return false;
+  } finally {
+    // Reset the flag after a delay to prevent rapid subsequent calls
+    setTimeout(() => {
+      revalidationInProgress = false;
+    }, 5000);
   }
 }
 

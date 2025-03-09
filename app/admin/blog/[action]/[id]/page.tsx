@@ -329,8 +329,10 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
       return;
     }
 
+    if (saving) return; // Prevent multiple saves
     setSaving(true);
     setSaveSuccess(false);
+    
     try {
       const postData = {
         ...post,
@@ -353,6 +355,7 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
         postData.publishedAt = Timestamp.now();
       }
 
+      // Save to Firestore
       if (resolvedParams.action === 'edit' && resolvedParams.id) {
         const docRef = doc(db, 'blog_posts', resolvedParams.id);
         const docSnap = await getDoc(docRef);
@@ -367,32 +370,34 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
         await setDoc(newDocRef, postData);
       }
       
+      // Update local state
       setPost(prev => ({
         ...prev,
         ...postData
       }));
       
-      // Call the revalidation API to clear the cache
+      // Handle revalidation for published posts
       if (status === 'published') {
         try {
-          // Revalidate the specific blog post
           const success = await revalidateBlogPost(postData.slug);
-          
           if (success) {
-            toast.success('Blog post published and site updated');
+            toast.success('Blog post published successfully');
           } else {
-            toast.warning('Blog post published but site update may be delayed');
+            toast.warning('Blog post saved but site update may be delayed');
           }
         } catch (revalidateError) {
           console.error('Error revalidating blog pages:', revalidateError);
-          toast.warning('Blog post published but site update may be delayed');
+          toast.warning('Blog post saved but site update may be delayed');
         }
+      } else {
+        toast.success('Draft saved successfully');
       }
-      
+
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      console.error('Error saving post:', error);
+      console.error('Error saving blog post:', error);
+      toast.error('Failed to save blog post');
+      setSaveSuccess(false);
     } finally {
       setSaving(false);
     }
