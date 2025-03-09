@@ -291,7 +291,13 @@ export default async function BlogPostPage({ params }: Props) {
         title={post.title}
         description={post.description || post.excerpt || ''}
         datePublished={post.publishedAt}
-        dateModified={post.updatedAt || post.publishedAt}
+        dateModified={typeof post.updatedAt === 'string' 
+          ? post.updatedAt 
+          : post.updatedAt && typeof (post.updatedAt as any).toDate === 'function'
+            ? (post.updatedAt as any).toDate().toISOString()
+            : post.updatedAt && (post.updatedAt as any)._seconds
+              ? new Date((post.updatedAt as any)._seconds * 1000).toISOString()
+              : post.publishedAt}
         authorName={post.author.name}
         imageUrl={post.coverImage}
         url={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://nayabharatyojana.in'}/blog/${post.slug}`}
