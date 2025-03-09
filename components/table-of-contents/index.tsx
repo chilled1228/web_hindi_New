@@ -152,13 +152,14 @@ export function TableOfContents({ content }: TableOfContentsProps) {
   }, [content]);
 
   return (
-    <div>
-      <h2 className="flex items-center gap-2 font-semibold text-base lg:text-lg mb-4 lg:mb-6 text-zinc-900 dark:text-zinc-100">
-        <span className="text-indigo-500 dark:text-indigo-400">✦</span> Table of Contents
+    <div className="relative">
+      <h2 className="flex items-center gap-2 font-semibold text-base lg:text-lg mb-4 lg:mb-6 text-zinc-900">
+        <span className="text-indigo-500">✦</span> Table of Contents
       </h2>
+      
       <div 
         ref={tocRef} 
-        className="relative w-full max-h-[calc(100vh-24rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600" 
+        className="relative w-full max-h-[calc(100vh-24rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300" 
       />
     </div>
   );

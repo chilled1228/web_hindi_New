@@ -1,6 +1,5 @@
 'use client'
 
-import { ThemeProvider as NextThemeProvider } from 'next-themes'
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -183,17 +182,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (!mounted) return null;
     
     return (
-      <NextThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
-      </NextThemeProvider>
+      <AuthProvider>
+        {children}
+        <Toaster />
+      </AuthProvider>
     );
   }, [mounted, children]);
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { db } from '@/lib/firebase'
 import { collection, query, getDocs, orderBy, limit, where } from 'firebase/firestore'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Search } from 'lucide-react'
 import NextImage from 'next/image'
@@ -96,7 +96,7 @@ export function PromptGrid() {
                   href={`/prompts/${prompt.slug}`}
                   className="group"
                 >
-                  <Card className="overflow-hidden transition-all duration-300 hover:shadow-2xl dark:shadow-primary/5 hover:-translate-y-1 bg-background/60 dark:bg-gray-800/40 backdrop-blur-xl border-primary/10 dark:border-white/5">
+                  <Card className="overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-background/60 backdrop-blur-xl border-primary/10">
                     <div className="relative h-[200px]">
                       <NextImage
                         src={prompt.imageUrl}
@@ -107,8 +107,8 @@ export function PromptGrid() {
                         unoptimized={process.env.NODE_ENV === 'development'}
                       />
                     </div>
-                    <div className="p-6">
-                      <Badge variant="secondary" className="mb-3 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground hover:bg-primary/20 transition-colors duration-300">
+                    <CardContent className="p-6">
+                      <Badge variant="secondary" className="mb-3 bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300">
                         {prompt.category}
                       </Badge>
                       <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors duration-300 line-clamp-1">
@@ -117,7 +117,7 @@ export function PromptGrid() {
                       <p className="text-sm text-muted-foreground/80 line-clamp-2">
                         {prompt.description}
                       </p>
-                    </div>
+                    </CardContent>
                   </Card>
                 </Link>
               ))

@@ -77,7 +77,7 @@ export default async function RootLayout({
   const websiteUrl = 'https://nayabharatyojana.in';
 
   return (
-    <html lang="en" className="light" suppressHydrationWarning>
+    <html lang="en">
       <head>
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />

@@ -41,18 +41,16 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
 
   return (
     <div className="flex justify-center mb-4 md:mb-6">
-      <div className="inline-flex flex-wrap p-1 rounded-full bg-[#f5f5f5] dark:bg-gray-800 max-w-full overflow-x-auto no-scrollbar">
+      <div className="inline-flex flex-wrap p-1 rounded-full bg-[#f5f5f5] max-w-full overflow-x-auto no-scrollbar">
         {tabs.map(({ value, label, icon: Icon }) => (
           <button
             key={value}
             onClick={() => setActiveTab(value)}
-            className={`
-              px-2 py-1 text-[11px] sm:text-[12px] md:px-4 md:py-2 md:text-[14px] font-medium rounded-full 
-              flex items-center gap-1.5 sm:gap-2 transition-colors shrink-0
-              ${value === activeTab 
-                ? 'bg-white dark:bg-gray-900 shadow-sm text-black dark:text-white' 
-                : 'text-[#666666] dark:text-gray-400 hover:text-black dark:hover:text-white'}
-            `}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              activeTab === value
+                ? 'bg-white shadow-sm text-black'
+                : 'text-[#666666] hover:text-black'
+            }`}
           >
             <Icon className="w-4 h-4" />
             {label}
