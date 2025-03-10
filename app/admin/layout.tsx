@@ -164,7 +164,7 @@ export default function AdminLayout({
         
         if (!db) {
           console.error('Firestore not initialized')
-          window.location.href = '/'
+          window.location.href = '/auth'
           return
         }
         
@@ -173,7 +173,7 @@ export default function AdminLayout({
           
         if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
           console.log('User is not an admin')
-          window.location.href = '/'
+          window.location.href = '/auth'
           return
         }
 
@@ -248,7 +248,15 @@ export default function AdminLayout({
                   </Link>
                 ))}
                 
-                <div className="mt-auto border-t mx-2 pt-4">
+                <div className="mt-auto border-t mx-2 pt-4 space-y-2">
+                  <Link
+                    href="/auth"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-muted-foreground hover:bg-muted"
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <Home className="h-4 w-4" />
+                    Go to Login
+                  </Link>
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start px-4 py-2.5 text-sm font-medium text-destructive"
@@ -361,9 +369,9 @@ export default function AdminLayout({
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/" className="cursor-pointer">
+                  <Link href="/auth" className="cursor-pointer">
                     <Home className="mr-2 h-4 w-4" />
-                    <span>Go to Website</span>
+                    <span>Go to Login</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
