@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers';
 import { AuthButtons } from '@/components/auth/auth-buttons';
@@ -9,16 +9,44 @@ import { Loader2 } from 'lucide-react';
 export default function AuthPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isPostLogout, setIsPostLogout] = useState(false);
+
+  useEffect(() => {
+    // Check if this is a post-logout navigation
+    const isPostLogoutNav = document.referrer.includes('/admin');
+    setIsPostLogout(isPostLogoutNav);
+
+    // Clear any stale auth state on mount
+    if (isPostLogoutNav) {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('firebase:') || key.includes('auth')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('firebase:') || key.includes('auth')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (user && !loading) {
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect') || '/';
       
-      // Use replace to prevent back button from returning to auth page
-      router.replace(redirectUrl);
+      // Add a small delay for post-logout redirects
+      if (isPostLogout) {
+        setTimeout(() => {
+          router.replace(redirectUrl);
+        }, 100);
+      } else {
+        router.replace(redirectUrl);
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isPostLogout]);
 
   if (loading) {
     return (

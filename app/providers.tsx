@@ -63,11 +63,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
+        // Clear any stale auth state on initialization
+        const isPostLogout = document.referrer.includes('/admin');
+        if (isPostLogout) {
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('firebase:') || key.includes('auth')) {
+              localStorage.removeItem(key);
+            }
+          });
+          
+          Object.keys(sessionStorage).forEach(key => {
+            if (key.startsWith('firebase:') || key.includes('auth')) {
+              sessionStorage.removeItem(key);
+            }
+          });
+        }
+        
         // Check if another tab has already initialized auth
         const existingAuth = localStorage.getItem('authInitialized');
         const now = Date.now();
         
-        if (existingAuth) {
+        if (existingAuth && !isPostLogout) {
           const lastInit = parseInt(existingAuth, 10);
           // If auth was initialized in another tab within the last 5 seconds, wait for it
           if (now - lastInit < 5000) {
@@ -102,7 +118,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (user) {
             try {
               // Force token refresh to ensure we have a valid token
-              await user.getIdToken(true);
+              const token = await user.getIdToken(true);
+              
+              // Set auth cookie with proper attributes
+              const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : '';
+              document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; ${secure}`;
+              
               setUser(user);
               console.log('User authenticated:', user.email);
             } catch (error) {

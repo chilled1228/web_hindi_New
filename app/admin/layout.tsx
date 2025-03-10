@@ -174,22 +174,44 @@ export default function AdminLayout({
     try {
       setIsLoading(true)
       
-      // Clear cookies with proper attributes
-      const domain = window.location.hostname
-      const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
-      document.cookie = `__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain}; ${secure}`
-      document.cookie = `firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain}; ${secure}`
+      // First clear all auth state from localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('firebase:') || key.includes('auth')) {
+          localStorage.removeItem(key)
+        }
+      })
+      
+      // Clear session storage
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('firebase:') || key.includes('auth')) {
+          sessionStorage.removeItem(key)
+        }
+      })
+      
+      // Clear cookies with proper attributes for all possible domains
+      const domains = [window.location.hostname, `.${window.location.hostname}`]
+      const paths = ['/', '/admin', '/auth']
+      
+      domains.forEach(domain => {
+        paths.forEach(path => {
+          document.cookie = `__session=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain};`
+          document.cookie = `firebaseToken=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain};`
+        })
+      })
       
       // Sign out from Firebase
       if (auth) {
         await signOut(auth)
       }
       
-      // Use router for client-side navigation
-      router.replace('/auth')
+      // Small delay to ensure all cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Force a hard navigation to the auth page
+      window.location.href = '/auth'
     } catch (error) {
       console.error('Error signing out:', error)
-      router.replace('/auth')
+      window.location.href = '/auth'
     }
   }
 
