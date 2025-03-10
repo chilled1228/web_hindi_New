@@ -103,105 +103,23 @@ export default function AdminLayout({
   
   const breadcrumbs = generateBreadcrumbs();
 
-  useEffect(() => {
-    // If we're logging out, don't check admin status
-    if (sessionStorage.getItem('isLoggingOut')) {
-      router.replace('/auth');
-      return;
-    }
-
-    const checkAdminStatus = async () => {
-      try {
-        if (!auth) {
-          console.error('Auth not initialized')
-          setIsLoading(false)
-          router.replace('/auth?redirect=/admin')
-          return
-        }
-        
-        const user = auth.currentUser
-        if (!user) {
-          console.log('No user logged in, redirecting to auth page')
-          setIsLoading(false)
-          setIsAdmin(false)
-          router.replace('/auth?redirect=/admin')
-          return
-        }
-
-        // Get fresh token and user claims
-        const token = await user.getIdToken(true)
-        
-        if (!db) {
-          console.error('Firestore not initialized')
-          setIsLoading(false)
-          setIsAdmin(false)
-          router.replace('/')
-          return
-        }
-        
-        const userDocRef = doc(db, 'users', user.uid)
-        const userDocSnap = await getDoc(userDocRef)
-          
-        if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
-          console.log('User is not an admin')
-          setIsLoading(false)
-          setIsAdmin(false)
-          router.replace('/')
-          return
-        }
-
-        // Set auth cookie with proper attributes
-        const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
-        document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; ${secure}`
-
-        setIsAdmin(true)
-        setUserName(user.displayName || '')
-        setUserEmail(user.email || '')
-        setIsLoading(false)
-      } catch (error) {
-        console.error('Error in checkAdminStatus:', error)
-        setIsLoading(false)
-        setIsAdmin(false)
-        router.replace('/auth?redirect=/admin')
-      }
-    }
-
-    checkAdminStatus()
-    
-    // Add a timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.log('Loading timeout reached, redirecting to auth page')
-        setIsLoading(false)
-        setIsAdmin(false)
-        router.replace('/auth?redirect=/admin')
-      }
-    }, 5000) // 5 seconds timeout
-    
-    return () => clearTimeout(timeoutId)
-  }, [router, isLoading])
-
   const handleSignOut = async () => {
     try {
-      // Set logging out flag first
-      sessionStorage.setItem('isLoggingOut', 'true')
-      setIsLoading(true)
-      
-      // First clear all auth state from localStorage
+      // Clear all auth state from localStorage
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('firebase:') || key.includes('auth')) {
           localStorage.removeItem(key)
         }
       })
       
-      // Clear session storage except isLoggingOut flag
+      // Clear all session storage
       Object.keys(sessionStorage).forEach(key => {
-        if ((key.startsWith('firebase:') || key.includes('auth')) && key !== 'isLoggingOut') {
+        if (key.startsWith('firebase:') || key.includes('auth')) {
           sessionStorage.removeItem(key)
         }
       })
       
-      // Clear cookies with proper attributes for all possible domains
+      // Clear cookies
       const domains = [window.location.hostname, `.${window.location.hostname}`]
       const paths = ['/', '/admin', '/auth']
       
@@ -217,31 +135,64 @@ export default function AdminLayout({
         await signOut(auth)
       }
       
-      // Clear admin state
-      setIsAdmin(false)
-      setUserName('')
-      setUserEmail('')
-      
-      // Immediate redirect to auth page
-      router.replace('/auth')
+      // Force a clean navigation to auth page
+      window.location.href = '/auth'
     } catch (error) {
       console.error('Error signing out:', error)
-      // Ensure we redirect to auth page even on error
-      router.replace('/auth')
+      window.location.href = '/auth'
     }
   }
 
-  // Show loading screen during logout
-  if (sessionStorage.getItem('isLoggingOut')) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Signing out...</p>
-        </div>
-      </div>
-    )
-  }
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        if (!auth) {
+          console.error('Auth not initialized')
+          window.location.href = '/auth'
+          return
+        }
+        
+        const user = auth.currentUser
+        if (!user) {
+          console.log('No user logged in, redirecting to auth page')
+          window.location.href = '/auth'
+          return
+        }
+
+        // Get fresh token and user claims
+        const token = await user.getIdToken(true)
+        
+        if (!db) {
+          console.error('Firestore not initialized')
+          window.location.href = '/'
+          return
+        }
+        
+        const userDocRef = doc(db, 'users', user.uid)
+        const userDocSnap = await getDoc(userDocRef)
+          
+        if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
+          console.log('User is not an admin')
+          window.location.href = '/'
+          return
+        }
+
+        // Set auth cookie with proper attributes
+        const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
+        document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; ${secure}`
+
+        setIsAdmin(true)
+        setUserName(user.displayName || '')
+        setUserEmail(user.email || '')
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error in checkAdminStatus:', error)
+        window.location.href = '/auth'
+      }
+    }
+
+    checkAdminStatus()
+  }, [])
 
   if (isLoading) {
     return (
@@ -255,13 +206,8 @@ export default function AdminLayout({
   }
 
   if (!isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-        <p className="text-muted-foreground mb-4">You need to be an admin to access this page.</p>
-        <Button onClick={() => router.replace('/')}>Go Home</Button>
-      </div>
-    )
+    window.location.href = '/auth'
+    return null
   }
 
   return (
