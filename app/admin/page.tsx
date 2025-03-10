@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/providers';
 import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, doc, getDoc, updateDoc, setDoc, deleteDoc, Timestamp, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, setDoc, deleteDoc, Timestamp, query, where, orderBy, limit, Firestore } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -15,15 +15,24 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Users, FileText, Pencil, Copy, Trash2, RefreshCw } from 'lucide-react';
+import { Loader2, Plus, Users, FileText, Pencil, Copy, Trash2, RefreshCw, LayoutDashboard, ChevronRight, Settings, BarChart3, Calendar, Clock, ArrowUpRight, AlertCircle, CheckCircle2, Filter, LogOut } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { revalidateEntireSite, revalidateAllBlogPosts, revalidateBlogPost } from '@/lib/revalidation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { signOut } from 'firebase/auth';
 
 interface User {
   id: string;
@@ -161,7 +170,9 @@ export default function AdminDashboard() {
         return;
       }
       
-      const metadataDoc = await getDoc(doc(db as any, 'metadata', 'website'));
+      // Use type assertion to ensure db is treated as Firestore
+      const firestoreDb = db as Firestore;
+      const metadataDoc = await getDoc(doc(firestoreDb, 'metadata', 'website'));
       if (metadataDoc.exists()) {
         setMetadata(metadataDoc.data() as WebsiteMetadata);
       }
@@ -179,7 +190,9 @@ export default function AdminDashboard() {
         return;
       }
       
-      const metadataDoc = doc(db as any, 'metadata', 'website');
+      // Use type assertion to ensure db is treated as Firestore
+      const firestoreDb = db as Firestore;
+      const metadataDoc = doc(firestoreDb, 'metadata', 'website');
       await setDoc(metadataDoc, metadata);
       toast({
         title: 'Settings updated',
@@ -430,342 +443,369 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={async () => {
-              toast({
-                title: 'Revalidating...',
-                description: 'Refreshing site content...',
-              });
-              
-              const success = await revalidateEntireSite();
-              
-              if (success) {
-                toast({
-                  title: 'Success',
-                  description: 'Site content refreshed successfully!',
-                  variant: 'default',
-                });
-              } else {
-                toast({
-                  title: 'Error',
-                  description: 'Failed to refresh site content. Try again later.',
-                  variant: 'destructive',
-                });
-              }
-            }}
-            size="sm"
-            variant="outline"
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh Site
-          </Button>
-          <Button
-            onClick={() => router.push('/admin/blog/new')}
-            size="sm"
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            New Post
-          </Button>
-        </div>
-      </div>
-      
-      {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">Registered users across your platform</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Blog Posts</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{blogPosts.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {blogPosts.filter(post => post.status === 'published').length} published, 
-              {blogPosts.filter(post => post.status === 'draft').length} drafts
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Blog Posts */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Blog Posts</h2>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                toast({
-                  title: 'Revalidating...',
-                  description: 'Refreshing blog posts...',
-                });
-                
-                const success = await revalidateAllBlogPosts();
-                
-                if (success) {
+    <div className="space-y-8 pb-10">
+      {/* Minimal Navigation Bar */}
+      <div className="bg-background sticky top-0 z-50 border-b shadow-sm py-3">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <h1 className="text-xl font-bold">Admin Dashboard</h1>
+              <nav className="hidden md:flex items-center gap-4">
+                <Link href="/admin" className="text-sm font-medium text-primary">Dashboard</Link>
+                <Link href="/admin/blog" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
+                <Link href="/admin/users" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Users</Link>
+                <Link href="/admin/settings" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Settings</Link>
+              </nav>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={async () => {
                   toast({
-                    title: 'Success',
-                    description: 'Blog posts refreshed on the live site!',
-                    variant: 'default',
+                    title: 'Revalidating...',
+                    description: 'Refreshing site content...',
                   });
-                } else {
-                  toast({
-                    title: 'Error',
-                    description: 'Failed to refresh blog posts. Try again later.',
-                    variant: 'destructive',
-                  });
-                }
-              }}
-              className="gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh Site
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchBlogPosts()}
-              className="gap-2"
-            >
-              <Loader2 className={cn("h-4 w-4", updateLoading ? "animate-spin" : "")} />
-              Refresh List
-            </Button>
-          </div>
-        </div>
-        
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>Published</TableHead>
-                  <TableHead className="w-[200px] text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {blogPosts.map((post) => (
-                  <TableRow key={post.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium">{post.title}</TableCell>
-                    <TableCell>
-                      <span className={cn(
-                        "px-2 py-1 rounded-full text-xs font-medium",
-                        post.status === 'published' ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : 
-                                               "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                      )}>
-                        {post.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{post.author.name}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {formatPublishedDate(post.publishedAt)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/admin/blog/edit/${post.id}`)}
-                          className="h-8 gap-1"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Edit</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDuplicatePost(post.id)}
-                          className="h-8 gap-1"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Duplicate</span>
-                        </Button>
-                        {post.status === 'published' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRevalidatePost(post)}
-                            className="h-8 gap-1"
-                          >
-                            <RefreshCw className="h-3.5 w-3.5" />
-                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Refresh</span>
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeletePost(post.id)}
-                          className="h-8 gap-1 text-destructive hover:text-destructive/90"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Delete</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {blogPosts.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <FileText className="h-8 w-8 text-muted-foreground/50" />
-                        <p>No blog posts yet</p>
-                        <Button variant="outline" size="sm" onClick={() => router.push('/admin/blog/new')} className="mt-2">
-                          Create your first post
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  
+                  const success = await revalidateEntireSite();
+                  
+                  if (success) {
+                    toast({
+                      title: 'Success',
+                      description: 'Site content refreshed successfully!',
+                      variant: 'default',
+                    });
+                  } else {
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to refresh site content. Try again later.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">Refresh Site</span>
+              </Button>
+              <Button
+                onClick={() => router.push('/admin/blog/new')}
+                size="sm"
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New Post</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  if (auth) {
+                    signOut(auth);
+                    router.push('/auth');
+                  }
+                }}
+                className="gap-2 text-muted-foreground"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Users Section */}
-      <div className="space-y-4 mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Recent Users</h2>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => router.push('/admin/users')}
-          >
-            View All Users
-          </Button>
+      <div className="container mx-auto px-4">
+        {/* Welcome Banner */}
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background rounded-xl p-6 shadow-sm border relative overflow-hidden mb-8">
+          <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,rgba(255,255,255,0.6),transparent)]"></div>
+          <div className="relative z-10">
+            <h1 className="text-3xl font-bold tracking-tight">Welcome to Admin</h1>
+            <p className="text-muted-foreground mt-1 max-w-2xl">Manage your website content, users, and settings from this dashboard.</p>
+          </div>
         </div>
         
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Email</TableHead>
-                  <TableHead>Admin</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.slice(0, 5).map((user) => (
-                  <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium">{user.email}</TableCell>
-                    <TableCell>
-                      {user.isAdmin ? (
-                        <span className="text-green-600 dark:text-green-400">Admin</span>
-                      ) : (
-                        <span className="text-muted-foreground">User</span>
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+          {/* Main Content - 8 columns */}
+          <div className="md:col-span-8 space-y-8">
+            {/* Stats Overview Section */}
+            <section aria-labelledby="stats-heading" className="bg-card rounded-xl border shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 id="stats-heading" className="text-xl font-semibold flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Dashboard Overview
+                </h2>
+                <Badge variant="outline" className="gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  Last updated: {new Date().toLocaleTimeString()}
+                </Badge>
+              </div>
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                <Card className="border-l-4 border-l-primary shadow-sm hover:shadow transition-all group">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                    <div className="rounded-full p-1.5 bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      <Users className="h-4 w-4" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <ArrowUpRight className="h-3.5 w-3.5 text-green-500" />
+                      <span>Registered users across your platform</span>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-l-4 border-l-primary shadow-sm hover:shadow transition-all group">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Blog Posts</CardTitle>
+                    <div className="rounded-full p-1.5 bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{blogPosts.length}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="success" className="text-[10px] h-5">
+                        {blogPosts.filter(post => post.status === 'published').length} published
+                      </Badge>
+                      <Badge variant="secondary" className="text-[10px] h-5">
+                        {blogPosts.filter(post => post.status === 'draft').length} drafts
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+
+            {/* Blog Posts Section */}
+            <section aria-labelledby="blog-posts-heading" className="bg-card rounded-xl border shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 id="blog-posts-heading" className="text-xl font-semibold flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Recent Blog Posts
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push('/admin/blog')}
+                    className="gap-2"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                    View All
+                  </Button>
+                  <Button
+                    onClick={() => router.push('/admin/blog/new')}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Post
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="rounded-md border overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Title</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Author</TableHead>
+                        <TableHead>Published</TableHead>
+                        <TableHead className="w-[120px] text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {blogPosts.slice(0, 5).map((post) => (
+                        <TableRow key={post.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell className="font-medium">{post.title}</TableCell>
+                          <TableCell>
+                            {post.status === 'published' ? (
+                              <Badge variant="success" className="gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Published
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="gap-1">
+                                <Clock className="h-3 w-3" />
+                                Draft
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>{post.author.name}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {formatPublishedDate(post.publishedAt)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => router.push(`/admin/blog/edit/${post.id}`)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeletePost(post.id)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {blogPosts.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <FileText className="h-8 w-8 text-muted-foreground/50" />
+                              <p>No blog posts yet</p>
+                              <Button variant="outline" size="sm" onClick={() => router.push('/admin/blog/new')} className="mt-2">
+                                Create your first post
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          defaultValue={user.credits}
-                          id={`credits-${user.id}`}
-                          className="w-20 h-8"
-                          onBlur={(e) => handleCreditUpdate(user.id, e.target)}
-                        />
-                        {updateLoading === user.id && (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => router.push(`/admin/users/${user.id}`)}
-                      >
-                        View Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </section>
           </div>
-        </div>
-      </div>
-      
-      {/* Website Metadata Section */}
-      <div className="space-y-4 mt-8">
-        <h2 className="text-xl font-semibold">Website Metadata</h2>
-        <Card>
-          <CardContent className="pt-6">
-            <form className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
+          
+          {/* Sidebar - 4 columns */}
+          <div className="md:col-span-4 space-y-8">
+            {/* Users Section */}
+            <section aria-labelledby="users-heading" className="bg-card rounded-xl border shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 id="users-heading" className="text-xl font-semibold flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Recent Users
+                </h2>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => router.push('/admin/users')}
+                  className="gap-2"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  View All
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {users.slice(0, 5).map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                    <div>
+                      <p className="font-medium text-sm">{user.email}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {user.isAdmin ? (
+                          <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">Admin</Badge>
+                        ) : (
+                          <Badge variant="outline">User</Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">{user.credits} credits</span>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => router.push(`/admin/users/${user.id}`)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                      <span className="sr-only">View Details</span>
+                    </Button>
+                  </div>
+                ))}
+                {users.length === 0 && (
+                  <div className="text-center text-muted-foreground py-12">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Users className="h-8 w-8 text-muted-foreground/50" />
+                      <p>No users yet</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+            
+            {/* Website Metadata Section */}
+            <section aria-labelledby="metadata-heading" className="bg-card rounded-xl border shadow-sm p-6">
+              <h2 id="metadata-heading" className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                Website Settings
+              </h2>
+              <form className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Website Title</Label>
+                  <Label htmlFor="title" className="text-sm font-medium">Website Title</Label>
                   <Input
                     id="title"
                     value={metadata.title}
                     onChange={(e) => setMetadata({ ...metadata, title: e.target.value })}
                     placeholder="Enter website title"
+                    className="bg-background"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Website Description</Label>
+                  <Label htmlFor="description" className="text-sm font-medium">Website Description</Label>
                   <Textarea
                     id="description"
                     value={metadata.description}
                     onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
                     placeholder="Enter website description"
                     rows={3}
+                    className="bg-background"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="keywords">Website Keywords</Label>
+                  <Label htmlFor="keywords" className="text-sm font-medium">Website Keywords</Label>
                   <Input
                     id="keywords"
                     value={metadata.keywords}
                     onChange={(e) => setMetadata({ ...metadata, keywords: e.target.value })}
                     placeholder="keyword1, keyword2, keyword3"
+                    className="bg-background"
                   />
                 </div>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  onClick={updateMetadata}
-                  disabled={isMetadataLoading}
-                >
-                  {isMetadataLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Metadata'
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    onClick={updateMetadata}
+                    disabled={isMetadataLoading}
+                    className="w-full gap-2"
+                  >
+                    {isMetadataLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        Save & Refresh Site
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </div>
       </div>
     </div>
   );

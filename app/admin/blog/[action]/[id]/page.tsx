@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { 
   Loader2, Save, Eye, ArrowLeft, Check, AlertTriangle, FileText, Settings, 
   ImagePlus, Menu, Copy, Trash, Send, ExternalLink, ImageIcon, HelpCircle,
-  Info as InfoIcon, Trash2
+  Info as InfoIcon, Trash2, Link
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/app/providers';
@@ -498,8 +498,8 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Sticky header/toolbar */}
+    <div className="min-h-screen bg-background">
+      {/* Minimal header/toolbar */}
       <div className="sticky top-0 z-50 bg-background border-b shadow-sm">
         <div className="container mx-auto px-4">
           <div className="h-16 flex items-center justify-between gap-4">
@@ -517,61 +517,36 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
                 <h1 className="text-xl font-semibold">
                   {resolvedParams.action === 'edit' ? 'Edit Post' : 'Create New Post'}
                 </h1>
-                <Badge variant={post.status === 'published' ? "success" : "default"}>
-                  {post.status === 'published' ? 'Published' : 'Draft'}
-                </Badge>
+                {post.status === 'published' ? (
+                  <Badge variant="success" className="gap-1">
+                    <Check className="h-3 w-3" />
+                    Published
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Draft
+                  </Badge>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <AutoSaveIndicator />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Menu className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">Actions</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => router.push(`/blog/${post.slug}`)}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Live Post
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    const newPost = {...post, slug: `${post.slug}-copy`, title: `${post.title} (Copy)`};
-                    // Logic to duplicate post
-                  }}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Duplicate Post
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => {
-                      if(confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-                        // Logic to delete post
-                        router.push('/admin');
-                      }
-                    }}
-                  >
-                    <Trash className="h-4 w-4 mr-2" />
-                    Delete Post
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
               <div className="hidden sm:flex gap-2">
                 <Button
                   variant="outline"
                   onClick={() => handleSave('draft')}
                   disabled={saving}
+                  className="gap-1"
                 >
                   {saving && post.status === 'draft' ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="mr-2 h-4 w-4" />
+                      <Save className="h-4 w-4" />
                       Save Draft
                     </>
                   )}
@@ -579,16 +554,16 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
                 <Button
                   onClick={() => handleSave('published')}
                   disabled={saving}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
                 >
                   {saving && post.status === 'published' ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Publishing...
                     </>
                   ) : (
                     <>
-                      <Send className="mr-2 h-4 w-4" />
+                      <Send className="h-4 w-4" />
                       Publish
                     </>
                   )}
@@ -598,21 +573,57 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
               <div className="sm:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button>
-                      <Save className="h-4 w-4 mr-2" />
+                    <Button className="gap-1">
+                      <Save className="h-4 w-4" />
                       Save
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleSave('draft')}>
+                    <DropdownMenuItem onClick={() => handleSave('draft')} className="gap-2">
+                      <Save className="h-4 w-4" />
                       Save as Draft
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSave('published')}>
+                    <DropdownMenuItem onClick={() => handleSave('published')} className="gap-2">
+                      <Send className="h-4 w-4" />
                       Publish Now
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <Menu className="h-4 w-4" />
+                    <span className="hidden sm:inline">Actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => router.push(`/blog/${post.slug}`)} className="gap-2">
+                    <Eye className="h-4 w-4" />
+                    View Live Post
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    const newPost = {...post, slug: `${post.slug}-copy`, title: `${post.title} (Copy)`};
+                    // Logic to duplicate post
+                  }} className="gap-2">
+                    <Copy className="h-4 w-4" />
+                    Duplicate Post
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive gap-2"
+                    onClick={() => {
+                      if(confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+                        // Logic to delete post
+                        router.push('/admin');
+                      }
+                    }}
+                  >
+                    <Trash className="h-4 w-4" />
+                    Delete Post
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -627,594 +638,523 @@ export default function BlogPostEditor({ params }: { params: Promise<PageParams>
       )}
 
       <div className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="content" className="w-full">
-          <div className="flex justify-between items-center mb-6">
-            <TabsList>
-              <TabsTrigger value="content" className="gap-2 px-4">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Content</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="gap-2 px-4">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Settings</span>
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="gap-2 px-4">
-                <Eye className="h-4 w-4" />
-                <span className="hidden sm:inline">Preview</span>
-              </TabsTrigger>
-            </TabsList>
-            <div className="hidden sm:block">
-              <Button variant="ghost" size="sm" onClick={() => router.push('/admin/help/blog-editor')} className="text-muted-foreground">
-                <HelpCircle className="h-4 w-4 mr-2" />
-                Editor Help
-              </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content Area - 3/4 width on large screens */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Title Input - Full Width */}
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-lg flex items-center gap-2">
+                Title
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Post Title Best Practices</h4>
+                      <p className="text-sm">Keep titles under 60 characters for better SEO. Include keywords near the beginning.</p>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              </Label>
+              <Input
+                id="title"
+                value={post.title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="Enter a compelling title for your post"
+                className="text-lg py-6 text-2xl font-medium"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{post.title.length} characters</span>
+                <span className={post.title.length > 60 ? "text-amber-500" : "text-green-500"}>
+                  {post.title.length > 60 ? "Consider a shorter title for better SEO" : "Good title length"}
+                </span>
+              </div>
+            </div>
+
+            {/* Featured Image */}
+            <div className="space-y-2">
+              <Label className="text-lg flex items-center gap-2">
+                Featured Image
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Featured Image Tips</h4>
+                      <p className="text-sm">Use high-quality images with 16:9 aspect ratio (1920x1080px) for best results across all devices.</p>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              </Label>
+              {post.coverImage ? (
+                <div className="relative w-full h-[300px] rounded-lg overflow-hidden border bg-muted/20 group">
+                  <Image 
+                    src={post.coverImage}
+                    alt={post.title || "Featured image"}
+                    width={1920}
+                    height={1080}
+                    className="w-full h-full object-cover transition-opacity group-hover:opacity-50"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          // Open file picker
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          input.onchange = async (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (!file) return;
+                            
+                            try {
+                              const path = generateStoragePath('blog-images', file.name);
+                              const imageUrl = await uploadImage(file, path);
+                              setPost(prev => ({
+                                ...prev,
+                                coverImage: imageUrl,
+                                seo: {
+                                  ...prev.seo,
+                                  ogImage: imageUrl
+                                }
+                              }));
+                              toast.success('Featured image updated');
+                            } catch (error) {
+                              console.error('Error uploading image:', error);
+                              toast.error('Failed to upload image');
+                            }
+                          };
+                          input.click();
+                        }}
+                      >
+                        <ImagePlus className="h-4 w-4 mr-2" />
+                        Change Image
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setPost(prev => ({
+                            ...prev,
+                            coverImage: '',
+                            seo: {
+                              ...prev.seo,
+                              ogImage: prev.seo.ogImage === prev.coverImage ? '' : prev.seo.ogImage
+                            }
+                          }));
+                          toast.success('Featured image removed');
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-[200px] bg-muted rounded-lg flex flex-col items-center justify-center border border-dashed gap-4 hover:bg-muted/80 transition-colors cursor-pointer"
+                  onClick={() => {
+                    // Open file picker
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = async (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (!file) return;
+                      
+                      try {
+                        const path = generateStoragePath('blog-images', file.name);
+                        const imageUrl = await uploadImage(file, path);
+                        setPost(prev => ({
+                          ...prev,
+                          coverImage: imageUrl,
+                          seo: {
+                            ...prev.seo,
+                            ogImage: imageUrl
+                          }
+                        }));
+                        toast.success('Featured image added');
+                      } catch (error) {
+                        console.error('Error uploading image:', error);
+                        toast.error('Failed to upload image');
+                      }
+                    };
+                    input.click();
+                  }}
+                >
+                  <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                  <Button
+                    variant="secondary"
+                  >
+                    <ImagePlus className="h-4 w-4 mr-2" />
+                    Add Featured Image
+                  </Button>
+                  <p className="text-xs text-muted-foreground px-4 text-center">
+                    Drag and drop an image here or click to browse
+                  </p>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground flex items-center">
+                <InfoIcon className="h-3 w-3 mr-1 inline" />
+                Featured images should be high quality with a 16:9 aspect ratio (1920x1080px recommended)
+              </p>
+            </div>
+
+            {/* Excerpt */}
+            <div className="space-y-2">
+              <Label htmlFor="excerpt" className="text-lg flex items-center gap-2">
+                Excerpt
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Excerpt Tips</h4>
+                      <p className="text-sm">A good excerpt summarizes your post in 1-2 sentences and appears in search results and social shares.</p>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              </Label>
+              <Textarea
+                id="excerpt"
+                value={post.excerpt}
+                onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
+                placeholder="Enter a brief summary of your post (appears in search results and social shares)"
+                rows={3}
+                className="resize-y"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{post.excerpt.length} characters</span>
+                <span className={cn(
+                  post.excerpt.length > 160 ? "text-amber-500" : 
+                  post.excerpt.length < 50 && post.excerpt.length > 0 ? "text-amber-500" : 
+                  post.excerpt.length === 0 ? "text-muted-foreground" : "text-green-500"
+                )}>
+                  {post.excerpt.length > 160 ? "Too long for search results" : 
+                   post.excerpt.length < 50 && post.excerpt.length > 0 ? "Consider a longer excerpt" : 
+                   post.excerpt.length === 0 ? "Recommended: 50-160 characters" : "Good excerpt length"}
+                </span>
+              </div>
+            </div>
+
+            {/* Editor with reading time */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-lg">Content</Label>
+                <ReadingTime 
+                  content={post.content} 
+                  onTimeCalculated={(time) => {
+                    if (time !== post.readingTime) {
+                      setPost(prev => ({ ...prev, readingTime: time }));
+                    }
+                  }}
+                />
+              </div>
+              <div className="border rounded-lg shadow-sm">
+                <Editor
+                  value={post.content}
+                  onChange={(content: string) => setPost(prev => ({ ...prev, content }))}
+                  coverImage={post.coverImage ? {
+                    url: post.coverImage,
+                    alt: post.title,
+                    title: post.title,
+                    description: post.excerpt,
+                    width: 1920,
+                    height: 1080,
+                    loading: 'eager'
+                  } : null}
+                  onCoverImageChange={(imageData: ImageData | null) => {
+                    setPost(prev => ({
+                      ...prev,
+                      coverImage: imageData?.url || '',
+                      seo: {
+                        ...prev.seo,
+                        ogImage: imageData?.url || prev.seo.ogImage || ''
+                      }
+                    }));
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Content Tab */}
-          <TabsContent value="content" className="space-y-6">
-            {/* Quick tips alert */}
-            <Alert variant="default" className="bg-muted/50 mb-6">
-              <InfoIcon className="h-4 w-4" />
-              <AlertTitle>Quick Tips</AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc pl-5 text-sm">
-                  <li>Press Ctrl+S to save your draft at any time</li>
-                  <li>Images can be pasted directly into the editor</li>
-                  <li>Use the formatting toolbar to style your content</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
-            
-            <div className="space-y-6">
-              {/* Title Input - Full Width */}
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-lg flex items-center gap-2">
-                  Title
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-80">
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Post Title Best Practices</h4>
-                        <p className="text-sm">Keep titles under 60 characters for better SEO. Include keywords near the beginning.</p>
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
-                </Label>
-                <Input
-                  id="title"
-                  value={post.title}
-                  onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder="Enter a compelling title for your post"
-                  className="text-lg py-6 text-2xl"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{post.title.length} characters</span>
-                  <span className={post.title.length > 60 ? "text-amber-500" : "text-green-500"}>
-                    {post.title.length > 60 ? "Consider a shorter title for better SEO" : "Good title length"}
-                  </span>
+          {/* Sidebar - 1/4 width on large screens */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              {/* Publishing Options Card */}
+              <div className="bg-card rounded-lg border shadow-sm">
+                <div className="p-4 border-b bg-muted/50">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Send className="h-4 w-4 text-primary" />
+                    Publishing
+                  </h3>
                 </div>
-              </div>
-
-              {/* Featured Image */}
-              <div className="space-y-2">
-                <Label className="text-lg flex items-center gap-2">
-                  Featured Image
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-80">
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Featured Image Tips</h4>
-                        <p className="text-sm">Use high-quality images with 16:9 aspect ratio (1920x1080px) for best results across all devices.</p>
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
-                </Label>
-                {post.coverImage ? (
-                  <div className="relative w-full h-[300px] rounded-lg overflow-hidden border bg-muted/20 group">
-                    <Image 
-                      src={post.coverImage}
-                      alt={post.title || "Featured image"}
-                      width={1920}
-                      height={1080}
-                      className="w-full h-full object-cover transition-opacity group-hover:opacity-50"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="secondary"
-                          onClick={() => {
-                            // Open file picker
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*';
-                            input.onchange = async (e) => {
-                              const file = (e.target as HTMLInputElement).files?.[0];
-                              if (!file) return;
-                              
-                              try {
-                                const path = generateStoragePath('blog-images', file.name);
-                                const imageUrl = await uploadImage(file, path);
-                                setPost(prev => ({
-                                  ...prev,
-                                  coverImage: imageUrl,
-                                  seo: {
-                                    ...prev.seo,
-                                    ogImage: imageUrl
-                                  }
-                                }));
-                                toast.success('Featured image updated');
-                              } catch (error) {
-                                console.error('Error uploading image:', error);
-                                toast.error('Failed to upload image');
-                              }
-                            };
-                            input.click();
-                          }}
-                        >
-                          <ImagePlus className="h-4 w-4 mr-2" />
-                          Change Image
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => {
-                            setPost(prev => ({
-                              ...prev,
-                              coverImage: '',
-                              seo: {
-                                ...prev.seo,
-                                ogImage: prev.seo.ogImage === prev.coverImage ? '' : prev.seo.ogImage
-                              }
-                            }));
-                            toast.success('Featured image removed');
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Remove
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full h-[200px] bg-muted rounded-lg flex flex-col items-center justify-center border border-dashed gap-4 hover:bg-muted/80 transition-colors">
-                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        // Open file picker
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.onchange = async (e) => {
-                          const file = (e.target as HTMLInputElement).files?.[0];
-                          if (!file) return;
-                          
-                          try {
-                            const path = generateStoragePath('blog-images', file.name);
-                            const imageUrl = await uploadImage(file, path);
-                            setPost(prev => ({
-                              ...prev,
-                              coverImage: imageUrl,
-                              seo: {
-                                ...prev.seo,
-                                ogImage: imageUrl
-                              }
-                            }));
-                            toast.success('Featured image added');
-                          } catch (error) {
-                            console.error('Error uploading image:', error);
-                            toast.error('Failed to upload image');
-                          }
-                        };
-                        input.click();
-                      }}
-                    >
-                      <ImagePlus className="h-4 w-4 mr-2" />
-                      Add Featured Image
-                    </Button>
-                    <p className="text-xs text-muted-foreground px-4 text-center">
-                      Drag and drop an image here or click to browse
-                    </p>
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground flex items-center">
-                  <InfoIcon className="h-3 w-3 mr-1 inline" />
-                  Featured images should be high quality with a 16:9 aspect ratio (1920x1080px recommended)
-                </p>
-              </div>
-
-              {/* Excerpt */}
-              <div className="space-y-2">
-                <Label htmlFor="excerpt" className="text-lg flex items-center gap-2">
-                  Excerpt
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-80">
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Excerpt Tips</h4>
-                        <p className="text-sm">A good excerpt summarizes your post in 1-2 sentences and appears in search results and social shares.</p>
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
-                </Label>
-                <Textarea
-                  id="excerpt"
-                  value={post.excerpt}
-                  onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
-                  placeholder="Enter a brief summary of your post (appears in search results and social shares)"
-                  rows={3}
-                  className="resize-y"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{post.excerpt.length} characters</span>
-                  <span className={cn(
-                    post.excerpt.length > 160 ? "text-amber-500" : 
-                    post.excerpt.length < 50 && post.excerpt.length > 0 ? "text-amber-500" : 
-                    post.excerpt.length === 0 ? "text-muted-foreground" : "text-green-500"
-                  )}>
-                    {post.excerpt.length > 160 ? "Too long for search results" : 
-                     post.excerpt.length < 50 && post.excerpt.length > 0 ? "Consider a longer excerpt" : 
-                     post.excerpt.length === 0 ? "Recommended: 50-160 characters" : "Good excerpt length"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Editor with reading time */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-lg">Content</Label>
-                  <ReadingTime 
-                    content={post.content} 
-                    onTimeCalculated={(time) => {
-                      if (time !== post.readingTime) {
-                        setPost(prev => ({ ...prev, readingTime: time }));
+                <div className="p-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select 
+                      value={post.status}
+                      onValueChange={(value: 'draft' | 'published') => 
+                        setPost(prev => ({ ...prev, status: value }))
                       }
-                    }}
-                  />
-                </div>
-                <div className="border rounded-lg">
-                  <Editor
-                    value={post.content}
-                    onChange={(content: string) => setPost(prev => ({ ...prev, content }))}
-                    coverImage={post.coverImage ? {
-                      url: post.coverImage,
-                      alt: post.title,
-                      title: post.title,
-                      description: post.excerpt,
-                      width: 1920,
-                      height: 1080,
-                      loading: 'eager'
-                    } : null}
-                    onCoverImageChange={(imageData: ImageData | null) => {
-                      setPost(prev => ({
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="author">Author</Label>
+                    <Input
+                      id="author"
+                      value={post.author.name}
+                      onChange={(e) => setPost(prev => ({
                         ...prev,
-                        coverImage: imageData?.url || '',
-                        seo: {
-                          ...prev.seo,
-                          ogImage: imageData?.url || prev.seo.ogImage || ''
-                        }
-                      }));
-                    }}
-                  />
+                        author: { ...prev.author, name: e.target.value }
+                      }))}
+                      placeholder="Author name"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <Button
+                      onClick={() => handleSave(post.status)}
+                      disabled={saving}
+                      className="w-full gap-2"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </TabsContent>
 
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* URL Settings */}
-              <div className="space-y-4">
-                <div className="bg-card rounded-lg border p-6">
-                  <h3 className="text-lg font-semibold mb-4">URL Settings</h3>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="slug">
-                        URL Slug
-                        <span className="text-xs text-muted-foreground ml-2">
-                          (automatically generated from title)
-                        </span>
-                      </Label>
-                      <div className="flex gap-2 items-center">
-                        <span className="text-muted-foreground whitespace-nowrap">{BASE_URL}</span>
-                        <Input
-                          id="slug"
-                          value={post.slug}
-                          onChange={(e) => handleSlugChange(e.target.value)}
-                          placeholder="custom-url-slug"
-                          className="font-mono text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="permalink" className="flex items-center">
-                        Custom Permalink
-                        <span className="text-xs text-muted-foreground ml-2">
-                          (full URL, leave empty to use default)
-                        </span>
-                      </Label>
+              {/* URL Settings Card */}
+              <div className="bg-card rounded-lg border shadow-sm">
+                <div className="p-4 border-b bg-muted/50">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Link className="h-4 w-4 text-primary" />
+                    URL Settings
+                  </h3>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="slug">
+                      URL Slug
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (automatically generated from title)
+                      </span>
+                    </Label>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-muted-foreground whitespace-nowrap text-xs">{BASE_URL}</span>
                       <Input
-                        id="permalink"
-                        value={post.permalink}
-                        onChange={(e) => handlePermalinkChange(e.target.value)}
-                        placeholder="https://..."
+                        id="slug"
+                        value={post.slug}
+                        onChange={(e) => handleSlugChange(e.target.value)}
+                        placeholder="custom-url-slug"
                         className="font-mono text-sm"
                       />
                     </div>
-                    
-                    {post.isCustomPermalink && (
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const newSlug = slugify(post.title);
-                            setPost(prev => ({
-                              ...prev,
-                              slug: newSlug,
-                              permalink: `${BASE_URL}${newSlug}`,
-                              isCustomPermalink: false
-                            }));
-                          }}
-                        >
-                          Reset to Default URL
-                        </Button>
-                      </div>
-                    )}
                   </div>
-                </div>
 
-                {/* Categories and Tags */}
-                <div className="bg-card rounded-lg border p-6">
-                  <h3 className="text-lg font-semibold mb-4">Categories & Tags</h3>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="categories">Categories</Label>
-                      <Select 
-                        value={post.categories?.[0] || ''}
-                        onValueChange={(value) => {
-                          try {
-                            setPost(prev => ({ 
-                              ...prev, 
-                              categories: value ? [value] : [] 
-                            }));
-                            // Don't auto-save here, let the user explicitly save changes
-                            toast.success(`Category updated to: ${value || 'None'}`);
-                          } catch (error) {
-                            console.error('Error updating category:', error);
-                            toast.error('Failed to update category. Please try saving the post.');
-                          }
+                  <div className="space-y-2">
+                    <Label htmlFor="permalink" className="flex items-center">
+                      Custom Permalink
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (full URL, leave empty to use default)
+                      </span>
+                    </Label>
+                    <Input
+                      id="permalink"
+                      value={post.permalink}
+                      onChange={(e) => handlePermalinkChange(e.target.value)}
+                      placeholder="https://..."
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  
+                  {post.isCustomPermalink && (
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newSlug = slugify(post.title);
+                          setPost(prev => ({
+                            ...prev,
+                            slug: newSlug,
+                            permalink: `${BASE_URL}${newSlug}`,
+                            isCustomPermalink: false
+                          }));
                         }}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Travel">Travel</SelectItem>
-                          <SelectItem value="Lifestyle">Lifestyle</SelectItem>
-                          <SelectItem value="Health">Health</SelectItem>
-                          <SelectItem value="Technology">Technology</SelectItem>
-                          <SelectItem value="Food">Food</SelectItem>
-                          <SelectItem value="Fashion">Fashion</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Current category: {post.categories?.[0] || 'None'} (Save post to apply changes)
-                      </p>
+                        Reset to Default URL
+                      </Button>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="tags">Tags</Label>
-                      <Input 
-                        placeholder="Enter tags separated by commas"
-                        value={post.tags.join(', ')}
-                        onChange={(e) => {
-                          const tags = e.target.value
-                            .split(',')
-                            .map(tag => tag.trim())
-                            .filter(Boolean);
-                          setPost(prev => ({ ...prev, tags }));
-                        }}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Example: programming, web development, react
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {/* SEO Settings */}
-              <div className="space-y-4">
-                <div className="bg-card rounded-lg border p-6">
-                  <h3 className="text-lg font-semibold mb-4">SEO Settings</h3>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="metaTitle">Meta Title</Label>
-                      <Input
-                        id="metaTitle"
-                        value={post.seo.metaTitle}
-                        onChange={(e) => setPost(prev => ({
-                          ...prev,
-                          seo: { ...prev.seo, metaTitle: e.target.value }
-                        }))}
-                        placeholder="Enter meta title"
-                      />
-                      <div className="flex justify-between">
-                        <p className="text-xs text-muted-foreground">
-                          {post.seo.metaTitle.length} characters
-                        </p>
-                        <p className={cn(
-                          "text-xs",
-                          post.seo.metaTitle.length > 60 ? "text-red-500" : "text-muted-foreground"
-                        )}>
-                          Recommended: max 60 characters
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="metaDescription">Meta Description</Label>
-                      <Textarea
-                        id="metaDescription"
-                        value={post.seo.metaDescription}
-                        onChange={(e) => setPost(prev => ({
-                          ...prev,
-                          seo: { ...prev.seo, metaDescription: e.target.value }
-                        }))}
-                        placeholder="Enter meta description"
-                        rows={3}
-                      />
-                      <div className="flex justify-between">
-                        <p className="text-xs text-muted-foreground">
-                          {post.seo.metaDescription.length} characters
-                        </p>
-                        <p className={cn(
-                          "text-xs",
-                          post.seo.metaDescription.length > 160 ? "text-red-500" : "text-muted-foreground"
-                        )}>
-                          Recommended: max 160 characters
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="metaKeywords">Meta Keywords</Label>
-                      <Input
-                        id="metaKeywords"
-                        value={post.seo.metaKeywords}
-                        onChange={(e) => setPost(prev => ({
-                          ...prev,
-                          seo: { ...prev.seo, metaKeywords: e.target.value }
-                        }))}
-                        placeholder="keyword1, keyword2, keyword3"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="canonicalUrl">Canonical URL (optional)</Label>
-                      <Input
-                        id="canonicalUrl"
-                        value={post.seo.canonicalUrl || ''}
-                        onChange={(e) => setPost(prev => ({
-                          ...prev,
-                          seo: { ...prev.seo, canonicalUrl: e.target.value }
-                        }))}
-                        placeholder="https://..."
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="ogImage">Social Image URL</Label>
-                      <Input
-                        id="ogImage"
-                        value={post.seo.ogImage || post.coverImage || ''}
-                        onChange={(e) => setPost(prev => ({
-                          ...prev,
-                          seo: { ...prev.seo, ogImage: e.target.value }
-                        }))}
-                        placeholder="Uses featured image by default"
-                        className="text-muted-foreground"
-                      />
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 pt-2">
-                      <input
-                        type="checkbox"
-                        id="noIndex"
-                        checked={post.seo.noIndex}
-                        onChange={(e) => setPost(prev => ({
-                          ...prev,
-                          seo: { ...prev.seo, noIndex: e.target.checked }
-                        }))}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="noIndex" className="text-sm font-normal">
-                        Hide from search engines
-                      </Label>
-                    </div>
-                  </div>
+              {/* Categories and Tags Card */}
+              <div className="bg-card rounded-lg border shadow-sm">
+                <div className="p-4 border-b bg-muted/50">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                    Categories & Tags
+                  </h3>
                 </div>
-                
-                {/* Publishing Options */}
-                <div className="bg-card rounded-lg border p-6">
-                  <h3 className="text-lg font-semibold mb-4">Publishing Options</h3>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="status">Status</Label>
-                      <Select 
-                        value={post.status}
-                        onValueChange={(value: 'draft' | 'published') => 
-                          setPost(prev => ({ ...prev, status: value }))
+                <div className="p-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="categories">Category</Label>
+                    <Select 
+                      value={post.categories?.[0] || ''}
+                      onValueChange={(value) => {
+                        try {
+                          setPost(prev => ({ 
+                            ...prev, 
+                            categories: value ? [value] : [] 
+                          }));
+                          // Don't auto-save here, let the user explicitly save changes
+                          toast.success(`Category updated to: ${value || 'None'}`);
+                        } catch (error) {
+                          console.error('Error updating category:', error);
+                          toast.error('Failed to update category. Please try saving the post.');
                         }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="published">Published</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="author">Author</Label>
-                      <Input
-                        id="author"
-                        value={post.author.name}
-                        onChange={(e) => setPost(prev => ({
-                          ...prev,
-                          author: { ...prev.author, name: e.target.value }
-                        }))}
-                        placeholder="Author name"
-                      />
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Travel">Travel</SelectItem>
+                        <SelectItem value="Lifestyle">Lifestyle</SelectItem>
+                        <SelectItem value="Health">Health</SelectItem>
+                        <SelectItem value="Technology">Technology</SelectItem>
+                        <SelectItem value="Food">Food</SelectItem>
+                        <SelectItem value="Fashion">Fashion</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="tags">Tags</Label>
+                    <Input 
+                      placeholder="Enter tags separated by commas"
+                      value={post.tags.join(', ')}
+                      onChange={(e) => {
+                        const tags = e.target.value
+                          .split(',')
+                          .map(tag => tag.trim())
+                          .filter(Boolean);
+                        setPost(prev => ({ ...prev, tags }));
+                      }}
+                    />
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {post.tags.map((tag, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </TabsContent>
 
-          {/* Preview Tab */}
-          <TabsContent value="preview">
-            <div className="border rounded-lg bg-white dark:bg-zinc-900 shadow-sm">
-              <div className="border-b px-4 py-2 flex justify-between items-center bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  <h3 className="font-medium">Preview Mode</h3>
+              {/* SEO Settings Card */}
+              <div className="bg-card rounded-lg border shadow-sm">
+                <div className="p-4 border-b bg-muted/50">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Settings className="h-4 w-4 text-primary" />
+                    SEO Settings
+                  </h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Select defaultValue="desktop">
-                    <SelectTrigger className="w-[180px] h-8">
-                      <SelectValue placeholder="Select device" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mobile">Mobile View</SelectItem>
-                      <SelectItem value="tablet">Tablet View</SelectItem>
-                      <SelectItem value="desktop">Desktop View</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="sm" onClick={() => window.open(`/blog/preview/${post.id}`, '_blank')}>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open in New Tab
-                  </Button>
+                <div className="p-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="metaTitle">Meta Title</Label>
+                    <Input
+                      id="metaTitle"
+                      value={post.seo.metaTitle}
+                      onChange={(e) => setPost(prev => ({
+                        ...prev,
+                        seo: { ...prev.seo, metaTitle: e.target.value }
+                      }))}
+                      placeholder="Enter meta title"
+                    />
+                    <div className="flex justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {post.seo.metaTitle.length} characters
+                      </p>
+                      <p className={cn(
+                        "text-xs",
+                        post.seo.metaTitle.length > 60 ? "text-red-500" : "text-muted-foreground"
+                      )}>
+                        Recommended: max 60 characters
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="metaDescription">Meta Description</Label>
+                    <Textarea
+                      id="metaDescription"
+                      value={post.seo.metaDescription}
+                      onChange={(e) => setPost(prev => ({
+                        ...prev,
+                        seo: { ...prev.seo, metaDescription: e.target.value }
+                      }))}
+                      placeholder="Enter meta description"
+                      rows={3}
+                    />
+                    <div className="flex justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {post.seo.metaDescription.length} characters
+                      </p>
+                      <p className={cn(
+                        "text-xs",
+                        post.seo.metaDescription.length > 160 ? "text-red-500" : "text-muted-foreground"
+                      )}>
+                        Recommended: max 160 characters
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="noIndex"
+                      checked={post.seo.noIndex}
+                      onChange={(e) => setPost(prev => ({
+                        ...prev,
+                        seo: { ...prev.seo, noIndex: e.target.checked }
+                      }))}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="noIndex" className="text-sm font-normal">
+                      Hide from search engines
+                    </Label>
+                  </div>
                 </div>
-              </div>
-              <div className="p-6 overflow-auto max-h-[calc(100vh-20rem)]">
-                <Preview post={post} />
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
       
       {/* Keyboard shortcuts handler */}
