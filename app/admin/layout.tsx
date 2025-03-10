@@ -109,7 +109,7 @@ export default function AdminLayout({
         if (!auth) {
           console.error('Auth not initialized')
           setIsLoading(false)
-          router.push('/auth?redirect=/admin')
+          router.replace('/auth?redirect=/admin')
           return
         }
         
@@ -117,44 +117,42 @@ export default function AdminLayout({
         if (!user) {
           console.log('No user logged in, redirecting to auth page')
           setIsLoading(false)
-          router.push('/auth?redirect=/admin')
+          router.replace('/auth?redirect=/admin')
           return
         }
 
-        try {
-          await user.getIdToken(true)
-          
-          if (!db) {
-            console.error('Firestore not initialized')
-            setIsLoading(false)
-            router.push('/')
-            return
-          }
-          
-          const userDocRef = doc(db, 'users', user.uid)
-          const userDocSnap = await getDoc(userDocRef)
-          
-          if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
-            setIsLoading(false)
-            router.push('/')
-            return
-          }
-
-          setIsAdmin(true)
-          setUserName(user.displayName || '')
-          setUserEmail(user.email || '')
-        } catch (error) {
-          console.error('Error checking admin status:', error)
+        // Get fresh token and user claims
+        const token = await user.getIdToken(true)
+        
+        if (!db) {
+          console.error('Firestore not initialized')
           setIsLoading(false)
-          router.push('/')
+          router.replace('/')
+          return
         }
+        
+        const userDocRef = doc(db, 'users', user.uid)
+        const userDocSnap = await getDoc(userDocRef)
+          
+        if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
+          console.log('User is not an admin')
+          setIsLoading(false)
+          router.replace('/')
+          return
+        }
+
+        // Set auth cookie with proper attributes
+        const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
+        document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; ${secure}`
+
+        setIsAdmin(true)
+        setUserName(user.displayName || '')
+        setUserEmail(user.email || '')
+        setIsLoading(false)
       } catch (error) {
         console.error('Error in checkAdminStatus:', error)
         setIsLoading(false)
-        router.push('/auth?redirect=/admin')
-      } finally {
-        // Ensure loading state is always updated
-        setIsLoading(false)
+        router.replace('/auth?redirect=/admin')
       }
     }
 
@@ -165,7 +163,7 @@ export default function AdminLayout({
       if (isLoading) {
         console.log('Loading timeout reached, redirecting to auth page')
         setIsLoading(false)
-        router.push('/auth?redirect=/admin')
+        router.replace('/auth?redirect=/admin')
       }
     }, 5000) // 5 seconds timeout
     
@@ -174,27 +172,24 @@ export default function AdminLayout({
 
   const handleSignOut = async () => {
     try {
-      // First clear all cookies
-      document.cookie = '__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=' + window.location.hostname;
-      document.cookie = 'firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=' + window.location.hostname;
+      setIsLoading(true)
       
-      // Clear any local storage items related to Firebase auth
-      localStorage.removeItem('firebase:authUser:' + process.env.NEXT_PUBLIC_FIREBASE_API_KEY + ':[DEFAULT]');
+      // Clear cookies with proper attributes
+      const domain = window.location.hostname
+      const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
+      document.cookie = `__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain}; ${secure}`
+      document.cookie = `firebaseToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain}; ${secure}`
       
-      // Then sign out from Firebase
+      // Sign out from Firebase
       if (auth) {
-        await signOut(auth);
+        await signOut(auth)
       }
       
-      // Use a small delay to ensure everything is cleared before redirecting
-      setTimeout(() => {
-        // Force reload to clear any cached authentication state
-        window.location.href = '/auth';
-      }, 100);
+      // Use router for client-side navigation
+      router.replace('/auth')
     } catch (error) {
-      console.error('Error signing out:', error);
-      // Even if there's an error, try to redirect to auth page
-      window.location.href = '/auth';
+      console.error('Error signing out:', error)
+      router.replace('/auth')
     }
   }
 

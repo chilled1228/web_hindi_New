@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers';
 import { AuthButtons } from '@/components/auth/auth-buttons';
+import { Loader2 } from 'lucide-react';
 
 export default function AuthPage() {
   const { user, loading } = useAuth();
@@ -14,6 +15,7 @@ export default function AuthPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect') || '/';
       
+      // Use replace to prevent back button from returning to auth page
       router.replace(redirectUrl);
     }
   }, [user, loading, router]);
@@ -21,13 +23,23 @@ export default function AuthPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </div>
       </div>
     );
   }
 
   if (user) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
