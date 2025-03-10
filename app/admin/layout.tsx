@@ -105,75 +105,64 @@ export default function AdminLayout({
 
   const handleSignOut = async () => {
     try {
-      // Clear all auth state from localStorage
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('firebase:') || key.includes('auth')) {
-          localStorage.removeItem(key)
-        }
-      })
+      setIsLoading(true)
       
-      // Clear all session storage
-      Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('firebase:') || key.includes('auth')) {
-          sessionStorage.removeItem(key)
-        }
-      })
-      
-      // Clear cookies
-      const domains = [window.location.hostname, `.${window.location.hostname}`]
-      const paths = ['/', '/admin', '/auth']
-      
-      domains.forEach(domain => {
-        paths.forEach(path => {
-          document.cookie = `__session=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain};`
-          document.cookie = `firebaseToken=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain};`
-        })
-      })
-      
-      // Sign out from Firebase
+      // First sign out from Firebase
       if (auth) {
         await signOut(auth)
       }
+
+      // Then clear all storage and cookies
+      Object.keys(localStorage).forEach(key => {
+        localStorage.removeItem(key)
+      })
       
-      // Force a clean navigation to auth page
-      window.location.href = '/auth'
+      Object.keys(sessionStorage).forEach(key => {
+        sessionStorage.removeItem(key)
+      })
+      
+      // Clear cookies with all possible combinations
+      const domains = [window.location.hostname, `.${window.location.hostname}`, '']
+      const paths = ['/', '/admin', '/auth', '']
+      
+      domains.forEach(domain => {
+        paths.forEach(path => {
+          const cookieStr = domain ? `Domain=${domain};` : ''
+          const pathStr = path ? `Path=${path};` : ''
+          document.cookie = `__session=; ${pathStr} ${cookieStr} Expires=Thu, 01 Jan 1970 00:00:01 GMT;`
+          document.cookie = `firebaseToken=; ${pathStr} ${cookieStr} Expires=Thu, 01 Jan 1970 00:00:01 GMT;`
+        })
+      })
+
+      // Force reload to clear any cached states
+      window.location.replace('/auth')
     } catch (error) {
       console.error('Error signing out:', error)
-      window.location.href = '/auth'
+      window.location.replace('/auth')
     }
   }
 
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        if (!auth) {
-          console.error('Auth not initialized')
-          window.location.href = '/auth'
-          return
-        }
-        
-        const user = auth.currentUser
-        if (!user) {
-          console.log('No user logged in, redirecting to auth page')
-          window.location.href = '/auth'
+        if (!auth || !auth.currentUser) {
+          window.location.replace('/auth')
           return
         }
 
         // Get fresh token and user claims
-        const token = await user.getIdToken(true)
+        const token = await auth.currentUser.getIdToken(true)
         
         if (!db) {
-          console.error('Firestore not initialized')
-          window.location.href = '/auth'
+          window.location.replace('/auth')
           return
         }
         
-        const userDocRef = doc(db, 'users', user.uid)
+        const userDocRef = doc(db, 'users', auth.currentUser.uid)
         const userDocSnap = await getDoc(userDocRef)
           
         if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
-          console.log('User is not an admin')
-          window.location.href = '/auth'
+          window.location.replace('/auth')
           return
         }
 
@@ -182,32 +171,44 @@ export default function AdminLayout({
         document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; ${secure}`
 
         setIsAdmin(true)
-        setUserName(user.displayName || '')
-        setUserEmail(user.email || '')
+        setUserName(auth.currentUser.displayName || '')
+        setUserEmail(auth.currentUser.email || '')
         setIsLoading(false)
       } catch (error) {
         console.error('Error in checkAdminStatus:', error)
-        window.location.href = '/auth'
+        window.location.replace('/auth')
       }
     }
 
+    // Add auth state listener
+    const unsubscribe = auth?.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.replace('/auth')
+        return
+      }
+      checkAdminStatus()
+    })
+
+    // Initial check
     checkAdminStatus()
+
+    return () => {
+      unsubscribe?.()
+    }
   }, [])
 
-  if (isLoading) {
+  // Prevent flash of content during loading or redirect
+  if (isLoading || !isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading admin dashboard...</p>
+          <p className="text-muted-foreground">
+            {isLoading ? "Loading admin dashboard..." : "Redirecting..."}
+          </p>
         </div>
       </div>
     )
-  }
-
-  if (!isAdmin) {
-    window.location.href = '/auth'
-    return null
   }
 
   return (
