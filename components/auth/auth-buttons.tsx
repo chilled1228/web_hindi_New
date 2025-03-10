@@ -28,20 +28,19 @@ export function AuthButtons() {
     setError('');
     
     try {
-      // Get the token and set it in a cookie
+      // Get the token
       const token = await user.getIdToken(true);
       
-      // Set the cookie with proper attributes
-      document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Strict`;
+      // Set the cookie with proper attributes for production
+      const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : '';
+      document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; ${secure}`;
       
       // Get the redirect URL from query parameters
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect') || '/';
       
-      // Use a small delay to ensure cookies are set before redirecting
-      setTimeout(() => {
-        window.location.href = redirectUrl;
-      }, 100);
+      // Use router.replace for navigation
+      router.replace(redirectUrl);
     } catch (error) {
       console.error('Error setting authentication token:', error);
       setError('Failed to complete authentication. Please try again.');
