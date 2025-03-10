@@ -104,6 +104,12 @@ export default function AdminLayout({
   const breadcrumbs = generateBreadcrumbs();
 
   useEffect(() => {
+    // If we're logging out, don't check admin status
+    if (sessionStorage.getItem('isLoggingOut')) {
+      router.replace('/auth');
+      return;
+    }
+
     const checkAdminStatus = async () => {
       try {
         if (!auth) {
@@ -117,6 +123,7 @@ export default function AdminLayout({
         if (!user) {
           console.log('No user logged in, redirecting to auth page')
           setIsLoading(false)
+          setIsAdmin(false)
           router.replace('/auth?redirect=/admin')
           return
         }
@@ -127,6 +134,7 @@ export default function AdminLayout({
         if (!db) {
           console.error('Firestore not initialized')
           setIsLoading(false)
+          setIsAdmin(false)
           router.replace('/')
           return
         }
@@ -137,6 +145,7 @@ export default function AdminLayout({
         if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
           console.log('User is not an admin')
           setIsLoading(false)
+          setIsAdmin(false)
           router.replace('/')
           return
         }
@@ -152,6 +161,7 @@ export default function AdminLayout({
       } catch (error) {
         console.error('Error in checkAdminStatus:', error)
         setIsLoading(false)
+        setIsAdmin(false)
         router.replace('/auth?redirect=/admin')
       }
     }
@@ -163,6 +173,7 @@ export default function AdminLayout({
       if (isLoading) {
         console.log('Loading timeout reached, redirecting to auth page')
         setIsLoading(false)
+        setIsAdmin(false)
         router.replace('/auth?redirect=/admin')
       }
     }, 5000) // 5 seconds timeout
@@ -172,6 +183,8 @@ export default function AdminLayout({
 
   const handleSignOut = async () => {
     try {
+      // Set logging out flag first
+      sessionStorage.setItem('isLoggingOut', 'true')
       setIsLoading(true)
       
       // First clear all auth state from localStorage
@@ -181,9 +194,9 @@ export default function AdminLayout({
         }
       })
       
-      // Clear session storage
+      // Clear session storage except isLoggingOut flag
       Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('firebase:') || key.includes('auth')) {
+        if ((key.startsWith('firebase:') || key.includes('auth')) && key !== 'isLoggingOut') {
           sessionStorage.removeItem(key)
         }
       })
@@ -204,15 +217,30 @@ export default function AdminLayout({
         await signOut(auth)
       }
       
-      // Small delay to ensure all cleanup is complete
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Clear admin state
+      setIsAdmin(false)
+      setUserName('')
+      setUserEmail('')
       
-      // Force a hard navigation to the auth page
-      window.location.href = '/auth'
+      // Immediate redirect to auth page
+      router.replace('/auth')
     } catch (error) {
       console.error('Error signing out:', error)
-      window.location.href = '/auth'
+      // Ensure we redirect to auth page even on error
+      router.replace('/auth')
     }
+  }
+
+  // Show loading screen during logout
+  if (sessionStorage.getItem('isLoggingOut')) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Signing out...</p>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -231,7 +259,7 @@ export default function AdminLayout({
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
         <p className="text-muted-foreground mb-4">You need to be an admin to access this page.</p>
-        <Button onClick={() => router.push('/')}>Go Home</Button>
+        <Button onClick={() => router.replace('/')}>Go Home</Button>
       </div>
     )
   }

@@ -13,11 +13,15 @@ export default function AuthPage() {
 
   useEffect(() => {
     // Check if this is a post-logout navigation
-    const isPostLogoutNav = document.referrer.includes('/admin');
+    const isPostLogoutNav = Boolean(sessionStorage.getItem('isLoggingOut'));
     setIsPostLogout(isPostLogoutNav);
 
     // Clear any stale auth state on mount
     if (isPostLogoutNav) {
+      // Clear the logging out flag
+      sessionStorage.removeItem('isLoggingOut');
+      
+      // Clear any remaining auth state
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('firebase:') || key.includes('auth')) {
           localStorage.removeItem(key);
@@ -29,6 +33,20 @@ export default function AuthPage() {
           sessionStorage.removeItem(key);
         }
       });
+
+      // Clear cookies
+      const domains = [window.location.hostname, `.${window.location.hostname}`];
+      const paths = ['/', '/admin', '/auth'];
+      
+      domains.forEach(domain => {
+        paths.forEach(path => {
+          document.cookie = `__session=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain};`;
+          document.cookie = `firebaseToken=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${domain};`;
+        });
+      });
+
+      // Force reload after cleanup to ensure fresh state
+      window.location.reload();
     }
   }, []);
 
@@ -36,24 +54,18 @@ export default function AuthPage() {
     if (user && !loading) {
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect') || '/';
-      
-      // Add a small delay for post-logout redirects
-      if (isPostLogout) {
-        setTimeout(() => {
-          router.replace(redirectUrl);
-        }, 100);
-      } else {
-        router.replace(redirectUrl);
-      }
+      router.replace(redirectUrl);
     }
-  }, [user, loading, router, isPostLogout]);
+  }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || isPostLogout) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Checking authentication...</p>
+          <p className="text-muted-foreground">
+            {isPostLogout ? "Finalizing logout..." : "Checking authentication..."}
+          </p>
         </div>
       </div>
     );
