@@ -1,104 +1,89 @@
-'use client';
+import { Metadata } from 'next'
+import { defaultMetadata } from '../metadata'
+import { Suspense } from "react"
+import { ArrowRight, AlertTriangle, Scale, BookOpen, FileWarning, Shield, ExternalLink, HelpCircle, Mail, Users } from 'lucide-react';
+import { AnimatedBackground } from '@/components/ui/animated-background'
 
-import { ArrowRight, AlertTriangle, Scale, BookOpen, FileWarning, Shield, ExternalLink, HelpCircle } from 'lucide-react';
+// Generate metadata for SEO
+export const metadata: Metadata = {
+  ...defaultMetadata,
+  title: 'Disclaimer - Naya Bharat Yojana',
+  description: 'Disclaimer for Naya Bharat Yojana platform. Understand our limitations of liability and terms of use.',
+}
 
 export default function Disclaimer() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/50">
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-0 w-64 h-64 bg-gray-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-gray-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 py-16 relative">
+    <>
+      <AnimatedBackground />
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         {/* Header */}
         <div className="mb-16 text-center">
-          <div className="inline-flex items-center justify-center p-2 mb-4 rounded-2xl bg-gray-100 dark:bg-gray-800/50 backdrop-blur-sm">
-            <AlertTriangle className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+          <div className="inline-flex items-center justify-center p-2 mb-4 rounded-2xl bg-white/20 backdrop-blur-sm">
+            <AlertTriangle className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-white">
             Disclaimer
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-white/80 text-lg">
             Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
 
         {/* Introduction Section */}
         <div className="max-w-3xl mx-auto mb-16 text-center">
-          <p className="text-lg text-muted-foreground/90 leading-relaxed mb-6">
-            Please read this disclaimer carefully before using NayaBharatYojana. By accessing and using our platform, you acknowledge and agree to the terms outlined in this disclaimer.
+          <p className="text-lg text-white/90 leading-relaxed mb-6">
+            The information provided on NayaBharatYojana is for general informational purposes only. All information is provided in good faith, however, we make no representation or warranty regarding the accuracy, validity, or completeness of any information on this website.
           </p>
-          <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground/80">
+          <div className="flex items-center justify-center gap-3 text-sm text-white/80">
             <span className="flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4" />
-              Use at own risk
+              <FileWarning className="w-4 h-4" />
+              Use At Your Own Risk
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white/50" />
             <span className="flex items-center gap-1.5">
               <Scale className="w-4 h-4" />
-              Legal compliance
+              No Legal Advice
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white/50" />
             <span className="flex items-center gap-1.5">
-              <Shield className="w-4 h-4" />
-              No warranty
+              <BookOpen className="w-4 h-4" />
+              Educational Only
             </span>
           </div>
         </div>
 
         {/* Content */}
-        <div className="grid gap-12">
-          <section className="group rounded-3xl bg-gradient-to-b from-background to-gray-100/10 dark:to-gray-800/10 p-8 transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-800/20 border border-gray-200/30 dark:border-gray-800/30">
+        <div className="grid gap-8">
+          <section className="group rounded-3xl bg-white/90 backdrop-blur-sm p-8 transition-all duration-300 hover:shadow-lg hover:shadow-white/10">
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 group-hover:scale-110 transition-transform duration-300">
-                <FileWarning className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              <div className="p-3 rounded-2xl bg-[#F1F1FF] group-hover:scale-110 transition-transform duration-300">
+                <AlertTriangle className="w-6 h-6 text-gray-600" />
               </div>
               <div className="flex-1">
                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                  General Disclaimer
+                  No Liability
                   <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
                 </h2>
-                <div className="prose prose-gray dark:prose-invert">
+                <div className="prose prose-gray">
                   <p className="text-muted-foreground/90">
-                    The information provided on NayaBharatYojana is for general informational and educational purposes only. We make no representations or warranties of any kind, express or implied, about the completeness, accuracy, reliability, suitability, or availability of the information, products, services, or related graphics contained on the platform.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="group rounded-3xl bg-gradient-to-b from-background to-gray-100/10 dark:to-gray-800/10 p-8 transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-800/20 border border-gray-200/30 dark:border-gray-800/30">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 group-hover:scale-110 transition-transform duration-300">
-                <Scale className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                  User Responsibility
-                  <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
-                </h2>
-                <div className="prose prose-gray dark:prose-invert">
-                  <p className="text-muted-foreground/90">
-                    By using NayaBharatYojana, you acknowledge and agree that:
+                    Under no circumstances shall we have any liability to you for:
                   </p>
                   <ul className="mt-4 space-y-3 text-muted-foreground/90">
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      You use the platform and its content at your own risk
+                      Any loss or damage incurred from using our website
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      You are responsible for ensuring compliance with applicable laws and regulations
+                      Decisions made based on information provided
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      You will not use the platform for any illegal or unauthorized purposes
+                      Inaccuracies or omissions in our content
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      You are responsible for the content you generate using our prompts
+                      Technical issues or unavailability of the website
                     </li>
                   </ul>
                 </div>
@@ -106,36 +91,36 @@ export default function Disclaimer() {
             </div>
           </section>
 
-          <section className="group rounded-3xl bg-gradient-to-b from-background to-gray-100/10 dark:to-gray-800/10 p-8 transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-800/20 border border-gray-200/30 dark:border-gray-800/30">
+          <section className="group rounded-3xl bg-white/90 backdrop-blur-sm p-8 transition-all duration-300 hover:shadow-lg hover:shadow-white/10">
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 group-hover:scale-110 transition-transform duration-300">
-                <BookOpen className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              <div className="p-3 rounded-2xl bg-[#F1F1FF] group-hover:scale-110 transition-transform duration-300">
+                <Scale className="w-6 h-6 text-gray-600" />
               </div>
               <div className="flex-1">
                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                  Content Disclaimer
+                  Not Legal or Professional Advice
                   <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
                 </h2>
-                <div className="prose prose-gray dark:prose-invert">
+                <div className="prose prose-gray">
                   <p className="text-muted-foreground/90">
-                    The prompts and generated content on our platform:
+                    Important considerations regarding our content:
                   </p>
                   <ul className="mt-4 space-y-3 text-muted-foreground/90">
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      May not be suitable for all purposes or contexts
+                      Not a substitute for professional advice
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      Should be reviewed and verified before use in any professional or critical context
+                      Consult qualified professionals for specific situations
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      May require modification to meet specific needs or requirements
+                      Information may not be applicable to your circumstances
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      Are not guaranteed to produce specific results or outcomes
+                      Laws and regulations vary by location
                     </li>
                   </ul>
                 </div>
@@ -143,32 +128,36 @@ export default function Disclaimer() {
             </div>
           </section>
 
-          <section className="group rounded-3xl bg-gradient-to-b from-background to-gray-100/10 dark:to-gray-800/10 p-8 transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-800/20 border border-gray-200/30 dark:border-gray-800/30">
+          <section className="group rounded-3xl bg-white/90 backdrop-blur-sm p-8 transition-all duration-300 hover:shadow-lg hover:shadow-white/10">
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 group-hover:scale-110 transition-transform duration-300">
-                <ExternalLink className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              <div className="p-3 rounded-2xl bg-[#F1F1FF] group-hover:scale-110 transition-transform duration-300">
+                <ExternalLink className="w-6 h-6 text-gray-600" />
               </div>
               <div className="flex-1">
                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                  Third-Party Links
+                  External Links
                   <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
                 </h2>
-                <div className="prose prose-gray dark:prose-invert">
+                <div className="prose prose-gray">
                   <p className="text-muted-foreground/90">
-                    Our platform may contain links to external websites or services. We are not responsible for:
+                    Regarding external websites linked from our platform:
                   </p>
                   <ul className="mt-4 space-y-3 text-muted-foreground/90">
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      The content or accuracy of any linked websites
+                      We do not control third-party websites
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      The privacy practices of third-party websites
+                      Not responsible for their content or practices
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                      Any damages or losses incurred through the use of external links
+                      Inclusion of links does not imply endorsement
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                      Use external sites at your own risk
                     </li>
                   </ul>
                 </div>
@@ -177,27 +166,27 @@ export default function Disclaimer() {
           </section>
 
           {/* Contact Section with Special Styling */}
-          <section className="group rounded-3xl bg-gradient-to-b from-gray-100 to-background dark:from-gray-800 dark:to-background p-8 transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/20 dark:hover:shadow-gray-800/20 border border-gray-200/30 dark:border-gray-800/30">
+          <section className="group rounded-3xl bg-white/90 backdrop-blur-sm p-8 transition-all duration-300 hover:shadow-lg hover:shadow-white/10">
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-2xl bg-gray-200 dark:bg-gray-700 group-hover:scale-110 transition-transform duration-300">
-                <HelpCircle className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              <div className="p-3 rounded-2xl bg-[#F1F1FF] group-hover:scale-110 transition-transform duration-300">
+                <HelpCircle className="w-6 h-6 text-gray-600" />
               </div>
               <div className="flex-1">
                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                  Questions or Concerns?
+                  Questions About This Disclaimer
                   <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
                 </h2>
-                <div className="prose prose-gray dark:prose-invert">
+                <div className="prose prose-gray">
                   <p className="text-muted-foreground/90">
-                    If you have any questions about this Disclaimer, please contact us:
+                    If you have any questions about this disclaimer, please contact us:
                   </p>
                   <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                    <a href="mailto:support@nayabharatyojana.in" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
-                      <ExternalLink className="w-4 h-4" />
-                      support@nayabharatyojana.in
+                    <a href="mailto:legal@nayabharatyojana.in" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F1F1FF] hover:bg-[#E1E1FF] transition-colors duration-200">
+                      <Mail className="w-4 h-4" />
+                      legal@nayabharatyojana.in
                     </a>
-                    <a href="/contact" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
-                      <HelpCircle className="w-4 h-4" />
+                    <a href="/contact" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F1F1FF] hover:bg-[#E1E1FF] transition-colors duration-200">
+                      <Users className="w-4 h-4" />
                       Contact Form
                     </a>
                   </div>
@@ -207,6 +196,6 @@ export default function Disclaimer() {
           </section>
         </div>
       </div>
-    </div>
+    </>
   );
 } 

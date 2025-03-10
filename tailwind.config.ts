@@ -80,6 +80,14 @@ const config: Config = {
         'pulse-slow': {
           '0%, 100%': { opacity: '0.3' },
           '50%': { opacity: '0.1' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '200% 0' },
+          '100%': { backgroundPosition: '-200% 0' },
+        },
+        pulse: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
         }
       },
       animation: {
@@ -87,6 +95,8 @@ const config: Config = {
         'float-slower': 'float-slower 12s ease-in-out infinite',
         'gradient': 'gradient 15s ease infinite',
         'pulse-slow': 'pulse-slow 20s ease-in-out infinite',
+        'shimmer': 'shimmer 2s ease-in-out infinite',
+        'pulse': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       backgroundSize: {
         'gradient-size': '200% 200%',

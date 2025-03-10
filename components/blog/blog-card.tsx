@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface BlogCardProps {
   title: string;
@@ -42,6 +43,7 @@ export function BlogCard({
 }: BlogCardProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   useEffect(() => {
     setMounted(true);
@@ -85,10 +87,14 @@ export function BlogCard({
           {/* Image Container */}
           {coverImage ? (
             <div className="absolute inset-0 w-full h-full">
+              {!imageLoaded && (
+                <Skeleton className="absolute inset-0 w-full h-full" />
+              )}
               <img
                 src={coverImage}
                 alt={title}
-                className="w-full h-full object-cover"
+                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setImageLoaded(true)}
               />
               <div className="absolute inset-0 bg-black/10" />
             </div>
@@ -130,11 +136,17 @@ export function BlogCard({
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
               {author.image ? (
-                <img
-                  src={author.image}
-                  alt={author.name}
-                  className="w-full h-full rounded-full object-cover"
-                />
+                <div className="relative w-full h-full rounded-full overflow-hidden">
+                  {!mounted && (
+                    <Skeleton className="absolute inset-0 w-full h-full" />
+                  )}
+                  <img
+                    src={author.image}
+                    alt={author.name}
+                    className="w-full h-full rounded-full object-cover"
+                    onLoad={() => setMounted(true)}
+                  />
+                </div>
               ) : (
                 <span className="text-sm font-medium text-gray-600">
                   {author.name.charAt(0)}
