@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -61,151 +61,52 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const { theme, setTheme } = useTheme()
-  
-  // Generate breadcrumbs from pathname
-  interface Breadcrumb {
-    name: string;
-    href: string;
-    current?: boolean;
-  }
-  
-  const generateBreadcrumbs = (): Breadcrumb[] => {
-    if (pathname === '/admin') return [{ name: 'Dashboard', href: '/admin' }];
-    
-    const paths = pathname.split('/').filter(Boolean);
-    let currentPath = '';
-    
-    return paths.map((path, i) => {
-      currentPath += `/${path}`;
-      
-      // Format the name - capitalize first letter and replace hyphens with spaces
-      let name = path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ');
-      
-      // Special case for dynamic routes with brackets
-      if (name.includes('[') && name.includes(']')) {
-        name = 'Details';
-      }
-      
-      return {
-        name,
-        href: currentPath,
-        current: i === paths.length - 1
-      };
-    });
-  };
-  
-  const breadcrumbs = generateBreadcrumbs();
 
   const handleSignOut = async () => {
-    try {
-      setIsLoading(true)
-      
-      // First sign out from Firebase
-      if (auth) {
-        await signOut(auth)
-      }
-
-      // Then clear all storage and cookies
-      Object.keys(localStorage).forEach(key => {
-        localStorage.removeItem(key)
-      })
-      
-      Object.keys(sessionStorage).forEach(key => {
-        sessionStorage.removeItem(key)
-      })
-      
-      // Clear cookies with all possible combinations
-      const domains = [window.location.hostname, `.${window.location.hostname}`, '']
-      const paths = ['/', '/admin', '/auth', '']
-      
-      domains.forEach(domain => {
-        paths.forEach(path => {
-          const cookieStr = domain ? `Domain=${domain};` : ''
-          const pathStr = path ? `Path=${path};` : ''
-          document.cookie = `__session=; ${pathStr} ${cookieStr} Expires=Thu, 01 Jan 1970 00:00:01 GMT;`
-          document.cookie = `firebaseToken=; ${pathStr} ${cookieStr} Expires=Thu, 01 Jan 1970 00:00:01 GMT;`
-        })
-      })
-
-      // Force reload to clear any cached states
-      window.location.replace('/auth')
-    } catch (error) {
-      console.error('Error signing out:', error)
-      window.location.replace('/auth')
+    if (auth) {
+      await signOut(auth)
     }
+    window.location.href = '/auth'
   }
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const checkAdmin = async () => {
       try {
-        if (!auth || !auth.currentUser) {
-          window.location.replace('/auth')
+        const user = auth?.currentUser
+        if (!user || !db) {
+          window.location.href = '/auth'
           return
         }
 
-        // Get fresh token and user claims
-        const token = await auth.currentUser.getIdToken(true)
-        
-        if (!db) {
-          window.location.replace('/auth')
-          return
-        }
-        
-        const userDocRef = doc(db, 'users', auth.currentUser.uid)
-        const userDocSnap = await getDoc(userDocRef)
-          
-        if (!userDocSnap.exists() || !userDocSnap.data()?.isAdmin) {
-          window.location.replace('/auth')
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (!userDoc.exists() || !userDoc.data()?.isAdmin) {
+          window.location.href = '/auth'
           return
         }
 
-        // Set auth cookie with proper attributes
-        const secure = process.env.NODE_ENV === 'production' ? 'Secure;' : ''
-        document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; ${secure}`
-
-        setIsAdmin(true)
-        setUserName(auth.currentUser.displayName || '')
-        setUserEmail(auth.currentUser.email || '')
+        setUserName(user.displayName || '')
+        setUserEmail(user.email || '')
         setIsLoading(false)
       } catch (error) {
-        console.error('Error in checkAdminStatus:', error)
-        window.location.replace('/auth')
+        console.error('Error checking admin status:', error)
+        window.location.href = '/auth'
       }
     }
 
-    // Add auth state listener
-    const unsubscribe = auth?.onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.replace('/auth')
-        return
-      }
-      checkAdminStatus()
-    })
-
-    // Initial check
-    checkAdminStatus()
-
-    return () => {
-      unsubscribe?.()
-    }
+    checkAdmin()
   }, [])
 
-  // Prevent flash of content during loading or redirect
-  if (isLoading || !isAdmin) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">
-            {isLoading ? "Loading admin dashboard..." : "Redirecting..."}
-          </p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
@@ -249,15 +150,7 @@ export default function AdminLayout({
                   </Link>
                 ))}
                 
-                <div className="mt-auto border-t mx-2 pt-4 space-y-2">
-                  <Link
-                    href="/auth"
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors text-muted-foreground hover:bg-muted"
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <Home className="h-4 w-4" />
-                    Go to Login
-                  </Link>
+                <div className="mt-auto border-t mx-2 pt-4">
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start px-4 py-2.5 text-sm font-medium text-destructive"
@@ -313,33 +206,9 @@ export default function AdminLayout({
       <div className="flex-1 flex flex-col">
         {/* Header bar */}
         <header className="h-16 border-b px-6 flex items-center justify-between">
-          {/* Breadcrumbs */}
-          <nav className="flex" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-1">
-              <li>
-                <Link href="/admin" className="text-muted-foreground hover:text-foreground">
-                  <Home className="h-4 w-4" />
-                </Link>
-              </li>
-              {breadcrumbs.slice(1).map((breadcrumb, index) => (
-                <li key={breadcrumb.href} className="flex items-center">
-                  <ChevronRight className="h-4 w-4 text-muted-foreground mx-1" />
-                  <Link
-                    href={breadcrumb.href}
-                    className={cn(
-                      "text-sm font-medium",
-                      breadcrumb.current
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                    aria-current={breadcrumb.current ? "page" : undefined}
-                  >
-                    {breadcrumb.name}
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          </nav>
+          <h1 className="text-lg font-semibold">
+            {navigation.find(item => pathname.startsWith(item.href))?.name || 'Dashboard'}
+          </h1>
           
           {/* User menu */}
           <div className="flex items-center gap-4">
@@ -369,25 +238,12 @@ export default function AdminLayout({
                   </p>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/auth" className="cursor-pointer">
-                    <Home className="mr-2 h-4 w-4" />
-                    <span>Go to Login</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/settings" className="cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   className="text-destructive focus:text-destructive cursor-pointer"
                   onClick={handleSignOut}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>Sign Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
