@@ -1,9 +1,15 @@
 [build]
 command = "npm run build"
-publish = ".next"
+pages_build_output_dir = ".next/standalone"
 
 [build.environment]
 NODE_VERSION = "20"
+NPM_VERSION = "10"
 
 [site]
-bucket = ".next" 
+bucket = ".next/standalone"
+
+[env.production]
+routes = [
+  { pattern = "/*", zone_name = "nayabharatyojana.in" }
+] 

@@ -25,10 +25,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env
 .env*.local
-.env*.backup
-.env.backup*
+.env.production
+.env.development
+.env.test
 
 # vercel
 .vercel
@@ -36,6 +36,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# firebase
+*firebase-adminsdk*.json
+
+# cloudflare
+.wrangler/
+.dev.vars
 
 certificates
 

@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     domains: [
       'firebasestorage.googleapis.com',
@@ -46,18 +47,6 @@ const nextConfig = {
       '.',
     ];
     
-    // Add bundle analyzer in production build when analyzing
-    if (process.env.ANALYZE === 'true') {
-      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-      config.plugins.push(
-        new BundleAnalyzerPlugin({
-          analyzerMode: 'server',
-          analyzerPort: isServer ? 8888 : 8889,
-          openAnalyzer: true,
-        })
-      );
-    }
-    
     return config;
   },
   // Enable React strict mode for better development experience
@@ -70,7 +59,12 @@ const nextConfig = {
   staticPageGenerationTimeout: 120,
   // Disable x-powered-by header
   poweredByHeader: false,
-  output: 'standalone',
+  // Configure trailing slashes
+  trailingSlash: false,
+  // Configure Cloudflare specific settings
+  env: {
+    NEXT_PUBLIC_BASE_URL: 'https://nayabharatyojana.in',
+  }
 };
 
 export default nextConfig; 
