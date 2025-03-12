@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
-    "deploy": "wrangler pages deploy .next/standalone"
+    "deploy": "wrangler pages deploy .next"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",

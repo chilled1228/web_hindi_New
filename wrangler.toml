@@ -1,15 +1,21 @@
+name = "nayabharatyojana"
+compatibility_date = "2023-12-01"
+compatibility_flags = ["nodejs_compat"]
+
 [build]
 command = "npm run build"
-pages_build_output_dir = ".next/standalone"
-
-[build.environment]
-NODE_VERSION = "20"
-NPM_VERSION = "10"
 
 [site]
-bucket = ".next/standalone"
+bucket = ".next"
 
 [env.production]
-routes = [
-  { pattern = "/*", zone_name = "nayabharatyojana.in" }
-] 
+vars = { ENVIRONMENT = "production" }
+
+# Configure routes for Next.js
+[[routes]]
+pattern = "/_next/*"
+content_type = "application/javascript"
+
+[[routes]]
+pattern = "/api/*"
+script = "api" 
