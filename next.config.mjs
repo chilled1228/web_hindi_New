@@ -10,6 +10,7 @@ const nextConfig = {
     minimumCacheTTL: 60,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    unoptimized: true, // Required for Cloudflare Pages
   },
   experimental: {
     serverComponentsExternalPackages: ['firebase-admin'],
@@ -69,6 +70,7 @@ const nextConfig = {
   staticPageGenerationTimeout: 120,
   // Disable x-powered-by header
   poweredByHeader: false,
+  output: 'standalone',
 };
 
 export default nextConfig; 
