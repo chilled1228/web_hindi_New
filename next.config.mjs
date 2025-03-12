@@ -10,7 +10,6 @@ const nextConfig = {
     minimumCacheTTL: 60,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    unoptimized: true, // Required for Cloudflare Pages
   },
   experimental: {
     serverComponentsExternalPackages: ['firebase-admin'],
@@ -46,6 +45,18 @@ const nextConfig = {
       '.',
     ];
     
+    // Add bundle analyzer in production build when analyzing
+    if (process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'server',
+          analyzerPort: isServer ? 8888 : 8889,
+          openAnalyzer: true,
+        })
+      );
+    }
+    
     return config;
   },
   // Enable React strict mode for better development experience
@@ -58,12 +69,6 @@ const nextConfig = {
   staticPageGenerationTimeout: 120,
   // Disable x-powered-by header
   poweredByHeader: false,
-  // Configure trailing slashes
-  trailingSlash: false,
-  // Configure Cloudflare specific settings
-  env: {
-    NEXT_PUBLIC_BASE_URL: 'https://nayabharatyojana.in',
-  }
 };
 
 export default nextConfig; 
